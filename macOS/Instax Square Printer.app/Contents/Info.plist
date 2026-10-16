@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>InstaxSquarePrinter</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.instax.square.printer</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>Instax Square Printer</string>
+    <key>CFBundleDisplayName</key>
+    <string>Instax Square Printer</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.1.0</string>
+    <key>CFBundleVersion</key>
+    <string>2</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Instax Square Printer uses Bluetooth Low Energy to connect and print photos to your Fujifilm Instax SQUARE Link printer (INSTAX-50271289).</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Instax Square Printer accesses your Apple Photos and iCloud Photos library so you can select and bulk print photos directly to your Instax SQUARE Link printer.</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
+</dict>
+</plist>

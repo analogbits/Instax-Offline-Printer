@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instax Universal Offline Printer</title>
+<style>
+  :root {
+    --bg: #0f1013;
+    --card: #18191f;
+    --card-inner: #20222a;
+    --border: #2e303b;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --success: #22c55e;
+    --success-hover: #16a34a;
+    --text: #f3f4f6;
+    --text-dim: #9ca3af;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 20px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+  }
+  .app-container {
+    width: 100%;
+    max-width: 1100px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  h1 { font-size: 19px; margin: 0; display: flex; align-items: center; gap: 8px; }
+  .badges-row { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge.green {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+  .badge.orange {
+    background: rgba(249, 115, 22, 0.15);
+    color: #fb923c;
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+  }
+  @media (max-width: 880px) { .main-layout { grid-template-columns: 1fr; } }
+
+  /* Left: Preview Area */
+  .preview-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #090a0d;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .canvas-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 400px;
+    overflow: hidden;
+  }
+  canvas {
+    max-width: 100%;
+    max-height: 420px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    cursor: grab;
+    background: #fff;
+  }
+  canvas:active { cursor: grabbing; }
+
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 8px 13px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  button:hover { background: var(--accent-hover); }
+  button:disabled { background: #2d3039; color: #6b7280; cursor: not-allowed; }
+  button.secondary { background: #242630; color: var(--text); border: 1px solid var(--border); }
+  button.secondary:hover { background: #2d303c; }
+  button.success { background: var(--success); }
+  button.success:hover { background: var(--success-hover); }
+
+  select, input[type="range"], input[type="color"] {
+    background: #242630;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    outline: none;
+  }
+  select { width: 100%; }
+
+  /* Right Sidebar Controls */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .card-group {
+    background: var(--card-inner);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .tabs-nav {
+    display: flex;
+    gap: 4px;
+    background: #17181f;
+    padding: 3px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .tab-btn {
+    flex: 1;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    padding: 5px;
+    border-radius: 4px;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  .field-row {
+    margin-bottom: 10px;
+  }
+  .field-row:last-child { margin-bottom: 0; }
+  .field-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 4px;
+    color: var(--text-dim);
+  }
+  .field-value { font-family: monospace; color: var(--text); }
+
+  .bar-wrap { margin-top: 10px; }
+  .bar-bg {
+    width: 100%;
+    height: 7px;
+    background: #1a1b22;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--success);
+    transition: width 0.15s;
+  }
+
+  .log-console {
+    background: #090a0d;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    font-family: Consolas, monospace;
+    font-size: 10px;
+    color: #4ade80;
+    height: 95px;
+    overflow-y: auto;
+    margin-top: 10px;
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header>
+    <div>
+      <h1>📸 Instax Universal Offline Web Printer</h1>
+      <div style="font-size: 12px; color: var(--text-dim); margin-top: 3px;">
+        Zero-install Bluetooth printing for Google Chrome, Edge, and Brave
+      </div>
+    </div>
+    <div class="badges-row">
+      <span class="badge" id="badgeFilm">Film: --/10</span>
+      <span class="badge" id="badgeBattery">Battery: --%</span>
+      <span class="badge green">100% Offline</span>
+    </div>
+  </header>
+
+  <div id="browserNotice" style="display:none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #fca5a5;">
+    ⚠️ <b>Browser Notice:</b> This browser (such as Apple Safari or Firefox) does not support the Web Bluetooth API. Please open this file in <b>Google Chrome</b>, <b>Microsoft Edge</b>, or <b>Brave</b> to print to your Instax printer.
+  </div>
+
+  <div class="main-layout">
+    <!-- Left: Preview Canvas & Editing Controls -->
+    <div class="preview-section">
+      <div class="canvas-wrapper">
+        <canvas id="photoCanvas" width="800" height="800"></canvas>
+      </div>
+
+      <!-- Quick Action Toolbar -->
+      <div class="toolbar">
+        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        <button class="secondary" onclick="document.getElementById('fileInput').click()">📁 Add Photo...</button>
+        <button class="secondary" onclick="actionRotate(-90)">↺ Rotate 90°</button>
+        <button class="secondary" onclick="actionRotate(90)">Rotate 90° ↻</button>
+        <button class="secondary" onclick="actionReset()">Reset Framing</button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; width: 100%; font-size: 11px; color: var(--text-dim); margin-top: 8px;">
+        <span id="canvasInfo">Target: 800 × 800 px (Instax SQUARE Link)</span>
+        <span>Drag photo to pan</span>
+      </div>
+    </div>
+
+    <!-- Right Sidebar Controls -->
+    <div class="sidebar">
+      <!-- 1. Connection Card -->
+      <div class="card-group">
+        <div class="card-title">
+          <span>1. Bluetooth Printer</span>
+          <span id="btStatusText" style="color: #9ca3af; text-transform: none;">Not connected</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button id="btnConnect" onclick="connectBluetooth()" style="flex: 1;">📡 Connect Instax</button>
+          <button class="secondary" id="btnStopLed" onclick="actionStopLed()" title="Stop LED loop">🛑 Stop LED</button>
+        </div>
+        <div style="font-size: 11px; color: #fbbf24; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 6px; padding: 7px 9px; margin-top: 8px; line-height: 1.4;">
+          💡 <b>Bluetooth Tip:</b> Turn <b>OFF</b> Bluetooth on your phone/tablet. Instax printers can only pair with one device at a time and will hide if paired with your phone.
+        </div>
+      </div>
+
+      <!-- 2. Settings Tabs -->
+      <div class="card-group">
+        <div class="tabs-nav">
+          <button class="tab-btn active" id="tabFramingBtn" onclick="showTab('framing')">Framing</button>
+          <button class="tab-btn" id="tabColorBtn" onclick="showTab('color')">Film & Filters</button>
+        </div>
+
+        <!-- Framing Tab Content -->
+        <div id="tabFramingContent">
+          <div class="field-row">
+            <div class="field-label"><span>Printer Model</span></div>
+            <select id="modelSelect" onchange="actionModelChange()">
+              <option value="square">Instax SQUARE Link (800 × 800)</option>
+              <option value="wide">Instax Link WIDE (1260 × 840)</option>
+              <option value="mini">Instax Mini Link (600 × 800)</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Fit Mode</span></div>
+            <select id="fitModeSelect" onchange="renderCanvas()">
+              <option value="crop">Fill Canvas (Crop)</option>
+              <option value="fit">Fit Entire Image (Letterbox)</option>
+              <option value="stretch">Stretch</option>
+            </select>
+          </div>
+
+          <div class="field-row" id="bgColorRow">
+            <div class="field-label"><span>Letterbox Matte Color</span></div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <input type="color" id="bgColorPicker" value="#FFFFFF" onchange="renderCanvas()" style="width: 44px; height: 30px; padding: 2px;">
+              <button class="secondary" style="padding: 4px 8px; font-size: 11px;" onclick="setLetterboxColor('#FFFFFF')">White</button>
+              <button class="secondary" style="padding: 4px 8px; font-size: 11px;" onclick="setLetterboxColor('#000000')">Black</button>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Zoom</span><span class="field-value" id="valZoom">1.00×</span></div>
+            <input type="range" id="sliderZoom" min="0.5" max="2.5" step="0.05" value="1.0" oninput="renderCanvas()">
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Horizontal Pan</span><span class="field-value" id="valPanX">0.00</span></div>
+            <input type="range" id="sliderPanX" min="-1.0" max="1.0" step="0.02" value="0.0" oninput="renderCanvas()">
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Vertical Pan</span><span class="field-value" id="valPanY">0.00</span></div>
+            <input type="range" id="sliderPanY" min="-1.0" max="1.0" step="0.02" value="0.0" oninput="renderCanvas()">
+          </div>
+        </div>
+
+        <!-- Color & Filters Tab Content -->
+        <div id="tabColorContent" style="display: none;">
+          <div class="field-row">
+            <div class="field-label"><span>Print Mode</span></div>
+            <select id="printModeSelect" onchange="renderCanvas()">
+              <option value="rich">instax-Rich Mode (Vibrant Pop)</option>
+              <option value="natural">instax-Natural Mode (Classic 3D-LUT)</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Artistic Filter</span></div>
+            <select id="filterPresetSelect" onchange="renderCanvas()">
+              <option value="none">Original (No Filter)</option>
+              <option value="mono">B&W Monochrome</option>
+              <option value="sepia">Warm Sepia</option>
+              <option value="vintage">Vintage Film</option>
+              <option value="cool">Cool Fade</option>
+              <option value="vivid">Vivid Pop</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Brightness</span><span class="field-value" id="valBright">0.00</span></div>
+            <input type="range" id="sliderBright" min="-0.4" max="0.4" step="0.02" value="0.0" oninput="renderCanvas()">
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Contrast</span><span class="field-value" id="valContrast">1.00</span></div>
+            <input type="range" id="sliderContrast" min="0.6" max="1.6" step="0.05" value="1.0" oninput="renderCanvas()">
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Saturation</span><span class="field-value" id="valSat">1.00</span></div>
+            <input type="range" id="sliderSat" min="0.0" max="2.0" step="0.05" value="1.0" oninput="renderCanvas()">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Print Actions & Diagnostics -->
+      <div class="card-group">
+        <div class="card-title"><span>3. Print & Diagnostics</span></div>
+        <button id="btnPrint" class="success" style="width: 100%; padding: 12px; font-size: 14px;" onclick="printPhoto()" disabled>
+          🖨 Print Physical Photo
+        </button>
+
+        <div class="bar-wrap">
+          <div class="bar-bg"><div id="progressFill" class="bar-fill"></div></div>
+          <div id="statusLabel" style="font-size: 11px; color: var(--text-dim); margin-top: 5px;">Ready — Select photo & connect printer.</div>
+        </div>
+
+        <div class="log-console" id="logConsole"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// BLE Protocol Constants
+const SERVICE_UUID = "70954782-2d83-473d-9e5f-81e1d02d5273";
+const WRITE_UUID   = "70954783-2d83-473d-9e5f-81e1d02d5273";
+const NOTIFY_UUID  = "70954784-2d83-473d-9e5f-81e1d02d5273";
+
+let btDevice = null;
+let writeChar = null;
+let notifyChar = null;
+let rxBuffer = new Uint8Array(0);
+let pendingPromise = null;
+
+// Canvas & Image State
+const canvas = document.getElementById('photoCanvas');
+const ctx = canvas.getContext('2d');
+let loadedImage = null;
+let currentRotation = 0;
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+
+// Log helper
+function log(msg) {
+  const box = document.getElementById('logConsole');
+  box.textContent += msg + "\n";
+  box.scrollTop = box.scrollHeight;
+}
+
+// UI Tabs
+function showTab(tab) {
+  document.getElementById('tabFramingContent').style.display = (tab === 'framing') ? 'block' : 'none';
+  document.getElementById('tabColorContent').style.display = (tab === 'color') ? 'block' : 'none';
+  document.getElementById('tabFramingBtn').className = (tab === 'framing') ? 'tab-btn active' : 'tab-btn';
+  document.getElementById('tabColorBtn').className = (tab === 'color') ? 'tab-btn active' : 'tab-btn';
+}
+
+function setLetterboxColor(hex) {
+  document.getElementById('bgColorPicker').value = hex;
+  renderCanvas();
+}
+
+// Model dimensions
+function actionModelChange() {
+  const m = document.getElementById('modelSelect').value;
+  if (m === 'wide') {
+    canvas.width = 1260; canvas.height = 840;
+    document.getElementById('canvasInfo').textContent = 'Target: 1260 × 840 px (Instax Link WIDE)';
+  } else if (m === 'mini') {
+    canvas.width = 600; canvas.height = 800;
+    document.getElementById('canvasInfo').textContent = 'Target: 600 × 800 px (Instax Mini Link)';
+  } else {
+    canvas.width = 800; canvas.height = 800;
+    document.getElementById('canvasInfo').textContent = 'Target: 800 × 800 px (Instax SQUARE Link)';
+  }
+  renderCanvas();
+}
+
+function actionRotate(deg) {
+  currentRotation = (currentRotation + deg) % 360;
+  renderCanvas();
+}
+
+function actionReset() {
+  currentRotation = 0;
+  document.getElementById('sliderZoom').value = 1.0;
+  document.getElementById('sliderPanX').value = 0.0;
+  document.getElementById('sliderPanY').value = 0.0;
+  document.getElementById('sliderBright').value = 0.0;
+  document.getElementById('sliderContrast').value = 1.0;
+  document.getElementById('sliderSat').value = 1.0;
+  document.getElementById('filterPresetSelect').value = "none";
+  renderCanvas();
+}
+
+// Canvas Drag-to-Pan
+canvas.addEventListener('mousedown', (e) => {
+  if (!loadedImage) return;
+  isDragging = true;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const dx = (e.clientX - dragStartX) / (canvas.clientWidth / 2);
+  const dy = (e.clientY - dragStartY) / (canvas.clientHeight / 2);
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+
+  const sliderX = document.getElementById('sliderPanX');
+  const sliderY = document.getElementById('sliderPanY');
+  sliderX.value = Math.max(-1.0, Math.min(1.0, parseFloat(sliderX.value) + dx));
+  sliderY.value = Math.max(-1.0, Math.min(1.0, parseFloat(sliderY.value) + dy));
+  renderCanvas();
+});
+
+window.addEventListener('mouseup', () => { isDragging = false; });
+
+// File Input
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const img = new Image();
+    img.onload = () => {
+      loadedImage = img;
+      renderCanvas();
+      if (writeChar) document.getElementById('btnPrint').disabled = false;
+      log(`Loaded image: ${img.naturalWidth} × ${img.naturalHeight} px`);
+    };
+    img.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// Canvas Rendering Pipeline (Framing + Film Mode + Artistic Filters)
+function renderCanvas() {
+  const zoom = parseFloat(document.getElementById('sliderZoom').value);
+  const panX = parseFloat(document.getElementById('sliderPanX').value);
+  const panY = parseFloat(document.getElementById('sliderPanY').value);
+  const bright = parseFloat(document.getElementById('sliderBright').value);
+  const contrast = parseFloat(document.getElementById('sliderContrast').value);
+  const sat = parseFloat(document.getElementById('sliderSat').value);
+  const fitMode = document.getElementById('fitModeSelect').value;
+  const printMode = document.getElementById('printModeSelect').value;
+  const filter = document.getElementById('filterPresetSelect').value;
+  const bgColor = document.getElementById('bgColorPicker').value;
+
+  // Update label indicators
+  document.getElementById('valZoom').textContent = zoom.toFixed(2) + "×";
+  document.getElementById('valPanX').textContent = (panX >= 0 ? "+" : "") + panX.toFixed(2);
+  document.getElementById('valPanY').textContent = (panY >= 0 ? "+" : "") + panY.toFixed(2);
+  document.getElementById('valBright').textContent = (bright >= 0 ? "+" : "") + bright.toFixed(2);
+  document.getElementById('valContrast').textContent = contrast.toFixed(2);
+  document.getElementById('valSat').textContent = sat.toFixed(2);
+
+  // Background
+  ctx.fillStyle = (fitMode === 'fit') ? bgColor : '#1E1E1E';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (!loadedImage) {
+    ctx.fillStyle = '#666';
+    ctx.font = '24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Select a photo to print', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  // Calculate Base CSS Filter string reflecting Film Mode & Presets
+  let filterStr = "";
+
+  // 1. Film Mode Emulation
+  if (printMode === 'rich') {
+    // Rich Mode: Boost saturation (+18%) and subtle contrast pop
+    filterStr += "saturate(118%) contrast(108%) ";
+  } else {
+    // Natural Mode: Soft analog instant film highlights with 3D-LUT warmth
+    filterStr += "sepia(10%) contrast(98%) brightness(102%) ";
+  }
+
+  // 2. Artistic Filter Presets
+  if (filter === 'mono') {
+    filterStr += "grayscale(100%) contrast(115%) ";
+  } else if (filter === 'sepia') {
+    filterStr += "sepia(80%) contrast(105%) ";
+  } else if (filter === 'vintage') {
+    filterStr += "sepia(35%) contrast(90%) brightness(105%) saturate(85%) ";
+  } else if (filter === 'cool') {
+    filterStr += "hue-rotate(185deg) saturate(75%) contrast(95%) ";
+  } else if (filter === 'vivid') {
+    filterStr += "saturate(150%) contrast(115%) ";
+  }
+
+  // 3. User Adjustments
+  filterStr += `brightness(${(1.0 + bright) * 100}%) contrast(${contrast * 100}%) saturate(${sat * 100}%)`;
+  ctx.filter = filterStr.trim();
+
+  // Draw image
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate((currentRotation * Math.PI) / 180);
+
+  const imgW = (currentRotation % 180 === 0) ? loadedImage.naturalWidth : loadedImage.naturalHeight;
+  const imgH = (currentRotation % 180 === 0) ? loadedImage.naturalHeight : loadedImage.naturalWidth;
+  const canvasAspect = canvas.width / canvas.height;
+  const imgAspect = imgW / imgH;
+
+  let drawW, drawH;
+  if (fitMode === 'stretch') {
+    drawW = canvas.width * zoom;
+    drawH = canvas.height * zoom;
+  } else if (fitMode === 'fit') {
+    if (imgAspect > canvasAspect) {
+      drawW = canvas.width * zoom;
+      drawH = (canvas.width / imgAspect) * zoom;
+    } else {
+      drawH = canvas.height * zoom;
+      drawW = (canvas.height * imgAspect) * zoom;
+    }
+  } else { // crop
+    if (imgAspect > canvasAspect) {
+      drawH = canvas.height * zoom;
+      drawW = (canvas.height * imgAspect) * zoom;
+    } else {
+      drawW = canvas.width * zoom;
+      drawH = (canvas.width / imgAspect) * zoom;
+    }
+  }
+
+  const offsetX = panX * (canvas.width / 2);
+  const offsetY = panY * (canvas.height / 2);
+
+  ctx.drawImage(loadedImage, -drawW / 2 + offsetX, -drawH / 2 + offsetY, drawW, drawH);
+  ctx.restore();
+  ctx.filter = 'none'; // reset
+}
+
+// -------------------------------------------------------------
+// Bluetooth Low Energy Protocol Engine
+// -------------------------------------------------------------
+
+function buildPacket(sidHi, sidLo, payload = new Uint8Array(0)) {
+  const totLen = 7 + payload.length;
+  const pkt = new Uint8Array(totLen);
+  pkt[0] = 0x41; // 'A'
+  pkt[1] = 0x62; // 'b'
+  pkt[2] = (totLen >> 8) & 0xFF;
+  pkt[3] = totLen & 0xFF;
+  pkt[4] = sidHi;
+  pkt[5] = sidLo;
+  pkt.set(payload, 6);
+
+  let sum = 0;
+  for (let i = 0; i < totLen - 1; i++) {
+    sum = (sum + pkt[i]) & 0xFF;
+  }
+  pkt[totLen - 1] = (255 - sum) & 0xFF;
+  return pkt;
+}
+
+async function connectBluetooth() {
+  if (!navigator.bluetooth) {
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const msg = isSafari
+      ? "Apple Safari does not support the Web Bluetooth API.\n\nPlease open this file in Google Chrome, Microsoft Edge, or Brave to connect directly to your Instax printer."
+      : "Your current browser does not support the Web Bluetooth API.\n\nPlease open this file in Google Chrome, Microsoft Edge, or Brave.";
+    alert(msg);
+    log("⚠️ " + msg);
+    return;
+  }
+
+  try {
+    log("Scanning for nearby Instax printers...");
+    btDevice = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: "INSTAX" }],
+      optionalServices: [SERVICE_UUID]
+    });
+
+    log(`Connecting to GATT Server on ${btDevice.name}...`);
+    const server = await btDevice.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+    writeChar = await service.getCharacteristic(WRITE_UUID);
+    notifyChar = await service.getCharacteristic(NOTIFY_UUID);
+
+    // Attach event listener first before starting notifications
+    notifyChar.addEventListener('characteristicvaluechanged', handleNotify);
+    await notifyChar.startNotifications();
+
+    document.getElementById('btStatusText').innerHTML = `<b style='color:#4ade80;'>Connected (${btDevice.name})</b>`;
+    document.getElementById('btnConnect').textContent = "Connected ✓";
+    document.getElementById('btnConnect').disabled = true;
+
+    log("GATT channel open. Querying printer status...");
+    await queryPrinterStatus();
+
+    if (loadedImage) document.getElementById('btnPrint').disabled = false;
+  } catch (err) {
+    log("Connection failed: " + err);
+    let extra = "";
+    if (err.name === 'NotFoundError' || (err.message && err.message.includes('User cancelled'))) {
+      extra = "\n\n💡 Tip: If your printer is not appearing in the list, please turn OFF Bluetooth on your iPhone, iPad, or Android phone so the printer is free to pair with your computer.";
+    }
+    alert("Bluetooth link failed: " + err.message + extra);
+  }
+}
+
+function handleNotify(event) {
+  const dv = event.target.value;
+  const val = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
+  const newBuf = new Uint8Array(rxBuffer.length + val.length);
+  newBuf.set(rxBuffer);
+  newBuf.set(val, rxBuffer.length);
+  rxBuffer = newBuf;
+
+  while (rxBuffer.length >= 8) {
+    if (rxBuffer[0] !== 0x61 || rxBuffer[1] !== 0x42) {
+      let idx = -1;
+      for (let i = 0; i < rxBuffer.length - 1; i++) {
+        if (rxBuffer[i] === 0x61 && rxBuffer[i+1] === 0x42) {
+          idx = i;
+          break;
+        }
+      }
+      if (idx === -1) {
+        rxBuffer = new Uint8Array(0);
+        return;
+      }
+      rxBuffer = rxBuffer.slice(idx);
+      if (rxBuffer.length < 8) return;
+    }
+
+    const len = (rxBuffer[2] << 8) | rxBuffer[3];
+    if (rxBuffer.length < len) return;
+
+    const pkt = rxBuffer.slice(0, len);
+    rxBuffer = rxBuffer.slice(len);
+
+    const sid = [pkt[4], pkt[5]];
+    const resCode = pkt[6];
+    const payload = len > 8 ? pkt.slice(7, -1) : new Uint8Array(0);
+
+    const hexSample = Array.from(payload.slice(0, 8)).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+    log(`[RX] <- SID(${sid[0]},${sid[1]}) Code=0x${resCode.toString(16)} (${payload.length}B) [${hexSample}]`);
+
+    if (pendingPromise && (pendingPromise.sid[0] === sid[0] && pendingPromise.sid[1] === sid[1])) {
+      pendingPromise.resolve({ sid, resCode, payload });
+      pendingPromise = null;
+    }
+  }
+}
+
+async function sendCmd(sidHi, sidLo, payload = new Uint8Array(0), timeoutMs = 10000) {
+  const pkt = buildPacket(sidHi, sidLo, payload);
+  const hexSample = Array.from(pkt.slice(0, 8)).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+  log(`[TX] -> SID(${sidHi},${sidLo}) (${pkt.length}B) [${hexSample}]`);
+
+  const promise = new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      if (pendingPromise && pendingPromise.reject === reject) {
+        pendingPromise = null;
+        reject(new Error(`Timeout waiting for SID(${sidHi},${sidLo})`));
+      }
+    }, timeoutMs);
+    pendingPromise = {
+      sid: [sidHi, sidLo],
+      resolve: (val) => { clearTimeout(timer); resolve(val); },
+      reject: (err) => { clearTimeout(timer); reject(err); }
+    };
+  });
+
+  // MTU slicing
+  const mtu = 180;
+  for (let offset = 0; offset < pkt.length; offset += mtu) {
+    const slice = pkt.slice(offset, offset + mtu);
+    if (typeof writeChar.writeValueWithoutResponse === 'function' && writeChar.properties.writeWithoutResponse) {
+      await writeChar.writeValueWithoutResponse(slice);
+    } else if (typeof writeChar.writeValueWithResponse === 'function' && writeChar.properties.write) {
+      await writeChar.writeValueWithResponse(slice);
+    } else if (typeof writeChar.writeValue === 'function') {
+      await writeChar.writeValue(slice);
+    }
+    await new Promise(r => setTimeout(r, 6));
+  }
+
+  return promise;
+}
+
+async function queryPrinterStatus() {
+  // 1. SupportFunctionInfo: Image specs (0x00)
+  try {
+    const imgInfo = await sendCmd(0x00, 0x02, new Uint8Array([0x00]), 3500);
+    if (imgInfo.resCode === 0 && imgInfo.payload.length >= 5) {
+      const p = imgInfo.payload;
+      const w = (p[1] << 8) | p[2];
+      const h = (p[3] << 8) | p[4];
+      log(`Printer Resolution: ${w} × ${h} px`);
+      if (w === 1260 || h === 840) {
+        document.getElementById('modelSelect').value = 'wide';
+        actionModelChange();
+      } else if (w === 800) {
+        document.getElementById('modelSelect').value = 'square';
+        actionModelChange();
+      }
+    }
+  } catch (err) {
+    log("Resolution query: " + err.message);
+  }
+
+  // 2. Battery Info (0x01)
+  try {
+    const battInfo = await sendCmd(0x00, 0x02, new Uint8Array([0x01]), 3500);
+    if (battInfo.resCode === 0 && battInfo.payload.length >= 2) {
+      const b1 = battInfo.payload[1];
+      const lvl = b1 & 0x07;
+      const isCharging = ((b1 >> 3) & 0x01) === 1;
+      let pct = battInfo.payload.length >= 3 ? battInfo.payload[2] : (lvl * 25);
+      if (pct > 94) pct = 100;
+      const badge = document.getElementById('badgeBattery');
+      badge.textContent = `Battery: ${pct}%${isCharging ? " ⚡" : ""}`;
+      badge.className = isCharging || pct > 20 ? 'badge green' : 'badge orange';
+      log(`Battery: ${pct}% (Level ${lvl}, ${isCharging ? 'Charging' : 'Discharging'})`);
+    }
+  } catch (err) {
+    log("Battery query: " + err.message);
+  }
+
+  // 3. Printer Info & Film remaining (0x02)
+  try {
+    const prtInfo = await sendCmd(0x00, 0x02, new Uint8Array([0x02]), 3500);
+    if (prtInfo.resCode === 0 && prtInfo.payload.length >= 2) {
+      const film = prtInfo.payload[1] & 0x0F;
+      const badge = document.getElementById('badgeFilm');
+      badge.textContent = film > 0 ? `Film: ${film}/10` : 'Film: Empty!';
+      badge.className = film > 0 ? 'badge' : 'badge orange';
+      log(`Film remaining: ${film}/10 sheets`);
+
+      if (prtInfo.payload.length >= 3) {
+        const isCoverOpen = (prtInfo.payload[2] & 0x01) === 1;
+        if (isCoverOpen) {
+          log("⚠️ Warning: Printer back cover is OPEN!");
+          badge.textContent = "Cover Open!";
+          badge.className = "badge orange";
+        }
+      }
+    }
+  } catch (err) {
+    log("Film query: " + err.message);
+  }
+}
+
+async function actionStopLed() {
+  if (!writeChar) return;
+  await sendCmd(0x30, 0x01, new Uint8Array([0x00, 0x01, 0x05, 0x00, 0x00, 0x00, 0x00]));
+  log("LED loop stopped.");
+}
+
+// Robust Iterative JPEG Compression (Guaranteed <= 60 KB for Square, <= 110 KB for Wide)
+async function compressToBudget(maxBytes) {
+  let quality = 0.94;
+  let blob = null;
+  while (quality >= 0.15) {
+    blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+    if (blob.size <= maxBytes || quality <= 0.16) {
+      log(`JPEG compressed: ${(blob.size / 1024).toFixed(1)} KB (quality: ${Math.round(quality * 100)}%, budget: ${Math.round(maxBytes/1024)} KB)`);
+      return blob;
+    }
+    quality -= 0.04;
+  }
+  return blob;
+}
+
+async function printPhoto() {
+  if (!writeChar || !loadedImage) return;
+  document.getElementById('btnPrint').disabled = true;
+  const statusLbl = document.getElementById('statusLabel');
+  const bar = document.getElementById('progressFill');
+
+  try {
+    const model = document.getElementById('modelSelect').value;
+    const maxBytes = (model === 'wide') ? 110 * 1024 : 60 * 1024;
+
+    statusLbl.textContent = "Encoding JPEG to printer budget (<" + Math.round(maxBytes/1024) + " KB)...";
+    bar.style.width = "4%";
+
+    const jpegBlob = await compressToBudget(maxBytes);
+    const jpegBytes = new Uint8Array(await jpegBlob.arrayBuffer());
+
+    const frameSize = 1808;
+    const padLen = (frameSize - (jpegBytes.length % frameSize)) % frameSize;
+    const padded = new Uint8Array(jpegBytes.length + padLen);
+    padded.set(jpegBytes);
+
+    const mode = document.getElementById('printModeSelect').value;
+    const optByte = (mode === 'natural') ? 0x08 : 0x00;
+
+    statusLbl.textContent = "Initiating print handshake...";
+    bar.style.width = "8%";
+
+    const totSz = padded.length;
+    const startPayload = new Uint8Array([
+      0x02, optByte, 0x00, 0x00,
+      (totSz >> 24) & 0xFF, (totSz >> 16) & 0xFF, (totSz >> 8) & 0xFF, totSz & 0xFF
+    ]);
+
+    const startResp = await sendCmd(0x10, 0x00, startPayload, 12000);
+    if (startResp.resCode !== 0) throw new Error(`PRINT_START rejected (code 0x${startResp.resCode.toString(16)})`);
+
+    const totalChunks = padded.length / frameSize;
+    log(`Beginning upload of ${totalChunks} chunks (@ ${frameSize}B)...`);
+
+    for (let i = 0; i < totalChunks; i++) {
+      const chunk = padded.slice(i * frameSize, (i + 1) * frameSize);
+      const dataPayload = new Uint8Array(4 + frameSize);
+      dataPayload[0] = (i >> 24) & 0xFF; dataPayload[1] = (i >> 16) & 0xFF;
+      dataPayload[2] = (i >> 8) & 0xFF;  dataPayload[3] = i & 0xFF;
+      dataPayload.set(chunk, 4);
+
+      const pct = Math.round(10 + ((i + 1) / totalChunks) * 75);
+      bar.style.width = pct + "%";
+      statusLbl.textContent = `Uploading chunk ${i + 1} of ${totalChunks}...`;
+
+      const res = await sendCmd(0x10, 0x01, dataPayload, 15000);
+      if (res.resCode !== 0) throw new Error(`Chunk ${i+1} rejected`);
+    }
+
+    statusLbl.textContent = "Finalizing image transfer...";
+    bar.style.width = "88%";
+    const endResp = await sendCmd(0x10, 0x02, new Uint8Array(0), 10000);
+    if (endResp.resCode !== 0) throw new Error("PRINT_END rejected");
+
+    statusLbl.textContent = "Triggering film exposure & ejection...";
+    bar.style.width = "94%";
+    const execResp = await sendCmd(0x10, 0x80, new Uint8Array(0), 15000);
+    if (execResp.resCode !== 0) throw new Error("PRINT_EXEC rejected");
+
+    statusLbl.textContent = "Ejecting Instax photo (~12s)...";
+    bar.style.width = "97%";
+    await new Promise(r => setTimeout(r, 12000));
+
+    bar.style.width = "100%";
+    statusLbl.textContent = "🎉 Print complete!";
+    log("Physical print complete! Updating film status...");
+    await queryPrinterStatus();
+    alert("Photo printed successfully!");
+  } catch (err) {
+    statusLbl.textContent = "Error: " + err.message;
+    log("Print failed: " + err.message);
+    alert("Print error: " + err.message);
+    // Send cancel
+    try { await sendCmd(0x10, 0x03, new Uint8Array(0), 3000); } catch(e){}
+  } finally {
+    document.getElementById('btnPrint').disabled = false;
+  }
+}
+
+// Browser capability check
+if (!navigator.bluetooth) {
+  const notice = document.getElementById('browserNotice');
+  if (notice) notice.style.display = 'block';
+}
+
+// Initial draw
+renderCanvas();
+</script>
+</body>
+</html>

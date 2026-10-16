@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Instax Offline Printer
+Comment=Print photos directly to Instax SQUARE Link, Link WIDE, and Mini over Bluetooth Low Energy
+Exec=bash -c "cd $(dirname %k) && ./linux-run.sh"
+Terminal=false
+Type=Application
+Categories=Graphics;Photography;Printing;
+StartupNotify=true
