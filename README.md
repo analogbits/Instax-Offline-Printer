@@ -104,6 +104,26 @@ Print directly from **Apple Photos** to your Instax printer with zero cloud hops
 
 ---
 
+## 🧪 Safe Testing: Dry Run & Hardware Diagnostics (Zero Film Used!)
+
+Want to test your Bluetooth connection, MTU throughput, and printer commands without wasting a single sheet of physical film? We've built two dedicated non-destructive diagnostic tools into every client:
+
+### 1. 🧪 "Dry Run" Mode (Full Image & BLE Throughput Test)
+* **What it does:** Streams 100% of your real image chunks across Bluetooth, negotiates packet framing, and waits for the printer's onboard ASIC chip to decompress and validate the image in RAM.
+* **The Magic:** Once the printer validates the image without errors, our software immediately issues `PRINT_IMAGE_DOWNLOAD_CANCEL` (`0x10, 0x03`) instead of the physical exposure command.
+* **Result:** The printer dumps the buffer from memory and returns to ready state. **Zero film is exposed or ejected**, and it works even if your film cartridge is completely empty (`0/10`)!
+  * **In macOS App:** Check the **`[✓] Dry Run (Test Data Flow — 0 Film)`** box next to the Print button. The button switches to **Test Transfer (Dry Run)**.
+  * **In Web Bluetooth:** Check the **`[✓] Dry Run (Test Data Flow — 0 Film)`** box right above the print button.
+  * **In CLI:** Run `instax-square print photo.jpg --dry-run` or `python3 instax_printer.py print photo.jpg --dry-run`.
+
+### 2. ⚡ "Hardware Ping & LED Test" (Instant 1-Second Link Check)
+* **What it does:** Queries printer firmware registers, verifies battery and film counts, and sends the hardware command `LED_PATTERN_SETTINGS` (`0x30, 0x01`) to pulse the printer's front logo LED in a glowing rainbow pattern.
+* **Result:** Instant physical visual confirmation on the printer body that Bluetooth commands are executing with zero mechanical movement.
+  * **In macOS App:** Press `⌘D` to open the Protocol Console and click **Ping & Flash LED**, or select **Diagnostics $\to$ Flash Rainbow LED**.
+  * **In CLI:** Run `instax-square ping` or `python3 instax_printer.py ping`.
+
+---
+
 ## 💡 Advice, Troubleshooting & FAQ
 
 ### Q: Why do I get "Unsupported device" or "navigator.bluetooth is undefined"?

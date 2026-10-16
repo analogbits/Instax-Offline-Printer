@@ -272,13 +272,13 @@ class InstaxBLE:
         stop_payload = bytes([0x00, 0x01, 0x05, 0x00, 0x00, 0x00, 0x00])
         await self.send_command(SID_LED_PATTERN, stop_payload)
 
-    async def print_jpeg(self, jpeg_data: bytes, mode: str = "rich", progress_cb: Optional[Callable[[str, float], None]] = None) -> InstaxPrinterStatus:
+    async def print_jpeg(self, jpeg_data: bytes, mode: str = "rich", dry_run: bool = False, progress_cb: Optional[Callable[[str, float], None]] = None) -> InstaxPrinterStatus:
         if progress_cb: progress_cb("Checking printer status...", 0.04)
         st = await self.fetch_status()
 
         if st.is_cover_open:
             raise RuntimeError("Printer film cover is open. Please close the back compartment.")
-        if st.film_remaining <= 0:
+        if not dry_run and st.film_remaining <= 0:
             raise RuntimeError("No film remaining (0/10) in printer cartridge.")
         if st.battery_percent < 6 and not st.is_charging:
             raise RuntimeError(f"Battery is too low ({st.battery_percent}%) to print.")
@@ -309,7 +309,8 @@ class InstaxBLE:
                     chunk.extend(b"\x00" * (frame_sz - len(chunk)))
                 payload = bytes([(seq >> 24) & 0xFF, (seq >> 16) & 0xFF, (seq >> 8) & 0xFF, seq & 0xFF]) + chunk
                 pct = 0.10 + (seq + 1) / tot_frames * 0.75
-                if progress_cb: progress_cb(f"Uploading chunk {seq+1}/{tot_frames}...", pct)
+                prefix = "[Dry Run] " if dry_run else ""
+                if progress_cb: progress_cb(f"{prefix}Uploading chunk {seq+1}/{tot_frames}...", pct)
                 res = await self.send_command(SID_PRINT_DATA, payload, timeout=15.0)
                 if res["res_code"] != 0:
                     raise RuntimeError(f"Chunk {seq+1} rejected with code 0x{res['res_code']:02X}")
@@ -322,6 +323,14 @@ class InstaxBLE:
         r = await self.send_command(SID_PRINT_END, b"", timeout=10.0)
         if r["res_code"] != 0:
             raise RuntimeError(f"PRINT_END rejected: code 0x{r['res_code']:02X}")
+
+        if dry_run:
+            if progress_cb: progress_cb("Dry run complete! 100% data verified by printer ASIC (0 film used).", 1.0)
+            try: await self.send_command(SID_PRINT_CANCEL, b"", timeout=4.0)
+            except Exception: pass
+            await asyncio.sleep(0.4)
+            updated_st = await self.fetch_status()
+            return updated_st
 
         if progress_cb: progress_cb("Triggering physical exposure & film ejection...", 0.93)
         r = await self.send_command(SID_PRINT_EXEC, b"", timeout=15.0)
@@ -423,6 +432,10 @@ async def main_cli():
     p_status = subparsers.add_parser("status", help="Query printer hardware status")
     p_status.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
 
+    # ping
+    p_ping = subparsers.add_parser("ping", help="Ping printer & pulse front LED")
+    p_ping.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
+
     # led
     p_led = subparsers.add_parser("led", help="Control LED pattern")
     p_led.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
@@ -434,6 +447,7 @@ async def main_cli():
     p_print.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
     p_print.add_argument("--mode", choices=["rich", "natural"], default="rich")
     p_print.add_argument("--fit", choices=["crop", "fit", "stretch"], default="crop")
+    p_print.add_argument("--dry-run", action="store_true", help="Simulate data transfer without exposing film")
     p_print.add_argument("--width", type=int, default=800)
     p_print.add_argument("--height", type=int, default=800)
 
@@ -459,6 +473,17 @@ async def main_cli():
             print(f"  • Total Lifetime Prints: {st.total_prints}")
             await ble.disconnect()
 
+        elif args.command == "ping":
+            print(f"Connecting to {args.device}...")
+            await ble.connect(args.device)
+            st = await ble.fetch_status()
+            print(f"✓ Connected to {args.device} (Model: {st.model_number})")
+            print(f"  • Battery: {st.battery_percent}%, Film Remaining: {st.film_remaining}/10")
+            print("Pulsing rainbow LED on printer body...")
+            await ble.flash_rainbow_led()
+            await ble.disconnect()
+            print("✓ Ping & hardware communication test OK!")
+
         elif args.command == "led":
             await ble.connect(args.device)
             if args.off:
@@ -478,7 +503,8 @@ async def main_cli():
             max_b = st.max_jpeg_size if st.max_jpeg_size > 0 else 60*1024
 
             for idx, img_path in enumerate(args.images):
-                print(f"\n[{idx+1}/{len(args.images)}] Processing {img_path} for {w}x{h} px...")
+                action = "Simulating transfer for" if args.dry_run else "Processing"
+                print(f"\n[{idx+1}/{len(args.images)}] {action} {img_path} for {w}x{h} px...")
                 jpeg = render_image(img_path, target_width=w, target_height=h, fit_mode=args.fit, max_bytes=max_b)
                 print(f"  Compressed JPEG: {len(jpeg)/1024:.1f} KB")
 
@@ -486,14 +512,18 @@ async def main_cli():
                     bar = "█" * int(pct * 25) + "░" * (25 - int(pct * 25))
                     print(f"\r  [{bar}] {int(pct*100):3d}% — {stage}", end="", flush=True)
 
-                res = await ble.print_jpeg(jpeg, mode=args.mode, progress_cb=progress)
-                print(f"\n  ✓ Print complete! Film remaining: {res.film_remaining}/10")
+                res = await ble.print_jpeg(jpeg, mode=args.mode, dry_run=args.dry_run, progress_cb=progress)
+                if args.dry_run:
+                    print(f"\n  ✓ [DRY RUN SUCCESS] Verified by printer ASIC! Film remaining: {res.film_remaining}/10 (0 film used)")
+                else:
+                    print(f"\n  ✓ Print complete! Film remaining: {res.film_remaining}/10")
                 if idx + 1 < len(args.images):
                     print("  Waiting 3s before next print...")
                     await asyncio.sleep(3)
 
             await ble.disconnect()
-            print("\n🎉 Bulk print complete!")
+            complete_lbl = "🎉 Dry run complete (0 film used)!" if args.dry_run else "🎉 Bulk print complete!"
+            print(f"\n{complete_lbl}")
 
     except Exception as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)

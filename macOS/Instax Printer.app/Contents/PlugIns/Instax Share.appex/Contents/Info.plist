@@ -18,6 +18,10 @@
 	<string>XPC!</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.2.0</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>3</string>
 	<key>LSMinimumSystemVersion</key>
@@ -27,12 +31,17 @@
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>NSExtensionActivationRule</key>
-			<dict>
-				<key>NSExtensionActivationSupportsImageWithMaxCount</key>
-				<integer>100</integer>
-				<key>NSExtensionActivationSupportsFileWithMaxCount</key>
-				<integer>100</integer>
-			</dict>
+			<string>SUBQUERY (
+				extensionItems,
+				$extensionItem,
+				SUBQUERY (
+					$extensionItem.attachments,
+					$attachment,
+					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.image" ||
+					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.data" ||
+					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.item"
+				).@count >= 1
+			).@count >= 1</string>
 		</dict>
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.share-services</string>

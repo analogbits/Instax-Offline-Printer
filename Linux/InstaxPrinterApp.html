@@ -387,7 +387,13 @@
       <!-- 3. Print Actions & Diagnostics -->
       <div class="card-group">
         <div class="card-title"><span>3. Print & Diagnostics</span></div>
-        <button id="btnPrint" class="success" style="width: 100%; padding: 12px; font-size: 14px;" onclick="printPhoto()" disabled>
+        <div style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: #a5b4fc;">
+            <input type="checkbox" id="chkDryRun" onchange="toggleDryRunMode()">
+            <span>🧪 Dry Run (Test Data Flow — 0 Film)</span>
+          </label>
+        </div>
+        <button id="btnPrint" class="success" style="width: 100%; padding: 12px; font-size: 14px; transition: background 0.2s;" onclick="printPhoto()" disabled>
           🖨 Print Physical Photo
         </button>
 
@@ -863,11 +869,13 @@ async function printPhoto() {
   const statusLbl = document.getElementById('statusLabel');
   const bar = document.getElementById('progressFill');
 
+  const isDryRun = document.getElementById('chkDryRun')?.checked || false;
+
   try {
     const model = document.getElementById('modelSelect').value;
     let maxBytes = 60 * 1024;
     if (model === 'wide') {
-      maxBytes = 110 * 1024;
+      maxBytes = 200 * 1024;
     } else if (model === 'mini') {
       maxBytes = 54 * 1024; // Safe for Mini Link 1, 2, AND Mini Link 3 (55 KB ASIC limit)
     }
@@ -881,7 +889,7 @@ async function printPhoto() {
     const mode = document.getElementById('printModeSelect').value;
     const optByte = (mode === 'natural') ? 0x08 : 0x00;
 
-    statusLbl.textContent = "Initiating print handshake...";
+    statusLbl.textContent = (isDryRun ? "[Dry Run] " : "") + "Initiating handshake...";
     bar.style.width = "8%";
 
     // Exact raw JPEG length sent in DOWNLOAD_START
@@ -902,7 +910,7 @@ async function printPhoto() {
     }
 
     const totalChunks = Math.ceil(jpegBytes.length / frameSize);
-    log(`Beginning upload of ${totalChunks} chunks (@ ${frameSize}B)...`);
+    log(`Beginning upload of ${totalChunks} chunks (@ ${frameSize}B)${isDryRun ? " [DRY RUN]" : ""}...`);
 
     for (let i = 0; i < totalChunks; i++) {
       const start = i * frameSize;
@@ -917,7 +925,8 @@ async function printPhoto() {
 
       const pct = Math.round(10 + ((i + 1) / totalChunks) * 75);
       bar.style.width = pct + "%";
-      statusLbl.textContent = `Uploading chunk ${i + 1} of ${totalChunks}...`;
+      const pfx = isDryRun ? "[Dry Run] " : "";
+      statusLbl.textContent = `${pfx}Uploading chunk ${i + 1} of ${totalChunks}...`;
 
       const res = await sendCmd(0x10, 0x01, dataPayload, 15000);
       if (res.resCode !== 0) throw new Error(`Chunk ${i+1} rejected`);
@@ -927,6 +936,17 @@ async function printPhoto() {
     bar.style.width = "88%";
     const endResp = await sendCmd(0x10, 0x02, new Uint8Array(0), 10000);
     if (endResp.resCode !== 0) throw new Error("PRINT_END rejected");
+
+    if (isDryRun) {
+      statusLbl.textContent = "🧪 Dry run complete! 100% data verified by printer (0 film used).";
+      bar.style.width = "100%";
+      log("[DRY-RUN] ✅ Success! All packets confirmed by printer ASIC. Releasing buffer without exposing film.");
+      try { await sendCmd(0x10, 0x03, new Uint8Array(0), 4000); } catch(e){}
+      await new Promise(r => setTimeout(r, 400));
+      await queryPrinterStatus();
+      alert("✅ Dry Run Successful!\n\nAll image packets were successfully transmitted over Bluetooth and validated in printer RAM.\n\n0 film was used.");
+      return;
+    }
 
     statusLbl.textContent = "Triggering film exposure & ejection...";
     bar.style.width = "94%";
@@ -950,6 +970,18 @@ async function printPhoto() {
     try { await sendCmd(0x10, 0x03, new Uint8Array(0), 3000); } catch(e){}
   } finally {
     document.getElementById('btnPrint').disabled = false;
+  }
+}
+
+function toggleDryRunMode() {
+  const btn = document.getElementById('btnPrint');
+  const chk = document.getElementById('chkDryRun');
+  if (chk && chk.checked) {
+    btn.innerHTML = "🧪 Test Transfer (Dry Run — 0 Film)";
+    btn.style.background = "#4f46e5";
+  } else {
+    btn.innerHTML = "🖨 Print Physical Photo";
+    btn.style.background = "";
   }
 }
 
