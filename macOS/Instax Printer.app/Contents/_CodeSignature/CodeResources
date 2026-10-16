@@ -11,6 +11,15 @@
 	</dict>
 	<key>files2</key>
 	<dict>
+		<key>PlugIns/Instax Share.appex</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			bKjZFg/55UjfMW3iXfIHptZhlVs=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"6ca8d9160ff9e548df316de25df207a6d661955b"</string>
+		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
 			<key>hash2</key>
