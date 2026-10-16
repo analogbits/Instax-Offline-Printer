@@ -50,8 +50,8 @@ class InstaxDesktopApp(tk.Tk):
         self.selected_model = tk.StringVar(value="SQUARE")
         self.model_configs = {
             "SQUARE": {"width": 800, "height": 800, "preview_w": 380, "preview_h": 380, "name": "Instax SQUARE Link"},
-            "WIDE": {"width": 1260, "height": 840, "preview_w": 460, "preview_h": 307, "name": "Instax Link WIDE"},
-            "MINI": {"width": 600, "height": 800, "preview_w": 300, "preview_h": 400, "name": "Instax Mini Link"}
+            "WIDE": {"width": 1260, "height": 840, "preview_w": 460, "preview_h": 307, "name": "Instax Link WIDE / WIDE 2"},
+            "MINI": {"width": 600, "height": 800, "preview_w": 300, "preview_h": 400, "name": "Instax Mini Link (1/2/3/Link+)"}
         }
 
         # Hardware readings

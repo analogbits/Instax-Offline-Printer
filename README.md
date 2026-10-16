@@ -7,7 +7,7 @@
 > 🚀 **Try it right now in your browser (no download or installation required):**  
 > **[👉 Launch Web Bluetooth Printer](https://analogbits.github.io/Instax-Offline-Printer/)** *(Works in Google Chrome, Microsoft Edge, Brave, and Opera on Mac, Windows, Linux, Android, and Chromebooks)*
 
-A complete, self-contained suite of native standalone applications, command-line tools, and zero-install offline utilities for printing directly to **Fujifilm Instax SQUARE Link**, **Instax Link WIDE**, and **Instax Mini Link** printers over Bluetooth Low Energy.
+A complete, self-contained suite of native standalone applications, command-line tools, and zero-install offline utilities for printing directly to **Fujifilm Instax SQUARE Link**, **Instax Link WIDE / WIDE 2**, and **Instax Mini Link (1, 2, 3, & Link+)** printers over Bluetooth Low Energy.
 
 ---
 
@@ -74,8 +74,9 @@ A complete, self-contained suite of native standalone applications, command-line
 | Model | Image Canvas Resolution | Hardware Buffer Limit | Format Aspect |
 | :--- | :--- | :--- | :--- |
 | **Instax SQUARE Link** | `800 × 800 px` | 60 KB (61,440 B) | 1:1 Square |
-| **Instax Link WIDE** | `1260 × 840 px` | 110 KB (112,640 B) | 3:2 Landscape |
-| **Instax Mini Link / Mini Link 2** | `600 × 800 px` | 60 KB (61,440 B) | 3:4 Portrait |
+| **Instax Link WIDE** & **Link WIDE 2™** | `1260 × 840 px` (or `800 × 1260 px`) | 110 KB (112,640 B) | 3:2 Landscape |
+| **Instax Mini Link 1 / 2** | `600 × 800 px` | 60 KB (61,440 B) | 3:4 Portrait |
+| **Instax Mini Link 3** & **mini Link+™** | `600 × 800 px` | Safe 54 KB budget (tight 55 KB ASIC buffer) | 3:4 Portrait |
 
 ---
 

@@ -306,8 +306,8 @@
             <div class="field-label"><span>Printer Model</span></div>
             <select id="modelSelect" onchange="actionModelChange()">
               <option value="square">Instax SQUARE Link (800 × 800)</option>
-              <option value="wide">Instax Link WIDE (1260 × 840)</option>
-              <option value="mini">Instax Mini Link 1 / 2 / 3 (600 × 800)</option>
+              <option value="wide">Instax Link WIDE / WIDE 2 (1260 × 840)</option>
+              <option value="mini">Instax Mini Link 1 / 2 / 3 / Link+ (600 × 800)</option>
             </select>
           </div>
 
@@ -448,10 +448,10 @@ function actionModelChange() {
   const m = document.getElementById('modelSelect').value;
   if (m === 'wide') {
     canvas.width = 1260; canvas.height = 840;
-    document.getElementById('canvasInfo').textContent = 'Target: 1260 × 840 px (Instax Link WIDE)';
+    document.getElementById('canvasInfo').textContent = 'Target: 1260 × 840 px (Instax Link WIDE / WIDE 2)';
   } else if (m === 'mini') {
     canvas.width = 600; canvas.height = 800;
-    document.getElementById('canvasInfo').textContent = 'Target: 600 × 800 px (Instax Mini Link)';
+    document.getElementById('canvasInfo').textContent = 'Target: 600 × 800 px (Instax Mini Link / Link+)';
   } else {
     canvas.width = 800; canvas.height = 800;
     document.getElementById('canvasInfo').textContent = 'Target: 800 × 800 px (Instax SQUARE Link)';
@@ -779,13 +779,13 @@ async function queryPrinterStatus() {
       const w = (p[1] << 8) | p[2];
       const h = (p[3] << 8) | p[4];
       log(`Printer Resolution: ${w} × ${h} px`);
-      if (w === 1260 || h === 840) {
+      if (w === 1260 || h === 840 || (w === 800 && h === 1260) || (w === 1260 && h === 800)) {
         document.getElementById('modelSelect').value = 'wide';
         actionModelChange();
-      } else if (w === 800) {
+      } else if (w === 800 && h === 800) {
         document.getElementById('modelSelect').value = 'square';
         actionModelChange();
-      } else if (w === 600 || (w === 600 && h === 800) || (w === 800 && h === 600)) {
+      } else if (w === 600 || h === 600 || (w === 600 && h === 800) || (w === 800 && h === 600)) {
         document.getElementById('modelSelect').value = 'mini';
         actionModelChange();
       }
