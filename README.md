@@ -78,11 +78,18 @@ A complete, self-contained suite of native standalone applications, command-line
 
 ---
 
-### 🍏 6. Apple Photos Direct Add-On (`Apple-Photos-Addon/`)
-* **1-Click Companion App:** `Print from Apple Photos.app`
-  * Select one or more photos in Apple Photos $\to$ click the app (or drag it into your Dock) to immediately send your photos into Instax Printer's queue!
-* **Native Drag & Drop:** Select photos in Apple Photos and drag them directly into the app window or its Dock icon.
-* **In-App Photos Browser:** Click `+ Apple Photos / iCloud` in the app to view your entire photo library.
+### 🍏 6. Apple Photos Direct Integration (`Apple-Photos-Addon/`)
+Print directly from **Apple Photos** to your Instax printer with zero cloud hops:
+
+* **⭐️ Native macOS Share Menu ("Share to Instax Printer"):**
+  1. In **Apple Photos**, select one or more photos.
+  2. Click the **Share button** `[↑]` in the top toolbar (or right-click photo(s) $\to$ **Share** $\to$ **Instax Printer**).
+  3. The photos are automatically prepared and sent straight into Instax Printer's print queue!
+  4. *(First-time setup)*: If you don't see Instax Printer in the Share menu right away, click **More...** at the bottom of the Share list (or open **System Settings $\to$ Privacy & Security $\to$ Extensions $\to$ Sharing**) and ensure the checkbox next to **Instax Printer** is toggled **ON**.
+* **Edit With:** Right-click any photo in Apple Photos $\to$ **Edit With $\to$ Instax Printer**.
+* **1-Click Companion App (`Print from Apple Photos.app`):** Select photos in Apple Photos $\to$ click the app (or drag it into your Dock) to immediately queue your photos.
+* **Native Drag & Drop:** Select photos in Apple Photos and drag them directly into the Instax Printer window or onto its Dock icon.
+* **In-App Photos Browser:** Click `+ Apple Photos / iCloud` (`⌘ + Shift + I`) inside the app to search and browse your full library, albums, and favorites.
 
 ---
 
