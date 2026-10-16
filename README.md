@@ -1,6 +1,12 @@
 # 📸 Instax Offline Printer Applications Suite
 ### Universal 100% Offline Printing for macOS, Windows & Linux
 
+[![Try Web App Online](https://img.shields.io/badge/Web_App-Launch_in_Browser-3b82f6?style=for-the-badge&logo=googlechrome&logoColor=white)](https://mickyfitz13-ship-it.github.io/Instax-Offline-Printer/)
+[![Download Offline Suite](https://img.shields.io/badge/Download-Offline_Suite_(.zip)-22c55e?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/mickyfitz13-ship-it/Instax-Offline-Printer/releases/latest)
+
+> 🚀 **Try it right now in your browser (no download or installation required):**  
+> **[👉 Launch Web Bluetooth Printer](https://mickyfitz13-ship-it.github.io/Instax-Offline-Printer/)** *(Works in Google Chrome, Microsoft Edge, Brave, and Opera on Mac, Windows, Linux, Android, and Chromebooks)*
+
 A complete, self-contained suite of native standalone applications, command-line tools, and zero-install offline utilities for printing directly to **Fujifilm Instax SQUARE Link**, **Instax Link WIDE**, and **Instax Mini Link** printers over Bluetooth Low Energy.
 
 ---
@@ -55,8 +61,9 @@ A complete, self-contained suite of native standalone applications, command-line
 ---
 
 ### 🌐 4. Universal Web Bluetooth (`Web-Bluetooth-Offline/`)
-* **`InstaxPrinterWeb.html`**: A single-file, 100% offline HTML application.
-  * Double-click to open in **Google Chrome**, **Microsoft Edge**, **Brave**, or **Opera** on **any computer (Mac, Windows, Linux, Android, Chromebook)**.
+* **Live Online Web App:** [https://mickyfitz13-ship-it.github.io/Instax-Offline-Printer/](https://mickyfitz13-ship-it.github.io/Instax-Offline-Printer/)
+* **Offline File:** `InstaxPrinterWeb.html` (Double-click to open locally in Chrome, Edge, or Brave).
+  * 100% zero-install, works across **Mac, Windows, Linux, Android, and Chromebooks**.
   * Uses the browser's native Web Bluetooth API to connect directly to your printer with zero installations.
   * Features live canvas drag-to-pan, 0.5×–2.5× zoom, 90° rotation, fit modes (Crop, Letterbox, Stretch), film simulations (instax-Rich vs instax-Natural), artistic filters (B&W Mono, Sepia, Vintage, Cool, Vivid), and real-time film remaining / battery telemetry.
 
