@@ -878,18 +878,14 @@ async function printPhoto() {
     const jpegBlob = await compressToBudget(maxBytes);
     const jpegBytes = new Uint8Array(await jpegBlob.arrayBuffer());
 
-    const frameSize = 1808;
-    const padLen = (frameSize - (jpegBytes.length % frameSize)) % frameSize;
-    const padded = new Uint8Array(jpegBytes.length + padLen);
-    padded.set(jpegBytes);
-
     const mode = document.getElementById('printModeSelect').value;
     const optByte = (mode === 'natural') ? 0x08 : 0x00;
 
     statusLbl.textContent = "Initiating print handshake...";
     bar.style.width = "8%";
 
-    const totSz = padded.length;
+    // Exact raw JPEG length sent in DOWNLOAD_START
+    const totSz = jpegBytes.length;
     const startPayload = new Uint8Array([
       0x02, optByte, 0x00, 0x00,
       (totSz >> 24) & 0xFF, (totSz >> 16) & 0xFF, (totSz >> 8) & 0xFF, totSz & 0xFF
@@ -898,11 +894,22 @@ async function printPhoto() {
     const startResp = await sendCmd(0x10, 0x00, startPayload, 12000);
     if (startResp.resCode !== 0) throw new Error(`PRINT_START rejected (code 0x${startResp.resCode.toString(16)})`);
 
-    const totalChunks = padded.length / frameSize;
+    let frameSize = 1808;
+    if (startResp.payload && startResp.payload.length >= 4) {
+      const p = startResp.payload;
+      const reported = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+      if (reported >= 128 && reported <= 4096) frameSize = reported;
+    }
+
+    const totalChunks = Math.ceil(jpegBytes.length / frameSize);
     log(`Beginning upload of ${totalChunks} chunks (@ ${frameSize}B)...`);
 
     for (let i = 0; i < totalChunks; i++) {
-      const chunk = padded.slice(i * frameSize, (i + 1) * frameSize);
+      const start = i * frameSize;
+      const end = Math.min(start + frameSize, jpegBytes.length);
+      const chunk = new Uint8Array(frameSize); // zero-padded to frameSize for BLE receiver
+      chunk.set(jpegBytes.subarray(start, end));
+
       const dataPayload = new Uint8Array(4 + frameSize);
       dataPayload[0] = (i >> 24) & 0xFF; dataPayload[1] = (i >> 16) & 0xFF;
       dataPayload[2] = (i >> 8) & 0xFF;  dataPayload[3] = i & 0xFF;

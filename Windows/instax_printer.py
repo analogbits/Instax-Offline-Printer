@@ -286,23 +286,27 @@ class InstaxBLE:
         opt_byte = 0x08 if (mode == "natural" and st.supports_3d_lut) else 0x00
         frame_sz = st.chunk_size if st.chunk_size > 0 else 1808
 
-        # Pad to boundary
-        padded = bytearray(jpeg_data)
-        rem = len(padded) % frame_sz
-        if rem != 0:
-            padded.extend(b"\x00" * (frame_sz - rem))
-
         if progress_cb: progress_cb("Starting image download...", 0.08)
-        tot_sz = len(padded)
+        tot_sz = len(jpeg_data)
         start_payload = bytes([0x02, opt_byte, 0x00, 0x00, (tot_sz >> 24) & 0xFF, (tot_sz >> 16) & 0xFF, (tot_sz >> 8) & 0xFF, tot_sz & 0xFF])
         r = await self.send_command(SID_PRINT_START, start_payload)
         if r["res_code"] != 0:
             raise RuntimeError(f"PRINT_START rejected: code 0x{r['res_code']:02X}")
 
-        tot_frames = len(padded) // frame_sz
+        if len(r.get("payload", b"")) >= 4:
+            p = r["payload"]
+            reported = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]
+            if 128 <= reported <= 4096:
+                frame_sz = reported
+
+        tot_frames = (len(jpeg_data) + frame_sz - 1) // frame_sz
         try:
             for seq in range(tot_frames):
-                chunk = padded[seq * frame_sz : (seq + 1) * frame_sz]
+                start_idx = seq * frame_sz
+                end_idx = min(start_idx + frame_sz, len(jpeg_data))
+                chunk = bytearray(jpeg_data[start_idx:end_idx])
+                if len(chunk) < frame_sz:
+                    chunk.extend(b"\x00" * (frame_sz - len(chunk)))
                 payload = bytes([(seq >> 24) & 0xFF, (seq >> 16) & 0xFF, (seq >> 8) & 0xFF, seq & 0xFF]) + chunk
                 pct = 0.10 + (seq + 1) / tot_frames * 0.75
                 if progress_cb: progress_cb(f"Uploading chunk {seq+1}/{tot_frames}...", pct)
