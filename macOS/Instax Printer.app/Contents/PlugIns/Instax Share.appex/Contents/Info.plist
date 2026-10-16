@@ -27,15 +27,12 @@
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>NSExtensionActivationRule</key>
-			<string>SUBQUERY (
-				extensionItems,
-				$extensionItem,
-				SUBQUERY (
-					$extensionItem.attachments,
-					$attachment,
-					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.image"
-				).@count &gt;= 1
-			).@count &gt;= 1</string>
+			<dict>
+				<key>NSExtensionActivationSupportsImageWithMaxCount</key>
+				<integer>100</integer>
+				<key>NSExtensionActivationSupportsFileWithMaxCount</key>
+				<integer>100</integer>
+			</dict>
 		</dict>
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.share-services</string>
