@@ -32,5 +32,24 @@
     <string>AppIcon</string>
     <key>CFBundleIconName</key>
     <string>AppIcon</string>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Images</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.image</string>
+                <string>public.jpeg</string>
+                <string>public.png</string>
+                <string>public.heic</string>
+                <string>public.tiff</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>

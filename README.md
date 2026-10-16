@@ -78,6 +78,14 @@ A complete, self-contained suite of native standalone applications, command-line
 
 ---
 
+### 🍏 6. Apple Photos Direct Add-On (`Apple-Photos-Addon/`)
+* **1-Click Companion App:** `Print from Apple Photos.app`
+  * Select one or more photos in Apple Photos $\to$ click the app (or drag it into your Dock) to immediately send your photos into Instax Printer's queue!
+* **Native Drag & Drop:** Select photos in Apple Photos and drag them directly into the app window or its Dock icon.
+* **In-App Photos Browser:** Click `+ Apple Photos / iCloud` in the app to view your entire photo library.
+
+---
+
 ## 🖨 Supported Printer Models & Formats
 
 | Model | Image Canvas Resolution | Hardware Buffer Limit | Format Aspect |
@@ -90,6 +98,10 @@ A complete, self-contained suite of native standalone applications, command-line
 ---
 
 ## 💡 Advice, Troubleshooting & FAQ
+
+### Q: Why doesn't Bluetooth work inside a Virtual Machine (Parallels / VMware / VirtualBox)?
+* **Answer:** Hypervisors on macOS do **not** virtualize the Mac's internal Bluetooth Low Energy (BLE) radio into guest operating systems. Guest Windows or Linux will report *"Bluetooth is turned off"* or *"No adapter found"*.
+* **Solution:** Run the app natively on the host Mac, or plug an inexpensive physical USB Bluetooth 4.0/5.0 dongle into your Mac and pass it through to the VM via the Parallels menu: **Devices $\to$ USB & Bluetooth $\to$ [Dongle] $\to$ Connect to Windows/Linux**.
 
 ### Q: Why do I get "Unsupported device" or "navigator.bluetooth is undefined"?
 * **Answer:** Apple Safari and Mozilla Firefox do not support Web Bluetooth. Use **Google Chrome**, **Microsoft Edge**, or **Brave**.
