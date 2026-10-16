@@ -307,7 +307,7 @@
             <select id="modelSelect" onchange="actionModelChange()">
               <option value="square">Instax SQUARE Link (800 × 800)</option>
               <option value="wide">Instax Link WIDE (1260 × 840)</option>
-              <option value="mini">Instax Mini Link (600 × 800)</option>
+              <option value="mini">Instax Mini Link 1 / 2 / 3 (600 × 800)</option>
             </select>
           </div>
 
@@ -785,6 +785,9 @@ async function queryPrinterStatus() {
       } else if (w === 800) {
         document.getElementById('modelSelect').value = 'square';
         actionModelChange();
+      } else if (w === 600 || (w === 600 && h === 800) || (w === 800 && h === 600)) {
+        document.getElementById('modelSelect').value = 'mini';
+        actionModelChange();
       }
     }
   } catch (err) {
@@ -862,7 +865,12 @@ async function printPhoto() {
 
   try {
     const model = document.getElementById('modelSelect').value;
-    const maxBytes = (model === 'wide') ? 110 * 1024 : 60 * 1024;
+    let maxBytes = 60 * 1024;
+    if (model === 'wide') {
+      maxBytes = 110 * 1024;
+    } else if (model === 'mini') {
+      maxBytes = 54 * 1024; // Safe for Mini Link 1, 2, AND Mini Link 3 (55 KB ASIC limit)
+    }
 
     statusLbl.textContent = "Encoding JPEG to printer budget (<" + Math.round(maxBytes/1024) + " KB)...";
     bar.style.width = "4%";
