@@ -69,6 +69,15 @@ A complete, self-contained suite of native standalone applications, command-line
 
 ---
 
+### 🎨 5. Adobe Lightroom Classic Plugin (`Lightroom-Classic-Plugin/`)
+* **Plugin Bundle:** `Instax-Printer.lrplugin`
+* **Direct LrC Integration:** Print directly from Lightroom's Library or Develop module without leaving Lightroom!
+  * **Quick Print:** Right-click photo(s) $\to$ **File $\to$ Plug-in Extras $\to$ Print to Instax...**
+  * **Export Dialog:** Select **Export To: Instax Offline Printer** with framing and color controls.
+  * **Zero Setup:** Self-contained native binary bundled inside the plugin. Simply click **Add** in Lightroom's **File $\to$ Plug-in Manager**.
+
+---
+
 ## 🖨 Supported Printer Models & Formats
 
 | Model | Image Canvas Resolution | Hardware Buffer Limit | Format Aspect |
