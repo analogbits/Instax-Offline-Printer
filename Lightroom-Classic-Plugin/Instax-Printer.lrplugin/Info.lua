@@ -1,6 +1,7 @@
 return {
 	LrSdkVersion = 9.0,
 	LrToolkitVersion = 9.0,
+	LrToolkitIdentifier = "com.analogbits.instax-offline-printer",
 
 	LrPluginName = "Instax Offline Printer",
 	LrPluginInfoUrl = "https://github.com/analogbits/Instax-Offline-Printer",
