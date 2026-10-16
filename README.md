@@ -33,7 +33,7 @@ A complete, self-contained suite of native standalone applications, command-line
 ### 🍏 1. macOS (`macOS/`)
 | Component | How to Run | Description |
 | :--- | :--- | :--- |
-| **`Instax Square Printer.app`** | Double-click in Finder | Full native Swift desktop app. Apple Photos/iCloud browser, interactive pan/zoom/rotate framing, artistic filters, live film/battery gauges, collage printing, debug console (`⌘D`), and offline guide (`⌘?`). |
+| **`Instax Printer.app`** | Double-click in Finder | Full native Swift desktop app. Apple Photos/iCloud browser, interactive pan/zoom/rotate framing, artistic filters, live film/battery gauges, collage printing, debug console (`⌘D`), and offline guide (`⌘?`). |
 | **`instax-square`** | `./instax-square print photo.jpg` | High-performance standalone CLI binary. No Python or runtime needed. |
 | **`macOS-Run.command`** | Double-click in Finder | Emergency drag-and-drop terminal launcher. |
 | **`install-cli.sh`** | Run in Terminal | Installs `instax-square` system-wide to `/usr/local/bin`. |

@@ -17,11 +17,11 @@ If the printer was previously paired with your iPhone, iPad, or Android device:
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
-1. NATIVE macOS APP: "Instax Square Printer.app"
+1. NATIVE macOS APP: "Instax Printer.app"
 --------------------------------------------------------------------------------
 How to Run:
-  * Double-click "Instax Square Printer.app" in Finder.
-  * (Optional) Drag "Instax Square Printer.app" to your Applications folder.
+  * Double-click "Instax Printer.app" in Finder.
+  * (Optional) Drag "Instax Printer.app" to your Applications folder.
 
 Key Features & Shortcuts:
   * Apple Photos & iCloud Library: Click "Add from Photos" to browse your iCloud
