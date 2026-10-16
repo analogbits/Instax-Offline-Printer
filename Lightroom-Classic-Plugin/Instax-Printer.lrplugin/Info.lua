@@ -13,7 +13,7 @@ return {
 	},
 
 	-- Menu item under File -> Plug-in Extras
-	LrPluginExtras = {
+	LrExportMenuItems = {
 		{
 			title = "Print to Instax...",
 			file = "InstaxPluginExtras.lua",

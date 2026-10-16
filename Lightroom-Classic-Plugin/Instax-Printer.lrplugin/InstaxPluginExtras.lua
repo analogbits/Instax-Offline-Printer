@@ -7,6 +7,7 @@ local LrFileUtils = import 'LrFileUtils'
 local LrFunctionContext = import 'LrFunctionContext'
 local LrBinding = import 'LrBinding'
 local LrColor = import 'LrColor'
+local LrExportSession = import 'LrExportSession'
 
 LrTasks.startAsyncTask(function()
 	local catalog = LrApplication.activeCatalog()
@@ -89,16 +90,28 @@ LrTasks.startAsyncTask(function()
 			cliPath = "/usr/local/bin/instax-square"
 		end
 
-		local exportSession = catalog:batchExport {
-			photos = targetPhotos,
+		local exportFolder = LrPathUtils.child(
+			LrPathUtils.getStandardFilePath('temp'),
+			'instax-lightroom'
+		)
+		local directoryCreated, directoryError = LrFileUtils.createAllDirectories(exportFolder)
+		if not directoryCreated then
+			LrDialogs.showError("Could not create the temporary export folder: " .. tostring(directoryError))
+			return
+		end
+
+		local exportSession = LrExportSession {
+			photosToExport = targetPhotos,
 			exportSettings = {
 				LR_format = 'JPEG',
 				LR_jpeg_quality = 1.0,
 				LR_export_colorSpace = 'sRGB',
-				LR_export_destinationType = 'tempFolderPath',
+				LR_export_destinationType = 'specificFolder',
+				LR_export_destinationPathPrefix = exportFolder,
 				LR_collisionHandling = 'rename',
 			},
 		}
+		exportSession:doExportOnCurrentTask()
 
 		local count = 0
 		for _, rendition in exportSession:renditions() do
