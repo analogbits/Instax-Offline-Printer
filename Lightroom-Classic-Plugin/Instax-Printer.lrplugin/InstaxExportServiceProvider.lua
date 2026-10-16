@@ -7,6 +7,16 @@ local LrColor = import 'LrColor'
 
 local exportServiceProvider = {}
 
+local function executeWithOutput(command)
+	local outputPath = LrFileUtils.chooseUniqueFileName(
+		LrPathUtils.child(LrPathUtils.getStandardFilePath('temp'), 'instax-cli-output.txt')
+	)
+	local exitCode = LrTasks.execute(command .. string.format(' > "%s" 2>&1', outputPath))
+	local output = LrFileUtils.readFile(outputPath) or ""
+	LrFileUtils.delete(outputPath)
+	return exitCode, output
+end
+
 -- Hide non-relevant sections from Lightroom's Export Dialog
 exportServiceProvider.hideSections = { 'exportLocation', 'fileNaming', 'video' }
 exportServiceProvider.allowFileFormats = { 'JPEG' }
@@ -146,6 +156,7 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 	}
 
 	local cliPath = getCliPath()
+	local printFailed = false
 
 	for i, rendition in exportContext:renditions { stopIfCanceled = true } do
 		progressScope:setPortionComplete(i - 1, nPhotos)
@@ -173,16 +184,19 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 			end
 
 			local fullCmd = table.concat(cmdArgs, " ")
-			local exitCode = LrTasks.execute(fullCmd)
+			local exitCode, output = executeWithOutput(fullCmd)
 
 			-- Clean up temp exported JPEG
 			LrFileUtils.delete(renderedPath)
 
 			if exitCode ~= 0 then
 				LrDialogs.showError(string.format(
-					"Print failed for photo %d (Exit code %d).\n\nTips:\n1. Make sure Bluetooth on your phone/tablet is temporarily OFF.\n2. Ensure printer battery is charged (>20%%).\n3. Check that the film door and black protective slide are clear.",
-					i, exitCode
+					"Print failed for photo %d (exit code %d).\n\nPossible causes:\n1. Make sure Bluetooth on your phone/tablet is temporarily OFF.\n2. Ensure the printer is powered on and its battery is charged (>20%%).\n3. Check that film is available and the film door is closed.\n\nCLI details:\n%s",
+					i,
+					exitCode,
+					output ~= "" and output or "The Instax CLI did not provide an error message."
 				))
+				printFailed = true
 				break
 			end
 		else
@@ -193,7 +207,9 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 	end
 
 	progressScope:done()
-	LrDialogs.showBezel("🎉 Sent to Instax Printer!")
+	if not printFailed and not progressScope:isCanceled() then
+		LrDialogs.showBezel("🎉 Sent to Instax Printer!")
+	end
 end
 
 return exportServiceProvider

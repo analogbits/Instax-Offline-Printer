@@ -9,6 +9,16 @@ local LrBinding = import 'LrBinding'
 local LrColor = import 'LrColor'
 local LrExportSession = import 'LrExportSession'
 
+local function executeWithOutput(command)
+	local outputPath = LrFileUtils.chooseUniqueFileName(
+		LrPathUtils.child(LrPathUtils.getStandardFilePath('temp'), 'instax-cli-output.txt')
+	)
+	local exitCode = LrTasks.execute(command .. string.format(' > "%s" 2>&1', outputPath))
+	local output = LrFileUtils.readFile(outputPath) or ""
+	LrFileUtils.delete(outputPath)
+	return exitCode, output
+end
+
 LrTasks.startAsyncTask(function()
 	local catalog = LrApplication.activeCatalog()
 	local targetPhotos = catalog:getTargetPhotos()
@@ -120,10 +130,15 @@ LrTasks.startAsyncTask(function()
 				count = count + 1
 				local cmd = string.format('"%s" print "%s" --model %s --mode %s --fit %s',
 					cliPath, pathOrMessage, props.printerModel, props.printMode, props.fitMode)
-				local code = LrTasks.execute(cmd)
+				local code, output = executeWithOutput(cmd)
 				LrFileUtils.delete(pathOrMessage)
 				if code ~= 0 then
-					LrDialogs.showError(string.format("Failed to print photo %d. Check that printer is on, battery is charged (>20%%), and phone Bluetooth is off.", count))
+					LrDialogs.showError(string.format(
+						"Failed to print photo %d (exit code %d).\n\nPossible causes:\n1. Make sure Bluetooth on your phone/tablet is temporarily OFF.\n2. Ensure the printer is powered on and its battery is charged (>20%%).\n3. Check that film is available and the film door is closed.\n\nCLI details:\n%s",
+						count,
+						code,
+						output ~= "" and output or "The Instax CLI did not provide an error message."
+					))
 					return
 				end
 			end
