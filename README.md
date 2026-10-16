@@ -93,6 +93,34 @@ Print directly from **Apple Photos** to your Instax printer with zero cloud hops
 
 ---
 
+## 🎨 Creative Studio Features: Collages & Rich QR Badges
+
+### 🖼 Multi-Photo Collage Studio (Up to 9 Photos)
+Take full advantage of the larger **Instax Link WIDE** (`1260 × 840 px`) canvas and square prints:
+* **11 Creative Layouts:**
+  * **2 Photos:** Vertical Split (`50/50` Left/Right), Horizontal Split (Top/Bottom)
+  * **3 Photos:** **3 Vertical WIDE Stripes** (ideal for Link WIDE!), Hero + 2 Stacked, Top Banner + 2 Columns
+  * **4 Photos:** 2×2 Grid, **4 Vertical Photo-Booth Strips** (classic Instax WIDE photobooth!)
+  * **6 Photos:** 3×2 WIDE Panoramic Grid
+  * **8 Photos:** 4×2 WIDE Grid
+  * **9 Photos:** 3×3 Grid
+* **Adjustable Border Spacing:** Choose border gaps from `0 px` (seamless flush borders) to `32 px` (classic white matte borders).
+* **Usage:** In the macOS app, select photos in your queue $\to$ open the **Collage Studio** tab $\to$ click any layout button. In the CLI, pass `--collage <layout> --collage-spacing <px>`.
+
+### 📱 Rich QR Code Badges & Text Stamps (Instax QR Print)
+Embed high-resolution, scannable QR codes onto your physical prints—just like Fujifilm's mobile apps:
+* **Support Anything Scannable:** Web links (portfolios, videos, playlists), secret text messages, Wi-Fi credentials, location coordinates, or phone numbers.
+* **5 Dynamic Corner Positions:** Bottom-Right (default), Bottom-Left, Top-Right, Top-Left, or Bottom-Center.
+* **3 Badge Styles:**
+  * **Translucent Glass:** 92% frosted glass backing with a delicate hairline border.
+  * **Solid White:** Clean modern opaque card backing for maximum contrast.
+  * **Dark Vignette:** 65% dark backing with inverted white QR modules.
+* **3 Badge Sizes:** Small (15% canvas width), Medium (20%), Large (26%).
+* **Custom Text Captions:** Print a caption below the QR badge or a date stamp pill.
+* **Available Across All Apps:** Native Swift macOS app, CLI (`--qr <text> --qr-pos <pos> --qr-style <style>`), and Web Bluetooth!
+
+---
+
 ## 🖨 Supported Printer Models & Formats
 
 | Model | Image Canvas Resolution | Hardware Buffer Limit | Format Aspect |

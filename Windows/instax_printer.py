@@ -363,6 +363,7 @@ def render_image(
     zoom: float = 1.0,
     pan_x: float = 0.0,
     pan_y: float = 0.0,
+    qr_text: str = "",
     max_bytes: int = 60 * 1024
 ) -> bytes:
     with Image.open(src_path) as raw:
@@ -408,6 +409,34 @@ def render_image(
         canvas.paste(sc, (x, y))
         resized = canvas
 
+    # Draw QR code badge if requested
+    if qr_text:
+        try:
+            import qrcode
+            from PIL import ImageDraw
+            qr = qrcode.QRCode(box_size=4, border=1)
+            qr.add_data(qr_text)
+            qr.make(fit=True)
+            qr_raw = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
+            qw = max(60, int(target_width * 0.20))
+            qr_scaled = qr_raw.resize((qw, qw), Image.LANCZOS)
+            margin = max(16, int(target_width * 0.04))
+            bx = target_width - qw - margin
+            by = target_height - qw - margin
+            badge_pad = 8
+            draw = ImageDraw.Draw(resized, "RGBA")
+            # Frosted white badge backing with soft border
+            draw.rounded_rectangle(
+                [bx - badge_pad, by - badge_pad, bx + qw + badge_pad, by + qw + badge_pad],
+                radius=10,
+                fill=(255, 255, 255, 235),
+                outline=(0, 0, 0, 50),
+                width=1
+            )
+            resized.paste(qr_scaled, (bx, by), qr_scaled)
+        except ImportError:
+            print("Note: To embed scannable QR codes in prints, install the qrcode library: pip install qrcode[pil]")
+
     # JPEG Compression Search
     quality = 94
     while quality >= 15:
@@ -447,6 +476,7 @@ async def main_cli():
     p_print.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
     p_print.add_argument("--mode", choices=["rich", "natural"], default="rich")
     p_print.add_argument("--fit", choices=["crop", "fit", "stretch"], default="crop")
+    p_print.add_argument("--qr", type=str, default="", help="Embed scannable QR badge (URL, text, contact)")
     p_print.add_argument("--dry-run", action="store_true", help="Simulate data transfer without exposing film")
     p_print.add_argument("--width", type=int, default=800)
     p_print.add_argument("--height", type=int, default=800)
@@ -505,7 +535,7 @@ async def main_cli():
             for idx, img_path in enumerate(args.images):
                 action = "Simulating transfer for" if args.dry_run else "Processing"
                 print(f"\n[{idx+1}/{len(args.images)}] {action} {img_path} for {w}x{h} px...")
-                jpeg = render_image(img_path, target_width=w, target_height=h, fit_mode=args.fit, max_bytes=max_b)
+                jpeg = render_image(img_path, target_width=w, target_height=h, fit_mode=args.fit, qr_text=args.qr, max_bytes=max_b)
                 print(f"  Compressed JPEG: {len(jpeg)/1024:.1f} KB")
 
                 def progress(stage, pct):
