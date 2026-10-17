@@ -764,12 +764,40 @@
             `;
             tbody.appendChild(tr);
           });
-        } else {
-          tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted); text-align:center;">No local broadcast SSIDs reported by host OS. Default Direct IP 192.168.0.251:8080 ready.</td></tr>';
-        }
+        return;
       }
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="4" style="color:#f87171; text-align:center;">Wi-Fi diagnostic bridge unreachable: ${e}</td></tr>`;
+      document.getElementById('diagLanIp').textContent = 'Bridge Not Running';
+      document.getElementById('diagConnectedBadge').textContent = '🔴 Bridge Offline';
+      document.getElementById('diagConnectedBadge').style.background = 'rgba(239,68,68,0.2)';
+      document.getElementById('diagConnectedBadge').style.color = '#f87171';
+      document.getElementById('diagHardwareProbe').textContent = '⚪ Waiting for Bridge';
+      document.getElementById('diagHardwareProbe').style.color = 'var(--muted)';
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" style="padding:14px 4px;">
+            <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); padding:14px; border-radius:8px; color:#fde68a; line-height:1.5;">
+              <div style="font-weight:700; font-size:13px; margin-bottom:6px; color:#fbbf24; display:flex; align-items:center; gap:6px;">
+                <span>💡</span><span>Local Wi-Fi Bridge is Not Running</span>
+              </div>
+              <div style="font-size:12px; color:#e4e4e7; margin-bottom:10px;">
+                Web browsers run inside a security sandbox and cannot scan your computer's Wi-Fi card or open raw TCP sockets to <code>192.168.0.251:8080</code> without the local bridge running.
+              </div>
+              <div style="background:#18181f; padding:10px 12px; border-radius:6px; border:1px solid var(--border); font-size:12px; color:#f4f4f6;">
+                <b>To start the Wi-Fi scanner &amp; printer bridge:</b><br>
+                • <b>Mac:</b> Double-click <code style="color:#60a5fa;">Start-Legacy-iPhone-WiFi-Bridge.command</code> (on your Desktop or in <code>macOS/</code>).<br>
+                • <b>Windows:</b> Double-click <code style="color:#60a5fa;">Start-iPhone-WiFi-Bridge.bat</code>.<br>
+                • <b>Linux:</b> Run <code style="color:#60a5fa;">./Start-iPhone-WiFi-Bridge.sh</code>.<br><br>
+                <i>Once started, it displays your local Wi-Fi URL (e.g. <code>http://192.168.1.77:8089</code>) so you can also open it in <b>iPhone / iPad Safari</b>!</i>
+              </div>
+              <div style="margin-top:10px; font-size:11px; color:#fbbf24;">
+                🧪 <b>Want to test right now?</b> Close this dialog and check the <b>'Virtual SP Simulator'</b> box in the top bar to test image framing, dry-runs, and collages directly inside your browser!
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
     }
   }
 
