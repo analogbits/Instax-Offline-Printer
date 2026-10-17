@@ -21,3 +21,11 @@ COMMAND LINE USAGE:
   python3 legacy_instax_printer.py --status
   python3 legacy_instax_printer.py --model SP-2 --dry-run photo.jpg
   python3 legacy_instax_printer.py --model SP-3 photo.jpg
+
+PRINT FROM IPHONE / IPAD SAFARI (LOCAL WI-FI BRIDGE):
+------------------------------------------------------
+  chmod +x Start-iPhone-WiFi-Bridge.sh
+  ./Start-iPhone-WiFi-Bridge.sh
+  Open the displayed URL (http://<your-linux-ip>:8089) in Safari on your iPhone
+  or iPad to print photos directly from your camera roll!
+

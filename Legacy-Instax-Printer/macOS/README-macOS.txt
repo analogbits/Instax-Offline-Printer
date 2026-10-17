@@ -27,3 +27,10 @@ COMMAND LINE (CLI) USAGE:
   ./legacy-instax --simulate --model sp2 --status
   ./legacy-instax --model sp2 --dry-run photo.jpg
   ./legacy-instax --model sp3 photo.jpg
+
+IPHONE & IPAD SAFARI PRINTING (LOCAL WI-FI BRIDGE):
+----------------------------------------------------
+  Double-click "Start-iPhone-WiFi-Bridge.command" to host the Web Studio on
+  your home network. Open the displayed URL (http://<your-mac-ip>:8089)
+  in Safari on your iPhone or iPad to print straight from your camera roll!
+

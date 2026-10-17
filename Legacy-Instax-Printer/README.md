@@ -26,7 +26,27 @@ A dedicated, 100% offline desktop and web application suite for Fujifilm's class
 
 | Folder | Platform | Application Files |
 | :--- | :--- | :--- |
-| **`macOS/`** | macOS 13+ (Universal) | `Legacy Instax Printer.app`, `legacy-instax` CLI, `Legacy Instax Share.appex` Apple Photos Extension, `Sources/`, `build.sh` |
-| **`Windows/`** | Windows 10 / 11 | `LegacyInstaxPrinterGUI.pyw`, `legacy_instax_printer.py`, `Legacy-Instax-Printer.vbs`, `Legacy-Instax-Printer.bat` |
-| **`Linux/`** | Ubuntu / Fedora / Arch | `LegacyInstaxPrinterGUI.py`, `legacy_instax_printer.py`, `Legacy-Instax-Printer-Linux.sh`, `legacy-instax-printer.desktop` |
-| **`Web-WiFi-Offline/`** | Any Browser | `LegacyInstaxPrinterWeb.html` + `legacy_web_bridge.py` local HTTP-to-TCP bridge |
+| **`macOS/`** | macOS 13+ (Universal) | `Legacy Instax Printer.app`, `legacy-instax` CLI, `Start-iPhone-WiFi-Bridge.command`, `legacy_web_bridge.py`, `LegacyInstaxPrinterWeb.html`, `build.sh` |
+| **`Windows/`** | Windows 10 / 11 | `LegacyInstaxPrinterGUI.pyw`, `legacy_instax_printer.py`, `Start-iPhone-WiFi-Bridge.bat`, `legacy_web_bridge.py`, `LegacyInstaxPrinterWeb.html`, `Legacy-Instax-Printer.bat` |
+| **`Linux/`** | Ubuntu / Fedora / Arch | `LegacyInstaxPrinterGUI.py`, `legacy_instax_printer.py`, `Start-iPhone-WiFi-Bridge.sh`, `legacy_web_bridge.py`, `LegacyInstaxPrinterWeb.html`, `Legacy-Instax-Printer-Linux.sh` |
+| **`Web-WiFi-Offline/`** | iPhone / iPad / Any Browser | `LegacyInstaxPrinterWeb.html` + `legacy_web_bridge.py` + one-click `Start-iPhone-WiFi-Bridge.*` launchers |
+
+---
+
+## 📱 iPhone & iPad Safari Support (Local Wi-Fi Bridge)
+
+Want to print photos directly from your **iPhone or iPad camera roll** without installing any legacy apps?
+
+1. **Start the Bridge on Your Computer**:
+   - **Mac**: Double-click `Start-iPhone-WiFi-Bridge.command` (in `macOS/`, `Web-WiFi-Offline/`, or your desktop folder).
+   - **Windows**: Double-click `Start-iPhone-WiFi-Bridge.bat` (in `Windows/` or `Web-WiFi-Offline/`).
+   - **Linux**: Run `./Start-iPhone-WiFi-Bridge.sh` (in `Linux/` or `Web-WiFi-Offline/`).
+2. **Open Safari on your iPhone/iPad**:
+   - The terminal shows your local Wi-Fi URL (e.g. `http://192.168.1.77:8089`).
+   - Open that link in regular Safari on your iPhone or iPad connected to the same home Wi-Fi network.
+3. **Pick & Print**:
+   - Tap **"Choose Photo"** to select from your iPhone photo library.
+   - Adjust collage, framing, captions, or QR codes.
+   - Tap **"Print Physical Photo"** (or **"Dry Run"** for a zero-film test).
+   - Your computer beams the print job to your Instax SHARE SP-1, SP-2, or SP-3 printer automatically!
+

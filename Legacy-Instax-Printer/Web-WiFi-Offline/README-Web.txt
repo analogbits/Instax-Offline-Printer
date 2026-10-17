@@ -15,13 +15,16 @@ printers use raw TCP sockets over Wi-Fi Direct (192.168.0.251:8080). Because
 web browsers block direct raw TCP sockets from webpages, you have two ways to
 use LegacyInstaxPrinterWeb.html:
 
-OPTION 1 — Full Direct Wi-Fi Printing from Any Browser:
-  Run:
-    python3 legacy_web_bridge.py
-  This opens http://127.0.0.1:8089/LegacyInstaxPrinterWeb.html and relays your
-  browser's print & status commands directly to 192.168.0.251:8080!
+OPTION 1 — Direct Printing from Mac, PC & iPhone / iPad Safari:
+  Double-click:
+    - Mac:     Start-iPhone-WiFi-Bridge.command
+    - Windows: Start-iPhone-WiFi-Bridge.bat
+    - Linux:   ./Start-iPhone-WiFi-Bridge.sh
+  The terminal displays your computer's local Wi-Fi URL (e.g. http://192.168.1.77:8089).
+  Open that link on your iPhone, iPad, or any device on your home network to print
+  straight from your camera roll without installing any iOS apps!
 
-OPTION 2 — 100% Standalone Browser Studio (Double-Click HTML):
+OPTION 2 — Standalone Offline Browser Studio (Double-Click HTML):
   Double-click "LegacyInstaxPrinterWeb.html" to frame photos, build multi-photo
   collages with custom border spacing, generate scannable QR codes, test in the
   built-in Virtual SP-1/2/3 Browser Simulator, or export ready-to-print PNGs

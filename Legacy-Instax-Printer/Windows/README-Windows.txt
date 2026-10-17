@@ -19,3 +19,10 @@ HOW TO CONNECT & PRINT ON WINDOWS:
    and remaining film count.
 5. Use "Test Transfer (0-Film Dry Run)" to test the full Wi-Fi Direct image
    transfer without using any film, or click "Print Over Wi-Fi Direct".
+
+PRINT FROM IPHONE / IPAD SAFARI (LOCAL WI-FI BRIDGE):
+------------------------------------------------------
+Double-click "Start-iPhone-WiFi-Bridge.bat". Open the displayed URL
+(http://<your-pc-ip>:8089) in Safari on your iPhone or iPad to print photos
+directly from your camera roll!
+

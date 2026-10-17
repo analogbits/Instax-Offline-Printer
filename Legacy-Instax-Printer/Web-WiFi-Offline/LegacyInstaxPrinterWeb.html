@@ -163,6 +163,42 @@
       justify-content: space-between;
       color: var(--muted);
     }
+    @media (max-width: 900px) {
+      header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      main {
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar, .inspector {
+        border: none;
+        border-bottom: 1px solid var(--border);
+      }
+      canvas {
+        max-width: 100%;
+        height: auto;
+      }
+      .polaroid-frame {
+        width: 100%;
+        max-width: 380px;
+        box-sizing: border-box;
+      }
+    }
+    .bridge-banner {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #86efac;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
@@ -171,6 +207,7 @@
       <span class="brand-badge">SP-1 • SP-2 • SP-3</span>
       <span>Legacy Instax Printer — Wi-Fi Direct Web Studio</span>
     </div>
+    <div id="bridgeBanner" class="bridge-banner"></div>
     <select id="modelSelect">
       <option value="SP-1">Instax SHARE SP-1 (Mini • 600×800)</option>
       <option value="SP-2" selected>Instax SHARE SP-2 (Mini HD • 600×800)</option>
@@ -351,11 +388,32 @@
       }
     }
 
+    function getBridgeBase() {
+      if (window.location.protocol.startsWith('http')) {
+        return window.location.origin;
+      }
+      return 'http://127.0.0.1:8089';
+    }
+
+    async function checkBridge() {
+      try {
+        const resp = await fetch(`${getBridgeBase()}/api/bridge-ping`, { cache: 'no-store' });
+        const d = await resp.json();
+        if (d.ok) {
+          const el = document.getElementById('bridgeBanner');
+          if (el) {
+            el.style.display = 'flex';
+            el.innerHTML = `🟢 <b>Wi-Fi Bridge Active</b> (v${d.version || '1.5.4'} on ${d.hostname || 'Host'}) &nbsp;•&nbsp; iPhone / iPad URL: <a href="${d.lan_url}" target="_blank" style="color:#4ade80;font-weight:700;text-decoration:underline;margin-left:4px;">${d.lan_url}</a>`;
+          }
+        }
+      } catch (_) {}
+    }
+
     async function scanWiFi() {
       const statusEl = document.getElementById('statusText');
       statusEl.textContent = 'Scanning for INSTAX-XXXXXXXX Wi-Fi Direct networks and active printers...';
       try {
-        const resp = await fetch('http://127.0.0.1:8089/api/scan');
+        const resp = await fetch(`${getBridgeBase()}/api/scan`);
         const data = await resp.json();
         if (data.ok && Array.isArray(data.items)) {
           discoveredItems = data.items;
@@ -559,7 +617,7 @@
       const statusEl = document.getElementById('statusText');
       statusEl.textContent = `Connecting to ${sim ? 'Virtual Simulator' : document.getElementById('printerIp').value + ':' + document.getElementById('printerPort').value}...`;
       try {
-        const resp = await fetch('http://127.0.0.1:8089/api/status', {
+        const resp = await fetch(`${getBridgeBase()}/api/status`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -610,7 +668,7 @@
       try {
         statusEl.textContent = `Encoding ${spec.width}×${spec.height} (90° CW Scanline Planar RGB • ${spec.segments} segments)...`;
         const b64 = encodePlanarRGBBase64();
-        const resp = await fetch('http://127.0.0.1:8089/api/print', {
+        const resp = await fetch(`${getBridgeBase()}/api/print`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -752,6 +810,7 @@
     renderLEDs();
     createTestCard('SP-2');
     scanWiFi();
+    checkBridge();
   </script>
 </body>
 </html>
