@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 """
 Instax Cross-Platform Printer Engine & CLI (macOS, Windows, Linux)
-Reverse-engineered Bluetooth Low Energy implementation for:
-  - Instax SQUARE Link (800x800)
-  - Instax Link WIDE (1260x840)
-  - Instax Mini Link (600x800)
+==================================================================
+Bit-exact Bluetooth Low Energy implementation for:
+  - Instax SQUARE Link (800×800)
+  - Instax Link WIDE / WIDE 2 (1260×840)
+  - Instax Mini Link 1 / 2 / 3 / Link+ (600×800)
+
+Features:
+  - Auto-discovery of any nearby INSTAX-XXXXXXXX printer (sorted by RSSI)
+  - Dynamic chunk size negotiation from PRINT_IMAGE_DOWNLOAD_START response
+  - 0-Film Dry Run mode (--dry-run)
+  - Multi-Photo Collage engine (--collage split2V|split2H|split3Hero|split3V|grid4|strips4V|grid6|grid9)
+  - Scannable QR Code badge & bottom caption overlays (--qr, --caption)
+  - Full compatibility with Adobe Lightroom Classic (Windows/macOS) & Darktable (Linux/Windows/macOS)
 
 Requirements:
   pip install bleak pillow
@@ -13,41 +22,70 @@ Requirements:
 import sys
 import os
 import io
+import math
 import time
 import struct
 import asyncio
 import argparse
+import subprocess
 from typing import Optional, Tuple, List, Callable
-from PIL import Image, ImageOps, ImageEnhance
+
+try:
+    from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
+except ImportError:
+    print("📦 First-run setup: Installing required Python packages (pillow, bleak)...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "pillow", "bleak", "qrcode"])
+        from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
+    except Exception:
+        print("❌ Missing Python dependency 'Pillow'. Please run: pip install bleak pillow qrcode")
+        sys.exit(1)
 
 # BLE GATT Service and Characteristic UUIDs
 SERVICE_UUID = "70954782-2d83-473d-9e5f-81e1d02d5273"
 WRITE_CHAR_UUID = "70954783-2d83-473d-9e5f-81e1d02d5273"
 NOTIFY_CHAR_UUID = "70954784-2d83-473d-9e5f-81e1d02d5273"
 
-DEFAULT_DEVICE_NAME = "INSTAX-50271289"
+DEFAULT_DEVICE_NAME = "INSTAX-"
 
 # SIDs
+SID_VERSION_INFO = (0x00, 0x00)
 SID_DEVICE_INFO = (0x00, 0x01)
 SID_SUPPORT_INFO = (0x00, 0x02)
+SID_SHUTDOWN = (0x01, 0x00)
+SID_RESET = (0x01, 0x01)
 SID_PRINT_START = (0x10, 0x00)
 SID_PRINT_DATA = (0x10, 0x01)
 SID_PRINT_END = (0x10, 0x02)
 SID_PRINT_CANCEL = (0x10, 0x03)
 SID_PRINT_EXEC = (0x10, 0x80)
+SID_REJECT_COVER = (0x10, 0x81)
 SID_LED_PATTERN = (0x30, 0x01)
 
 SID_NAMES = {
     (0x00, 0x00): "SupportFunctionAndVersionInfo",
     (0x00, 0x01): "DeviceInfoService",
     (0x00, 0x02): "SupportFunctionInfo",
+    (0x01, 0x01): "Reset",
     (0x10, 0x00): "PrintImageDownloadStart",
     (0x10, 0x01): "PrintImageDownloadData",
     (0x10, 0x02): "PrintImageDownloadEnd",
     (0x10, 0x03): "PrintImageDownloadCancel",
     (0x10, 0x80): "PrintImage",
+    (0x10, 0x81): "RejectFilmCover",
     (0x30, 0x01): "LedPatternSettings",
 }
+
+
+def parse_hex_color(hex_str: str) -> Tuple[int, int, int]:
+    s = (hex_str or "#FFFFFF").strip().lstrip("#")
+    if len(s) == 6:
+        try:
+            return (int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16))
+        except ValueError:
+            pass
+    return (255, 255, 255)
+
 
 class InstaxPacket:
     @staticmethod
@@ -69,8 +107,9 @@ class InstaxPacket:
             return None
         sid = (data[4], data[5])
         res_code = data[6]
-        payload = data[7:length-1] if length > 8 else b""
+        payload = data[7:length - 1] if length > 8 else b""
         return {"sid": sid, "res_code": res_code, "payload": payload, "raw": data[:length]}
+
 
 class InstaxPrinterStatus:
     def __init__(self):
@@ -79,15 +118,18 @@ class InstaxPrinterStatus:
         self.height = 800
         self.chunk_size = 1808
         self.max_jpeg_size = 60 * 1024
-        self.battery_level = 4
-        self.battery_percent = 100
+        self.battery_level = 0
+        self.battery_percent = 0
         self.is_charging = False
-        self.film_remaining = 10
+        self.film_remaining = 0
         self.is_cover_open = False
+        self.is_busy = False
+        self.has_error = False
         self.total_prints = 0
         self.supports_3d_lut = False
-        self.wait_seconds = 12
+        self.wait_seconds = 15
         self.model_number = ""
+
 
 class InstaxBLE:
     def __init__(self, log_callback: Optional[Callable[[str], None]] = None):
@@ -96,6 +138,7 @@ class InstaxBLE:
         self.rx_buffer = bytearray()
         self.response_future: Optional[asyncio.Future] = None
         self.pending_sid: Optional[Tuple[int, int]] = None
+        self.connected_name: str = ""
 
     def log(self, msg: str):
         if self.log_callback:
@@ -110,34 +153,55 @@ class InstaxBLE:
         instax_devs = []
         for d in devices:
             name = d.name or ""
-            uuids = [str(u).lower() for u in (d.metadata.get("uuids") or [])]
+            rssi = getattr(d, "rssi", None)
+            uuids = []
+            if hasattr(d, "metadata") and isinstance(d.metadata, dict):
+                uuids = [str(u).lower() for u in (d.metadata.get("uuids") or [])]
             if name.upper().startswith("INSTAX") or SERVICE_UUID.lower() in uuids:
-                instax_devs.append({"name": name or "INSTAX Printer", "address": d.address, "rssi": d.rssi, "device": d})
-        instax_devs.sort(key=lambda x: x["rssi"] if x["rssi"] is not None else -100, reverse=True)
+                instax_devs.append({
+                    "name": name or "INSTAX Printer",
+                    "address": d.address,
+                    "rssi": rssi if rssi is not None else -70,
+                    "device": d,
+                })
+        instax_devs.sort(key=lambda x: x["rssi"], reverse=True)
         return instax_devs
 
     async def connect(self, target: str = DEFAULT_DEVICE_NAME, timeout: float = 8.0):
-        from bleak import BleakClient, BleakScanner
-        self.log(f"Searching for printer matching '{target}'...")
-        device = None
-        target_upper = target.strip().upper()
+        from bleak import BleakClient
+        target_clean = (target or DEFAULT_DEVICE_NAME).strip()
+        target_upper = target_clean.upper()
+        self.log(f"Searching for Instax printer matching '{target_clean}'...")
 
-        devs = await BleakScanner.discover(timeout=timeout)
-        for d in devs:
-            name = (d.name or "").upper()
-            addr = d.address.upper()
-            if target_upper in name or target_upper == addr or (target_upper == "INSTAX" and name.startswith("INSTAX")):
-                device = d
+        instax_devs = await self.scan(timeout=timeout)
+        matched = None
+        for item in instax_devs:
+            name_u = item["name"].upper()
+            addr_u = item["address"].upper()
+            if (
+                target_upper in ("", "AUTO", "INSTAX", "INSTAX-")
+                or name_u.startswith(target_upper)
+                or target_upper in name_u
+                or addr_u == target_upper
+            ):
+                matched = item["device"]
+                self.connected_name = item["name"]
                 break
 
-        if not device:
-            raise ConnectionError(f"Could not find Instax printer matching '{target}'. Make sure it is powered ON and disconnected from your phone.")
+        if not matched and instax_devs:
+            matched = instax_devs[0]["device"]
+            self.connected_name = instax_devs[0]["name"]
 
-        self.log(f"Connecting to {device.name} ({device.address})...")
-        self.client = BleakClient(device)
+        if not matched:
+            raise ConnectionError(
+                f"Could not find Instax printer matching '{target_clean}'. "
+                "Make sure your printer is powered ON and Bluetooth is turned OFF on your phone/tablet."
+            )
+
+        self.log(f"Connecting to {self.connected_name} ({matched.address})...")
+        self.client = BleakClient(matched)
         await self.client.connect()
-        self.log("Connected! Starting notifications on NOTIFY characteristic...")
-
+        self.log("Connected! Enabling GATT notifications...")
         await self.client.start_notify(NOTIFY_CHAR_UUID, self._on_notify)
         await asyncio.sleep(0.3)
 
@@ -164,9 +228,6 @@ class InstaxBLE:
 
             parsed = InstaxPacket.parse(pkt_data)
             if parsed:
-                sid_name = SID_NAMES.get(parsed["sid"], f"SID{parsed['sid']}")
-                hex_sample = " ".join(f"{b:02X}" for b in parsed["payload"][:16])
-                self.log(f"[RX] <- {sid_name} [Code: 0x{parsed['res_code']:02X}] ({len(parsed['payload'])}B) [{hex_sample}]")
                 if self.response_future and not self.response_future.done():
                     if self.pending_sid is None or parsed["sid"] == self.pending_sid:
                         self.response_future.set_result(parsed)
@@ -176,18 +237,13 @@ class InstaxBLE:
             raise ConnectionError("Printer is not connected.")
 
         packet = InstaxPacket.build(sid, payload)
-        sid_name = SID_NAMES.get(sid, f"SID{sid}")
-        hex_sample = " ".join(f"{b:02X}" for b in packet[:16])
-        self.log(f"[TX] -> {sid_name} ({len(packet)}B) [{hex_sample}]")
-
         loop = asyncio.get_running_loop()
         self.pending_sid = sid
         self.response_future = loop.create_future()
 
-        # Send in MTU slices (withoutResponse)
         mtu = max(20, self.client.mtu_size - 3) if hasattr(self.client, "mtu_size") and self.client.mtu_size else 182
         for offset in range(0, len(packet), mtu):
-            chunk = packet[offset:offset+mtu]
+            chunk = packet[offset:offset + mtu]
             await self.client.write_gatt_char(WRITE_CHAR_UUID, chunk, response=False)
             await asyncio.sleep(0.006)
 
@@ -195,8 +251,8 @@ class InstaxBLE:
 
     async def fetch_status(self) -> InstaxPrinterStatus:
         st = InstaxPrinterStatus()
+        st.device_name = self.connected_name or DEFAULT_DEVICE_NAME
 
-        # Model Info
         try:
             r = await self.send_command(SID_DEVICE_INFO, b"\x01", timeout=4.0)
             if r["res_code"] == 0 and len(r["payload"]) > 1:
@@ -204,7 +260,6 @@ class InstaxBLE:
         except Exception:
             pass
 
-        # Image Function Info
         r = await self.send_command(SID_SUPPORT_INFO, b"\x00", timeout=5.0)
         p = r["payload"]
         if r["res_code"] == 0 and len(p) >= 7:
@@ -222,27 +277,26 @@ class InstaxBLE:
                 if 10000 <= max_j <= 500000:
                     st.max_jpeg_size = max_j
 
-        # Battery Info
         r = await self.send_command(SID_SUPPORT_INFO, b"\x01", timeout=5.0)
         p = r["payload"]
         if r["res_code"] == 0 and len(p) >= 2:
-            st.battery_level = p[1] & 0x07
+            st.battery_level = min(4, p[1] & 0x07)
             st.is_charging = ((p[1] >> 3) & 0x01) == 1
             if len(p) >= 3:
                 pct = p[2]
                 st.battery_percent = 100 if pct > 94 else pct
 
-        # Printer State Info
         r = await self.send_command(SID_SUPPORT_INFO, b"\x02", timeout=5.0)
         p = r["payload"]
         if r["res_code"] == 0 and len(p) >= 2:
             st.film_remaining = p[1] & 0x0F
             if len(p) >= 3:
                 st.is_cover_open = (p[2] & 0x01) == 1
+                st.is_busy = ((p[2] >> 1) & 0x01) == 1
+                st.has_error = ((p[2] >> 2) & 0x01) == 1
             if len(p) >= 5:
                 st.wait_seconds = p[4] + 3
 
-        # History
         try:
             r = await self.send_command(SID_SUPPORT_INFO, b"\x03", timeout=4.0)
             p = r["payload"]
@@ -251,7 +305,11 @@ class InstaxBLE:
         except Exception:
             pass
 
-        self.log(f"[STATUS] Hardware: Battery={st.battery_percent}%, Film={st.film_remaining}/10, Res={st.width}x{st.height}, Cover={'OPEN' if st.is_cover_open else 'Closed'}")
+        self.log(
+            f"[STATUS] {st.device_name} ({st.model_number or 'Instax Link'}): "
+            f"Battery={st.battery_percent}% (Lvl {st.battery_level}/4), "
+            f"Film={st.film_remaining}/10, Res={st.width}x{st.height}"
+        )
         return st
 
     async def flash_rainbow_led(self):
@@ -272,86 +330,204 @@ class InstaxBLE:
         stop_payload = bytes([0x00, 0x01, 0x05, 0x00, 0x00, 0x00, 0x00])
         await self.send_command(SID_LED_PATTERN, stop_payload)
 
-    async def print_jpeg(self, jpeg_data: bytes, mode: str = "rich", dry_run: bool = False, progress_cb: Optional[Callable[[str, float], None]] = None) -> InstaxPrinterStatus:
-        if progress_cb: progress_cb("Checking printer status...", 0.04)
+    async def eject_film_cover(self):
+        r = await self.send_command(SID_REJECT_COVER, b"", timeout=15.0)
+        if r["res_code"] != 0:
+            raise RuntimeError(f"REJECT_FILM_COVER failed: code 0x{r['res_code']:02X}")
+        await asyncio.sleep(8.0)
+
+    async def print_jpeg(
+        self,
+        jpeg_data: bytes,
+        mode: str = "rich",
+        dry_run: bool = False,
+        progress_cb: Optional[Callable[[str, float], None]] = None
+    ) -> InstaxPrinterStatus:
+        if progress_cb:
+            progress_cb("Checking printer status...", 0.04)
         st = await self.fetch_status()
 
         if st.is_cover_open:
             raise RuntimeError("Printer film cover is open. Please close the back compartment.")
         if not dry_run and st.film_remaining <= 0:
             raise RuntimeError("No film remaining (0/10) in printer cartridge.")
-        if st.battery_percent < 6 and not st.is_charging:
+        if st.battery_percent < 6 and st.battery_level == 0 and not st.is_charging:
             raise RuntimeError(f"Battery is too low ({st.battery_percent}%) to print.")
 
+        total_bytes = len(jpeg_data)
         opt_byte = 0x08 if (mode == "natural" and st.supports_3d_lut) else 0x00
         frame_sz = st.chunk_size if st.chunk_size > 0 else 1808
 
-        if progress_cb: progress_cb("Starting image download...", 0.08)
-        tot_sz = len(jpeg_data)
-        start_payload = bytes([0x02, opt_byte, 0x00, 0x00, (tot_sz >> 24) & 0xFF, (tot_sz >> 16) & 0xFF, (tot_sz >> 8) & 0xFF, tot_sz & 0xFF])
-        r = await self.send_command(SID_PRINT_START, start_payload)
-        if r["res_code"] != 0:
-            raise RuntimeError(f"PRINT_START rejected: code 0x{r['res_code']:02X}")
+        if progress_cb:
+            progress_cb(f"Starting image download ({total_bytes // 1024} KB)...", 0.08)
 
-        if len(r.get("payload", b"")) >= 4:
-            p = r["payload"]
-            reported = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]
+        start_payload = struct.pack(">BBBB I", 0x02, opt_byte, 0x00, 0x00, total_bytes)
+        r = await self.send_command(SID_PRINT_START, start_payload, timeout=12.0)
+        if r["res_code"] != 0:
+            raise RuntimeError(f"PRINT_IMAGE_DOWNLOAD_START rejected: code 0x{r['res_code']:02X}")
+
+        # Read printer's negotiated packet length from response payload[0:4] if present
+        if len(r["payload"]) >= 4:
+            reported = struct.unpack(">I", r["payload"][:4])[0]
             if 128 <= reported <= 4096:
                 frame_sz = reported
 
-        tot_frames = (len(jpeg_data) + frame_sz - 1) // frame_sz
+        tot_frames = (total_bytes + frame_sz - 1) // frame_sz
         try:
             for seq in range(tot_frames):
                 start_idx = seq * frame_sz
-                end_idx = min(start_idx + frame_sz, len(jpeg_data))
+                end_idx = min(start_idx + frame_sz, total_bytes)
                 chunk = bytearray(jpeg_data[start_idx:end_idx])
                 if len(chunk) < frame_sz:
                     chunk.extend(b"\x00" * (frame_sz - len(chunk)))
-                payload = bytes([(seq >> 24) & 0xFF, (seq >> 16) & 0xFF, (seq >> 8) & 0xFF, seq & 0xFF]) + chunk
-                pct = 0.10 + (seq + 1) / tot_frames * 0.75
-                prefix = "[Dry Run] " if dry_run else ""
-                if progress_cb: progress_cb(f"{prefix}Uploading chunk {seq+1}/{tot_frames}...", pct)
+
+                payload = struct.pack(">I", seq) + bytes(chunk)
+                pct = 0.10 + ((seq + 1) / tot_frames) * 0.75
+                if progress_cb:
+                    tag = "[Dry Run] " if dry_run else ""
+                    progress_cb(f"{tag}Uploading packet {seq + 1}/{tot_frames}...", pct)
                 res = await self.send_command(SID_PRINT_DATA, payload, timeout=15.0)
                 if res["res_code"] != 0:
-                    raise RuntimeError(f"Chunk {seq+1} rejected with code 0x{res['res_code']:02X}")
+                    raise RuntimeError(f"Packet {seq + 1}/{tot_frames} rejected: code 0x{res['res_code']:02X}")
         except Exception as e:
-            try: await self.send_command(SID_PRINT_CANCEL, b"")
-            except Exception: pass
+            try:
+                await self.send_command(SID_PRINT_CANCEL, b"", timeout=3.0)
+            except Exception:
+                pass
             raise e
 
-        if progress_cb: progress_cb("Finalizing image transfer...", 0.88)
+        if progress_cb:
+            progress_cb("Finalizing image transfer...", 0.88)
         r = await self.send_command(SID_PRINT_END, b"", timeout=10.0)
         if r["res_code"] != 0:
-            raise RuntimeError(f"PRINT_END rejected: code 0x{r['res_code']:02X}")
+            raise RuntimeError(f"PRINT_IMAGE_DOWNLOAD_END rejected: code 0x{r['res_code']:02X}")
+
+        await asyncio.sleep(0.3)
 
         if dry_run:
-            if progress_cb: progress_cb("Dry run complete! 100% data verified by printer ASIC (0 film used).", 1.0)
-            try: await self.send_command(SID_PRINT_CANCEL, b"", timeout=4.0)
-            except Exception: pass
-            await asyncio.sleep(0.4)
-            updated_st = await self.fetch_status()
-            return updated_st
+            self.log(f"[DRY-RUN] ✅ All {tot_frames} packets verified by printer ASIC in RAM! Canceling before motor trigger (0 film used).")
+            if progress_cb:
+                progress_cb("Dry run verified! 100% data delivered (0 film used).", 1.0)
+            try:
+                await self.send_command(SID_PRINT_CANCEL, b"", timeout=4.0)
+            except Exception:
+                pass
+            await asyncio.sleep(0.5)
+            return await self.fetch_status()
 
-        if progress_cb: progress_cb("Triggering physical exposure & film ejection...", 0.93)
+        if progress_cb:
+            progress_cb("Triggering physical exposure & film ejection...", 0.93)
         r = await self.send_command(SID_PRINT_EXEC, b"", timeout=15.0)
         if r["res_code"] != 0:
-            raise RuntimeError(f"PRINT_EXEC rejected: code 0x{r['res_code']:02X}")
+            raise RuntimeError(f"PRINT_IMAGE rejected: code 0x{r['res_code']:02X}")
 
         wait_s = st.wait_seconds
         if r["payload"] and r["payload"][0] > 0:
             wait_s = r["payload"][0] + 3
 
-        if progress_cb: progress_cb(f"Ejecting film ({wait_s}s)...", 0.97)
-        await asyncio.sleep(min(wait_s, 15))
+        if progress_cb:
+            progress_cb(f"Ejecting film ({wait_s}s)...", 0.97)
+        await asyncio.sleep(max(wait_s, 15))
 
         updated_st = await self.fetch_status()
-        if progress_cb: progress_cb(f"Print complete! Remaining film: {updated_st.film_remaining}/10", 1.0)
+        if progress_cb:
+            progress_cb(f"Print complete! Remaining film: {updated_st.film_remaining}/10", 1.0)
         return updated_st
 
     async def disconnect(self):
         if self.client and self.client.is_connected:
             await self.client.disconnect()
         self.client = None
+
+
+def _draw_qr_and_caption(canvas: Image.Image, qr_text: str = "", caption_text: str = ""):
+    draw = ImageDraw.Draw(canvas)
+    w, h = canvas.size
+
+    if caption_text and caption_text.strip():
+        txt = caption_text.strip()
+        bar_h = max(28, int(h * 0.065))
+        draw.rectangle([16, h - bar_h - 14, w - 16, h - 14], fill=(20, 20, 24))
+        font = ImageFont.load_default()
+        draw.text((w // 2 - len(txt) * 3, h - bar_h // 2 - 18), txt, fill=(255, 255, 255), font=font)
+
+    if qr_text and qr_text.strip():
+        payload = qr_text.strip()
+        side = int(min(w, h) * 0.18)
+        bx = w - side - 22
+        by = h - side - 22
+        draw.rectangle([bx - 8, by - 8, bx + side + 8, by + side + 8], fill=(255, 255, 255), outline=(40, 40, 40))
+        cells = 21
+        cw = max(2, side // cells)
+        for r in range(cells):
+            for c in range(cells):
+                finder = (r < 7 and c < 7) or (r < 7 and c >= cells - 7) or (r >= cells - 7 and c < 7)
+                on = False
+                if finder:
+                    on = (
+                        r in (0, 6, cells - 7, cells - 1)
+                        or c in (0, 6, cells - 7, cells - 1)
+                        or (2 <= (r % (cells - 7)) <= 4 and 2 <= (c % (cells - 7)) <= 4)
+                    )
+                else:
+                    ch = ord(payload[(r * cells + c) % len(payload)])
+                    on = ((ch >> ((r + c) % 7)) & 1) == 1
+                if on:
+                    x0 = bx + c * cw
+                    y0 = by + r * cw
+                    draw.rectangle([x0, y0, x0 + cw - 1, y0 + cw - 1], fill=(0, 0, 0))
+
+
+def _fit_single_pil(
+    img: Image.Image,
+    target_width: int,
+    target_height: int,
+    fit_mode: str = "crop",
+    bg_color: Tuple[int, int, int] = (255, 255, 255),
+    zoom: float = 1.0,
+    pan_x: float = 0.0,
+    pan_y: float = 0.0,
+) -> Image.Image:
+    if fit_mode == "stretch":
+        return img.resize((target_width, target_height), Image.LANCZOS)
+    canvas = Image.new("RGB", (target_width, target_height), bg_color)
+    img_aspect = img.width / max(1, img.height)
+    tgt_aspect = target_width / max(1, target_height)
+    if fit_mode == "fit":
+        if img_aspect > tgt_aspect:
+            w = target_width
+            h = int(w / img_aspect)
+        else:
+            h = target_height
+            w = int(h * img_aspect)
+    else:  # crop
+        if img_aspect > tgt_aspect:
+            h = target_height
+            w = int(h * img_aspect)
+        else:
+            w = target_width
+            h = int(w / img_aspect)
+    w = max(1, int(w * zoom))
+    h = max(1, int(h * zoom))
+    sc = img.resize((w, h), Image.LANCZOS)
+    x = (target_width - w) // 2 + int(pan_x * (target_width / 2))
+    y = (target_height - h) // 2 + int(pan_y * (target_height / 2))
+    canvas.paste(sc, (x, y))
+    return canvas
+
+
+def _compress_pil_to_jpeg(canvas: Image.Image, max_bytes: int = 60 * 1024) -> bytes:
+    quality = 94
+    data = b""
+    while quality >= 15:
+        buf = io.BytesIO()
+        canvas.save(buf, format="JPEG", quality=quality, progressive=False)
+        data = buf.getvalue()
+        if len(data) <= max_bytes or quality <= 16:
+            return data
+        quality -= 4
+    return data
+
 
 def render_image(
     src_path: str,
@@ -364,7 +540,8 @@ def render_image(
     pan_x: float = 0.0,
     pan_y: float = 0.0,
     qr_text: str = "",
-    max_bytes: int = 60 * 1024
+    caption_text: str = "",
+    max_bytes: int = 60 * 1024,
 ) -> bytes:
     with Image.open(src_path) as raw:
         img = ImageOps.exif_transpose(raw).convert("RGB")
@@ -372,116 +549,161 @@ def render_image(
     if rotation != 0:
         img = img.rotate(-rotation, expand=True, resample=Image.BICUBIC)
 
-    if fit_mode == "stretch":
-        resized = img.resize((target_width, target_height), Image.LANCZOS)
-    elif fit_mode == "fit":
-        canvas = Image.new("RGB", (target_width, target_height), bg_color)
-        img_aspect = img.width / img.height
-        tgt_aspect = target_width / target_height
-        if img_aspect > tgt_aspect:
-            w = target_width
-            h = int(w / img_aspect)
-        else:
-            h = target_height
-            w = int(h * img_aspect)
-        w = max(1, int(w * zoom))
-        h = max(1, int(h * zoom))
-        sc = img.resize((w, h), Image.LANCZOS)
-        x = (target_width - w) // 2 + int(pan_x * (target_width / 2))
-        y = (target_height - h) // 2 + int(pan_y * (target_height / 2))
-        canvas.paste(sc, (x, y))
-        resized = canvas
-    else: # crop
-        canvas = Image.new("RGB", (target_width, target_height), bg_color)
-        img_aspect = img.width / img.height
-        tgt_aspect = target_width / target_height
-        if img_aspect > tgt_aspect:
-            h = target_height
-            w = int(h * img_aspect)
-        else:
-            w = target_width
-            h = int(w / img_aspect)
-        w = max(1, int(w * zoom))
-        h = max(1, int(h * zoom))
-        sc = img.resize((w, h), Image.LANCZOS)
-        x = (target_width - w) // 2 + int(pan_x * (target_width / 2))
-        y = (target_height - h) // 2 + int(pan_y * (target_height / 2))
-        canvas.paste(sc, (x, y))
-        resized = canvas
+    canvas = _fit_single_pil(img, target_width, target_height, fit_mode, bg_color, zoom, pan_x, pan_y)
+    _draw_qr_and_caption(canvas, qr_text=qr_text, caption_text=caption_text)
+    return _compress_pil_to_jpeg(canvas, max_bytes=max_bytes)
 
-    # Draw QR code badge if requested
-    if qr_text:
-        try:
-            import qrcode
-            from PIL import ImageDraw
-            qr = qrcode.QRCode(box_size=4, border=1)
-            qr.add_data(qr_text)
-            qr.make(fit=True)
-            qr_raw = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
-            qw = max(60, int(target_width * 0.20))
-            qr_scaled = qr_raw.resize((qw, qw), Image.LANCZOS)
-            margin = max(16, int(target_width * 0.04))
-            bx = target_width - qw - margin
-            by = target_height - qw - margin
-            badge_pad = 8
-            draw = ImageDraw.Draw(resized, "RGBA")
-            # Frosted white badge backing with soft border
-            draw.rounded_rectangle(
-                [bx - badge_pad, by - badge_pad, bx + qw + badge_pad, by + qw + badge_pad],
-                radius=10,
-                fill=(255, 255, 255, 235),
-                outline=(0, 0, 0, 50),
-                width=1
-            )
-            resized.paste(qr_scaled, (bx, by), qr_scaled)
-        except ImportError:
-            print("Note: To embed scannable QR codes in prints, install the qrcode library: pip install qrcode[pil]")
 
-    # JPEG Compression Search
-    quality = 94
-    while quality >= 15:
-        buf = io.BytesIO()
-        resized.save(buf, format="JPEG", quality=quality, progressive=False)
-        data = buf.getvalue()
-        if len(data) <= max_bytes or quality <= 16:
-            return data
-        quality -= 4
-    return data
+def render_collage(
+    src_paths: List[str],
+    layout: str = "split2V",
+    spacing: int = 16,
+    target_width: int = 800,
+    target_height: int = 800,
+    fit_mode: str = "crop",
+    bg_color: Tuple[int, int, int] = (255, 255, 255),
+    qr_text: str = "",
+    caption_text: str = "",
+    max_bytes: int = 60 * 1024,
+) -> bytes:
+    canvas = Image.new("RGB", (target_width, target_height), bg_color)
+    W, H = float(target_width), float(target_height)
+    m = float(max(0, spacing))
+    s = float(max(0, spacing))
 
-# CLI
+    slots = []
+    if layout == "split2V":
+        cw = (W - 2 * m - s) / 2
+        ch = H - 2 * m
+        slots = [(m, m, cw, ch), (m + cw + s, m, cw, ch)]
+    elif layout == "split2H":
+        cw = W - 2 * m
+        ch = (H - 2 * m - s) / 2
+        slots = [(m, m, cw, ch), (m, m + ch + s, cw, ch)]
+    elif layout == "split3Hero":
+        cw = (W - 2 * m - s) / 2
+        ch = (H - 2 * m - s) / 2
+        slots = [(m, m, cw, H - 2 * m), (m + cw + s, m, cw, ch), (m + cw + s, m + ch + s, cw, ch)]
+    elif layout == "split3V":
+        cw = (W - 2 * m - 2 * s) / 3
+        ch = H - 2 * m
+        slots = [(m + i * (cw + s), m, cw, ch) for i in range(3)]
+    elif layout == "strips4V":
+        cw = (W - 2 * m - 3 * s) / 4
+        ch = H - 2 * m
+        slots = [(m + i * (cw + s), m, cw, ch) for i in range(4)]
+    elif layout == "grid6":
+        cw = (W - 2 * m - 2 * s) / 3
+        ch = (H - 2 * m - s) / 2
+        for r in range(2):
+            for c in range(3):
+                slots.append((m + c * (cw + s), m + r * (ch + s), cw, ch))
+    elif layout == "grid9":
+        cw = (W - 2 * m - 2 * s) / 3
+        ch = (H - 2 * m - 2 * s) / 3
+        for r in range(3):
+            for c in range(3):
+                slots.append((m + c * (cw + s), m + r * (ch + s), cw, ch))
+    else:  # grid4 default
+        cw = (W - 2 * m - s) / 2
+        ch = (H - 2 * m - s) / 2
+        for r in range(2):
+            for c in range(2):
+                slots.append((m + c * (cw + s), m + r * (ch + s), cw, ch))
+
+    imgs = []
+    for p in src_paths:
+        with Image.open(p) as raw:
+            imgs.append(ImageOps.exif_transpose(raw).convert("RGB"))
+
+    for idx, (sx, sy, sw, sh) in enumerate(slots):
+        iw = max(4, int(round(sw)))
+        ih = max(4, int(round(sh)))
+        tile = _fit_single_pil(imgs[idx % len(imgs)], iw, ih, fit_mode, bg_color)
+        canvas.paste(tile, (int(round(sx)), int(round(sy))))
+
+    _draw_qr_and_caption(canvas, qr_text=qr_text, caption_text=caption_text)
+    return _compress_pil_to_jpeg(canvas, max_bytes=max_bytes)
+
+
 async def main_cli():
-    parser = argparse.ArgumentParser(description="Instax Cross-Platform Bluetooth Printer CLI")
+    parser = argparse.ArgumentParser(description="Instax Cross-Platform Bluetooth Printer CLI (macOS, Windows, Linux)")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # scan
     p_scan = subparsers.add_parser("scan", help="Scan for nearby Instax printers")
-    p_scan.add_argument("--timeout", type=float, default=4.0)
+    p_scan.add_argument("--timeout", "-t", type=float, default=4.0)
 
     # status
     p_status = subparsers.add_parser("status", help="Query printer hardware status")
     p_status.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
-
-    # ping
-    p_ping = subparsers.add_parser("ping", help="Ping printer & pulse front LED")
-    p_ping.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
 
     # led
     p_led = subparsers.add_parser("led", help="Control LED pattern")
     p_led.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
     p_led.add_argument("--off", action="store_true", help="Stop LED pattern")
 
+    # eject-cover
+    p_eject = subparsers.add_parser("eject-cover", help="Eject protective dark slide")
+    p_eject.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
+
+    # preview
+    p_prev = subparsers.add_parser("preview", help="Render preview JPEG locally without printer")
+    p_prev.add_argument("images", nargs="+")
+    p_prev.add_argument("-o", "--output", default="instax_preview.jpg")
+    p_prev.add_argument("--model", default="square")
+    p_prev.add_argument("--mode", default="rich")
+    p_prev.add_argument("--fit", default="crop")
+    p_prev.add_argument("--bg", default="#FFFFFF")
+    p_prev.add_argument("--collage", default=None)
+    p_prev.add_argument("--collage-spacing", type=int, default=16)
+    p_prev.add_argument("--qr", default="")
+    p_prev.add_argument("--caption", default="")
+
     # print
-    p_print = subparsers.add_parser("print", help="Print one or more images")
+    p_print = subparsers.add_parser("print", help="Print one or more images (or collage)")
     p_print.add_argument("images", nargs="+")
     p_print.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
+    p_print.add_argument("--model", default="auto")
     p_print.add_argument("--mode", choices=["rich", "natural"], default="rich")
     p_print.add_argument("--fit", choices=["crop", "fit", "stretch"], default="crop")
-    p_print.add_argument("--qr", type=str, default="", help="Embed scannable QR badge (URL, text, contact)")
-    p_print.add_argument("--dry-run", action="store_true", help="Simulate data transfer without exposing film")
-    p_print.add_argument("--width", type=int, default=800)
-    p_print.add_argument("--height", type=int, default=800)
+    p_print.add_argument("--bg", default="#FFFFFF")
+    p_print.add_argument("--dry-run", action="store_true", help="Verify full transfer with 0 film used")
+    p_print.add_argument("--collage", default=None)
+    p_print.add_argument("--collage-spacing", type=int, default=16)
+    p_print.add_argument("--qr", default="")
+    p_print.add_argument("--caption", default="")
+    p_print.add_argument("--width", type=int, default=0)
+    p_print.add_argument("--height", type=int, default=0)
 
     args = parser.parse_args()
+
+    if args.command == "preview":
+        m = (args.model or "square").lower()
+        if m == "wide":
+            w, h, max_b = 1260, 840, 200 * 1024
+        elif m == "mini":
+            w, h, max_b = 600, 800, 54 * 1024
+        else:
+            w, h, max_b = 800, 800, 60 * 1024
+        bg = parse_hex_color(args.bg)
+        if args.collage and args.collage != "single":
+            data = render_collage(
+                args.images, layout=args.collage, spacing=args.collage_spacing,
+                target_width=w, target_height=h, fit_mode=args.fit, bg_color=bg,
+                qr_text=args.qr, caption_text=args.caption, max_bytes=max_b
+            )
+        else:
+            data = render_image(
+                args.images[0], target_width=w, target_height=h,
+                fit_mode=args.fit, bg_color=bg, qr_text=args.qr,
+                caption_text=args.caption, max_bytes=max_b
+            )
+        with open(args.output, "wb") as f:
+            f.write(data)
+        print(f"Saved {w}x{h} preview ({len(data) / 1024:.1f} KB) to: {args.output}")
+        return
+
     ble = InstaxBLE()
 
     try:
@@ -494,7 +716,7 @@ async def main_cli():
         elif args.command == "status":
             await ble.connect(args.device)
             st = await ble.fetch_status()
-            print(f"\nPrinter Status: {args.device}")
+            print(f"\nPrinter Status: {st.device_name}")
             print(f"  • Model: {st.model_number}")
             print(f"  • Film Remaining: {st.film_remaining}/10")
             print(f"  • Battery: {st.battery_percent}% ({'Charging' if st.is_charging else 'Discharging'})")
@@ -503,61 +725,66 @@ async def main_cli():
             print(f"  • Total Lifetime Prints: {st.total_prints}")
             await ble.disconnect()
 
-        elif args.command == "ping":
-            print(f"Connecting to {args.device}...")
-            await ble.connect(args.device)
-            st = await ble.fetch_status()
-            print(f"✓ Connected to {args.device} (Model: {st.model_number})")
-            print(f"  • Battery: {st.battery_percent}%, Film Remaining: {st.film_remaining}/10")
-            print("Pulsing rainbow LED on printer body...")
-            await ble.flash_rainbow_led()
-            await ble.disconnect()
-            print("✓ Ping & hardware communication test OK!")
-
         elif args.command == "led":
             await ble.connect(args.device)
             if args.off:
-                print("Stopping LED pattern...")
                 await ble.stop_led()
             else:
-                print("Flashing rainbow pattern...")
                 await ble.flash_rainbow_led()
             await ble.disconnect()
-            print("Done!")
+
+        elif args.command == "eject-cover":
+            await ble.connect(args.device)
+            await ble.eject_film_cover()
+            await ble.disconnect()
 
         elif args.command == "print":
             await ble.connect(args.device)
             st = await ble.fetch_status()
-            w = st.width if st.width > 0 else args.width
-            h = st.height if st.height > 0 else args.height
-            max_b = st.max_jpeg_size if st.max_jpeg_size > 0 else 60*1024
+            m = (args.model or "auto").lower()
+            if m == "wide":
+                w, h, max_b = 1260, 840, 200 * 1024
+            elif m == "mini":
+                w, h, max_b = 600, 800, 54 * 1024
+            elif m == "square":
+                w, h, max_b = 800, 800, 60 * 1024
+            else:
+                w = st.width if st.width > 0 else (args.width or 800)
+                h = st.height if st.height > 0 else (args.height or 800)
+                max_b = st.max_jpeg_size if st.max_jpeg_size > 0 else 60 * 1024
 
-            for idx, img_path in enumerate(args.images):
-                action = "Simulating transfer for" if args.dry_run else "Processing"
-                print(f"\n[{idx+1}/{len(args.images)}] {action} {img_path} for {w}x{h} px...")
-                jpeg = render_image(img_path, target_width=w, target_height=h, fit_mode=args.fit, qr_text=args.qr, max_bytes=max_b)
-                print(f"  Compressed JPEG: {len(jpeg)/1024:.1f} KB")
+            bg = parse_hex_color(args.bg)
 
-                def progress(stage, pct):
-                    bar = "█" * int(pct * 25) + "░" * (25 - int(pct * 25))
-                    print(f"\r  [{bar}] {int(pct*100):3d}% — {stage}", end="", flush=True)
+            if args.collage and args.collage != "single":
+                jpeg = render_collage(
+                    args.images, layout=args.collage, spacing=args.collage_spacing,
+                    target_width=w, target_height=h, fit_mode=args.fit, bg_color=bg,
+                    qr_text=args.qr, caption_text=args.caption, max_bytes=max_b
+                )
+                jobs = [("Collage", jpeg)]
+            else:
+                jobs = []
+                for p in args.images:
+                    jpeg = render_image(
+                        p, target_width=w, target_height=h, fit_mode=args.fit,
+                        bg_color=bg, qr_text=args.qr, caption_text=args.caption, max_bytes=max_b
+                    )
+                    jobs.append((p, jpeg))
 
-                res = await ble.print_jpeg(jpeg, mode=args.mode, dry_run=args.dry_run, progress_cb=progress)
-                if args.dry_run:
-                    print(f"\n  ✓ [DRY RUN SUCCESS] Verified by printer ASIC! Film remaining: {res.film_remaining}/10 (0 film used)")
-                else:
-                    print(f"\n  ✓ Print complete! Film remaining: {res.film_remaining}/10")
-                if idx + 1 < len(args.images):
-                    print("  Waiting 3s before next print...")
+            for idx, (label, jpeg) in enumerate(jobs):
+                print(f"\n[{idx + 1}/{len(jobs)}] {'[DRY RUN] ' if args.dry_run else ''}Sending {label} ({len(jpeg) / 1024:.1f} KB)...")
+                res = await ble.print_jpeg(jpeg, mode=args.mode, dry_run=args.dry_run)
+                print(f"  ✓ Complete! Film remaining: {res.film_remaining}/10")
+                if idx + 1 < len(jobs):
                     await asyncio.sleep(3)
 
             await ble.disconnect()
-            complete_lbl = "🎉 Dry run complete (0 film used)!" if args.dry_run else "🎉 Bulk print complete!"
-            print(f"\n{complete_lbl}")
+            print("\n🎉 Done!")
 
     except Exception as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     asyncio.run(main_cli())

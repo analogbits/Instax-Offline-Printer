@@ -416,6 +416,15 @@ class LegacyInstaxClient:
                 return {"film": film, "battery": batt, "dry_run": False}
 
 
+def _normalize_legacy_model(raw: str) -> str:
+    m = (raw or "SP-2").strip().upper()
+    if "1" in m:
+        return "SP-1"
+    if "3" in m:
+        return "SP-3"
+    return "SP-2"
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Legacy Instax Printer CLI — Wi-Fi Direct Tool for Fujifilm Instax SHARE SP-1, SP-2 & SP-3"
@@ -424,19 +433,24 @@ def main():
     parser.add_argument("--ip", default="192.168.0.251", help="Printer IP address (default: 192.168.0.251)")
     parser.add_argument("--port", type=int, default=8080, help="Printer TCP port (default: 8080)")
     parser.add_argument("--pin", type=int, default=1111, help="Printer 4-digit PIN code (default: 1111)")
-    parser.add_argument("--model", default="SP-2", choices=["SP-1", "SP-2", "SP-3"], help="Target model")
+    parser.add_argument("--model", default="SP-2", help="Target model (SP-1, SP-2, SP-3 or sp1, sp2, sp3)")
     parser.add_argument("--status", action="store_true", help="Query printer status and exit")
     parser.add_argument("--dry-run", action="store_true", help="Verify Wi-Fi transfer with 0 film used")
     parser.add_argument("--simulate", action="store_true", help="Run against built-in local simulator (127.0.0.1:18080)")
-    args = parser.parse_args()
+    parser.add_argument("--fit", action="store_true", help="Fit image inside frame with borders (default: crop to fill)")
+    parser.add_argument("--caption", default="", help="Optional bottom caption text")
+    parser.add_argument("--qr", default="", help="Optional scannable QR code text/URL")
+    args, _ = parser.parse_known_args()
+
+    model_name = _normalize_legacy_model(args.model)
 
     sim = None
     host, port = args.ip, args.port
     if args.simulate:
-        sim = VirtualInstaxShareServer(port=18080, model=args.model, pin=args.pin)
+        sim = VirtualInstaxShareServer(port=18080, model=model_name, pin=args.pin)
         sim.start()
         host, port = "127.0.0.1", 18080
-        print(f"🟢 Started Virtual Instax SHARE {args.model} Simulator at {host}:{port}")
+        print(f"🟢 Started Virtual Instax SHARE {model_name} Simulator at {host}:{port}")
 
     client = LegacyInstaxClient(host=host, port=port, pin=args.pin)
 
@@ -455,10 +469,11 @@ def main():
         sys.exit(1)
 
     img = Image.open(args.image)
-    planar = encode_planar_rgb(img, args.model)
+    fit_mode = "fit" if args.fit else "crop"
+    planar = encode_planar_rgb(img, model_name, fit_mode=fit_mode)
     result = client.print_planar_rgb(
         planar,
-        model_name=args.model,
+        model_name=model_name,
         dry_run=args.dry_run,
         progress_cb=lambda frac, msg: print(f"[{int(frac * 100):3d}%] {msg}"),
     )
@@ -467,3 +482,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

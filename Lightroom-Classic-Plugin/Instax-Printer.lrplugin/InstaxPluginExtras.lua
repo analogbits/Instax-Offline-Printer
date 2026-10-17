@@ -13,16 +13,33 @@ local function shellQuote(value)
 	return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
 end
 
+local function winQuote(value)
+	return '"' .. tostring(value):gsub('"', '\\"') .. '"'
+end
+
 local function isLegacySPModel(model)
 	return model == "sp1" or model == "sp2" or model == "sp3"
 end
 
 local function getCliPath(model)
 	local pluginPath = _PLUGIN.path
+	local isWin = (WIN_ENV == true)
+
+	if isWin then
+		if isLegacySPModel(model) then
+			return LrPathUtils.child(pluginPath, "bin/win/legacy-instax.bat")
+		end
+		return LrPathUtils.child(pluginPath, "bin/win/instax-square.bat")
+	end
+
 	if isLegacySPModel(model) then
 		local bundledLegacy = LrPathUtils.child(pluginPath, "bin/mac/legacy-instax")
 		if LrFileUtils.exists(bundledLegacy) then
 			return bundledLegacy
+		end
+		local linuxLegacy = LrPathUtils.child(pluginPath, "bin/linux/legacy-instax")
+		if LrFileUtils.exists(linuxLegacy) then
+			return linuxLegacy
 		end
 		if LrFileUtils.exists("/usr/local/bin/legacy-instax") then
 			return "/usr/local/bin/legacy-instax"
@@ -33,6 +50,10 @@ local function getCliPath(model)
 	local bundledCli = LrPathUtils.child(pluginPath, "bin/mac/instax-square")
 	if LrFileUtils.exists(bundledCli) then
 		return bundledCli
+	end
+	local linuxCli = LrPathUtils.child(pluginPath, "bin/linux/instax-square")
+	if LrFileUtils.exists(linuxCli) then
+		return linuxCli
 	end
 	if LrFileUtils.exists("/usr/local/bin/instax-square") then
 		return "/usr/local/bin/instax-square"
@@ -46,9 +67,10 @@ local function executeWithOutput(cliPath, arguments)
 	)
 	local exitPath = outputPath .. ".exit"
 	local helperPath = LrPathUtils.child(_PLUGIN.path, "bin/mac/InstaxCLIHelper.app")
+	local isWin = (WIN_ENV == true)
 
 	local launchExitCode
-	if LrFileUtils.exists(helperPath) then
+	if (not isWin) and LrFileUtils.exists(helperPath) then
 		local commandParts = {
 			"/usr/bin/open",
 			"-W",
@@ -62,12 +84,19 @@ local function executeWithOutput(cliPath, arguments)
 			table.insert(commandParts, shellQuote(argument))
 		end
 		launchExitCode = LrTasks.execute(table.concat(commandParts, " "))
-	else
-		local directParts = { string.format('"%s"', cliPath) }
+	elseif isWin then
+		local winParts = { winQuote(cliPath) }
 		for _, argument in ipairs(arguments) do
-			table.insert(directParts, string.format('"%s"', tostring(argument)))
+			table.insert(winParts, winQuote(argument))
 		end
-		launchExitCode = LrTasks.execute(table.concat(directParts, " ") .. string.format(' > "%s" 2>&1', outputPath))
+		local cmdLine = string.format('cmd.exe /C "%s > %s 2>&1"', table.concat(winParts, " "), winQuote(outputPath))
+		launchExitCode = LrTasks.execute(cmdLine)
+	else
+		local directParts = { shellQuote(cliPath) }
+		for _, argument in ipairs(arguments) do
+			table.insert(directParts, shellQuote(argument))
+		end
+		launchExitCode = LrTasks.execute(table.concat(directParts, " ") .. string.format(' > %s 2>&1', shellQuote(outputPath)))
 	end
 
 	local output = LrFileUtils.readFile(outputPath) or ""
