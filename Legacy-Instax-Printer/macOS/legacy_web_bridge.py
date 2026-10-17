@@ -10,7 +10,9 @@ INSTAX-XXXXXXXX Wi-Fi Direct networks.
 Provides:
 - Mobile Safari & iPhone / iPad Wi-Fi access over local network
 - Suppressed socket reset / broken pipe errors from iOS Safari speculative connections
-- REST endpoints: /api/bridge-ping, /api/scan, /api/status, /api/print
+- Real OS Wi-Fi access point scanning (macOS CoreWLAN, Windows netsh, Linux nmcli)
+- Subnet TCP 8080 probe for live Instax SHARE hardware
+- Dedicated /api/wifi-test diagnostics endpoint
 - Built-in Virtual SP-1/2/3 TCP simulator support (127.0.0.1:18080)
 """
 
@@ -20,14 +22,14 @@ import json
 import os
 import platform
 import socket
+import struct
+import subprocess
 import sys
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-# Resolve paths to locate legacy_instax_printer.py
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
 
 # Look for legacy_instax_printer in common directories
 for cand in [
@@ -41,16 +43,16 @@ for cand in [
 
 try:
     from legacy_instax_printer import (
+        MODELS,
         LegacyInstaxClient,
         VirtualInstaxShareServer,
-        scan_wifi_and_printers,
     )
     HAS_LEGACY_MODULE = True
 except ImportError:
     HAS_LEGACY_MODULE = False
+    MODELS = {}
     LegacyInstaxClient = None
     VirtualInstaxShareServer = None
-    scan_wifi_and_printers = None
 
 SIM_SERVER = VirtualInstaxShareServer(port=18080, model="SP-2", pin=1111) if VirtualInstaxShareServer else None
 
@@ -71,6 +73,204 @@ def get_lan_ip() -> str:
             return "127.0.0.1"
 
 
+def get_connected_wifi_ssid() -> str:
+    """Get the currently connected Wi-Fi SSID on macOS, Windows, or Linux."""
+    sys_name = platform.system().lower()
+    try:
+        if "darwin" in sys_name:
+            out = subprocess.check_output(["networksetup", "-getairportnetwork", "en0"], text=True, errors="ignore", timeout=3)
+            if "Current Wi-Fi Network:" in out:
+                return out.split(":", 1)[1].strip()
+        elif "windows" in sys_name:
+            out = subprocess.check_output(["netsh", "wlan", "show", "interfaces"], text=True, errors="ignore", timeout=4)
+            for line in out.splitlines():
+                if "SSID" in line and "BSSID" not in line and ":" in line:
+                    return line.split(":", 1)[1].strip()
+        elif "linux" in sys_name:
+            out = subprocess.check_output(["nmcli", "-t", "-f", "active,ssid", "dev", "wifi"], text=True, errors="ignore", timeout=4)
+            for line in out.splitlines():
+                if line.startswith("yes:"):
+                    return line.split(":", 1)[1].strip()
+    except Exception:
+        pass
+    return "Not Connected"
+
+
+def scan_all_nearby_wifi() -> list:
+    """Scan all nearby Wi-Fi networks using native OS tools."""
+    networks = []
+    seen = set()
+    sys_name = platform.system().lower()
+
+    if "darwin" in sys_name:
+        # Fast native CoreWLAN scan via swift
+        swift_code = """
+import CoreWLAN
+if let iface = CWWiFiClient.shared().interface(), let list = try? iface.scanForNetworks(withName: nil) {
+    for n in list {
+        if let s = n.ssid, !s.isEmpty {
+            print("\\(s)|\\(n.rssiValue)")
+        }
+    }
+}
+"""
+        try:
+            proc = subprocess.run(["swift", "-"], input=swift_code, capture_output=True, text=True, timeout=5)
+            for line in proc.stdout.strip().splitlines():
+                if "|" in line:
+                    ssid, sig = line.split("|", 1)
+                    ssid = ssid.strip()
+                    if ssid and ssid not in seen:
+                        seen.add(ssid)
+                        networks.append({
+                            "ssid": ssid,
+                            "signal": f"{sig.strip()} dBm",
+                            "is_instax": "INSTAX" in ssid.upper(),
+                        })
+        except Exception:
+            pass
+
+        # Fallback to system_profiler if swift scan didn't populate
+        if not networks:
+            try:
+                out = subprocess.check_output(["system_profiler", "SPAirPortDataType"], text=True, errors="ignore", timeout=6)
+                in_other = False
+                for line in out.splitlines():
+                    if "Other Local Wi-Fi Networks:" in line:
+                        in_other = True
+                        continue
+                    if in_other:
+                        stripped = line.strip()
+                        if stripped.endswith(":") and not stripped.startswith("PHY") and not stripped.startswith("Channel") and not stripped.startswith("Security"):
+                            ssid = stripped[:-1].strip()
+                            if ssid and ssid not in seen:
+                                seen.add(ssid)
+                                networks.append({
+                                    "ssid": ssid,
+                                    "signal": "Visible",
+                                    "is_instax": "INSTAX" in ssid.upper(),
+                                })
+            except Exception:
+                pass
+
+    elif "windows" in sys_name:
+        try:
+            out = subprocess.check_output(["netsh", "wlan", "show", "networks", "mode=bssid"], text=True, errors="ignore", timeout=5)
+            curr_ssid = None
+            for line in out.splitlines():
+                line = line.strip()
+                if line.startswith("SSID") and ":" in line and "BSSID" not in line:
+                    curr_ssid = line.split(":", 1)[1].strip()
+                elif line.startswith("Signal") and ":" in line and curr_ssid:
+                    sig = line.split(":", 1)[1].strip()
+                    if curr_ssid and curr_ssid not in seen:
+                        seen.add(curr_ssid)
+                        networks.append({
+                            "ssid": curr_ssid,
+                            "signal": sig,
+                            "is_instax": "INSTAX" in curr_ssid.upper(),
+                        })
+                    curr_ssid = None
+        except Exception:
+            pass
+
+    elif "linux" in sys_name:
+        try:
+            out = subprocess.check_output(["nmcli", "-t", "-f", "SSID,SIGNAL", "dev", "wifi", "list"], text=True, errors="ignore", timeout=5)
+            for line in out.splitlines():
+                if ":" in line:
+                    ssid, sig = line.split(":", 1)
+                    ssid = ssid.strip()
+                    if ssid and ssid not in seen:
+                        seen.add(ssid)
+                        networks.append({
+                            "ssid": ssid,
+                            "signal": f"{sig.strip()}%",
+                            "is_instax": "INSTAX" in ssid.upper(),
+                        })
+        except Exception:
+            pass
+
+    # Sort so any INSTAX printers are at the top, then alphabetically
+    networks.sort(key=lambda x: (not x["is_instax"], x["ssid"].lower()))
+    return networks
+
+
+def probe_tcp_printer(host: str, port: int, timeout: float = 0.5) -> bool:
+    """Test raw TCP connection to an Instax SHARE printer."""
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except Exception:
+        return False
+
+
+def run_full_wifi_diagnostics(sim_port: int = 18080) -> dict:
+    """Run full Wi-Fi environment test and printer discovery."""
+    lan_ip = get_lan_ip()
+    connected_ssid = get_connected_wifi_ssid()
+    all_networks = scan_all_nearby_wifi()
+    instax_networks = [n for n in all_networks if n["is_instax"]]
+
+    # TCP Probes
+    hardware_printer_found = probe_tcp_printer("192.168.0.251", 8080, timeout=0.6)
+    alt_gw_found = probe_tcp_printer("192.168.0.1", 8080, timeout=0.4)
+    sim_found = probe_tcp_printer("127.0.0.1", sim_port, timeout=0.2)
+
+    # Build formatted dropdown items for UI
+    items = []
+    if hardware_printer_found:
+        items.append({
+            "label": "🟢 Discovered Live Instax Printer (192.168.0.251:8080)",
+            "ip": "192.168.0.251",
+            "port": 8080,
+            "status": "online",
+        })
+    if alt_gw_found:
+        items.append({
+            "label": "🟢 Discovered Printer on Gateway (192.168.0.1:8080)",
+            "ip": "192.168.0.1",
+            "port": 8080,
+            "status": "online",
+        })
+
+    # Add any nearby INSTAX-XXXXXXXX Wi-Fi networks found in the air
+    for instax in instax_networks:
+        items.append({
+            "label": f"📸 {instax['ssid']} ({instax['signal']}) — Connect in Wi-Fi Settings",
+            "ip": "192.168.0.251",
+            "port": 8080,
+            "ssid": instax["ssid"],
+            "status": "hotspot_found",
+        })
+
+    items.append({
+        "label": "🎯 Default Instax SHARE (192.168.0.251:8080)",
+        "ip": "192.168.0.251",
+        "port": 8080,
+        "status": "default",
+    })
+    items.append({
+        "label": "🧪 Built-in Virtual SP-1/2/3 Simulator (127.0.0.1:18080)",
+        "ip": "127.0.0.1",
+        "port": sim_port,
+        "is_simulator": True,
+        "status": "simulator",
+    })
+
+    return {
+        "ok": True,
+        "lan_ip": lan_ip,
+        "connected_ssid": connected_ssid,
+        "networks_count": len(all_networks),
+        "all_networks": all_networks,
+        "instax_networks": instax_networks,
+        "hardware_printer_reachable": hardware_printer_found,
+        "simulator_reachable": sim_found,
+        "items": items,
+    }
+
+
 class LegacyBridgeHandler(BaseHTTPRequestHandler):
     server_version = "LegacyInstaxBridge/1.5.4"
 
@@ -78,7 +278,6 @@ class LegacyBridgeHandler(BaseHTTPRequestHandler):
         try:
             super().handle()
         except (ConnectionResetError, BrokenPipeError, TimeoutError, socket.timeout, OSError):
-            # iOS Safari opens speculative preconnect sockets and terminates them with RST
             pass
 
     def log_message(self, fmt, *args):
@@ -136,15 +335,13 @@ class LegacyBridgeHandler(BaseHTTPRequestHandler):
                 "hostname": socket.gethostname(),
                 "lan_ip": lan_ip,
                 "lan_url": f"http://{lan_ip}:{port}",
+                "connected_wifi": get_connected_wifi_ssid(),
             })
             return
 
-        if path == "/api/scan":
-            if HAS_LEGACY_MODULE and scan_wifi_and_printers:
-                items = scan_wifi_and_printers(sim_port=18080)
-            else:
-                items = [{"label": "📡 Default Instax SHARE (192.168.0.251:8080)", "ip": "192.168.0.251", "port": 8080}]
-            self._send_json({"ok": True, "items": items})
+        if path in ("/api/scan", "/api/wifi-test"):
+            diag = run_full_wifi_diagnostics(sim_port=18080)
+            self._send_json(diag)
             return
 
         # Serve LegacyInstaxPrinterWeb.html at / or /LegacyInstaxPrinterWeb.html
@@ -152,24 +349,6 @@ class LegacyBridgeHandler(BaseHTTPRequestHandler):
             html_path = os.path.join(SCRIPT_DIR, "LegacyInstaxPrinterWeb.html")
             if os.path.isfile(html_path):
                 with open(html_path, "rb") as f:
-                    content = f.read()
-                try:
-                    self.send_response(200)
-                    self.send_header("Content-Type", "text/html; charset=utf-8")
-                    self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
-                    self.send_header("Connection", "close")
-                    self.send_header("Content-Length", str(len(content)))
-                    self.end_headers()
-                    self.wfile.write(content)
-                except (ConnectionResetError, BrokenPipeError, OSError):
-                    pass
-                return
-
-        # Also permit seamless switching to BLE Link Web App
-        if path.endswith("InstaxPrinterWeb.html"):
-            ble_html = os.path.join(REPO_ROOT, "Web-Bluetooth-Offline", "InstaxPrinterWeb.html")
-            if os.path.isfile(ble_html):
-                with open(ble_html, "rb") as f:
                     content = f.read()
                 try:
                     self.send_response(200)
@@ -199,12 +378,9 @@ class LegacyBridgeHandler(BaseHTTPRequestHandler):
         except Exception:
             data = {}
 
-        if path == "/api/scan":
-            if HAS_LEGACY_MODULE and scan_wifi_and_printers:
-                items = scan_wifi_and_printers(sim_port=18080)
-            else:
-                items = [{"label": "📡 Default Instax SHARE (192.168.0.251:8080)", "ip": "192.168.0.251", "port": 8080}]
-            self._send_json({"ok": True, "items": items})
+        if path in ("/api/scan", "/api/wifi-test"):
+            diag = run_full_wifi_diagnostics(sim_port=18080)
+            self._send_json(diag)
             return
 
         host = data.get("ip", "192.168.0.251")
@@ -255,19 +431,21 @@ def main():
     lan_ip = get_lan_ip()
     lan_url = f"http://{lan_ip}:{args.port}"
     local_url = f"http://127.0.0.1:{args.port}"
+    connected_wifi = get_connected_wifi_ssid()
 
     print("=" * 74)
     print("📸 LEGACY INSTAX WI-FI DIRECT BRIDGE (SP-1 • SP-2 • SP-3 • iPhone / Safari)")
     print("=" * 74)
     print(f"  🟢 Status:          Running on {platform.system()} ({socket.gethostname()})")
+    print(f"  📶 Connected Wi-Fi: {connected_wifi}")
     print(f"  📱 iPhone / iPad:   Open Safari on your phone and go to:")
     print(f"                      👉  {lan_url}")
     print(f"  💻 This Computer:   {local_url}")
     print("-" * 74)
     print("  💡 How it works:")
-    print("     1. Keep this window open on your computer (computer connected to home Wi-Fi).")
+    print("     1. Keep this window open on your computer.")
     print(f"     2. On your iPhone/iPad (connected to same Wi-Fi), open {lan_url} in Safari.")
-    print("     3. Pick photos from your iPhone camera roll & tap Print!")
+    print("     3. Pick photos from your camera roll & tap Print Over Wi-Fi Direct!")
     print("     (Press Ctrl+C to stop the bridge)")
     print("=" * 74)
 

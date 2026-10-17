@@ -3,220 +3,134 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Legacy Instax Printer — Wi-Fi Direct Web Studio (SP-1 • SP-2 • SP-3)</title>
+<title>Legacy Instax Printer — Wi-Fi Direct Studio (SP-1 • SP-2 • SP-3)</title>
 <style>
   :root {
-    --bg: #0f1013;
-    --card: #18191f;
-    --card-inner: #20222a;
-    --border: #2e303b;
-    --accent: #d97706;
-    --accent-hover: #b45309;
+    --bg: #141417;
+    --panel: #1c1c21;
+    --card: #24242c;
+    --card-inner: #2b2b35;
+    --border: #383845;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --gold: #d4af37;
     --success: #22c55e;
     --success-hover: #16a34a;
-    --text: #f3f4f6;
-    --text-dim: #9ca3af;
-    --gold: #d4af37;
+    --amber: #f59e0b;
+    --text: #f4f4f6;
+    --muted: #a1a1aa;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    padding: 20px;
+    padding: 0;
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    min-height: 100vh;
   }
-  .app-container {
-    width: 100%;
-    max-width: 1100px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px 24px;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.6);
-  }
+
+  /* Top Wi-Fi Direct Connection Bar (matching Legacy Instax Printer app) */
   header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background: #1f1f26;
     border-bottom: 1px solid var(--border);
-    padding-bottom: 14px;
-    margin-bottom: 18px;
+    padding: 10px 16px;
+    display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    align-items: center;
+    gap: 10px;
   }
-  h1 { font-size: 19px; margin: 0; display: flex; align-items: center; gap: 8px; }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+  }
   .brand-badge {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #111;
+    background: linear-gradient(135deg, #e5c88f, #b38f52);
+    color: #141417;
+    padding: 3px 7px;
+    border-radius: 5px;
     font-size: 11px;
     font-weight: 800;
-    padding: 3px 8px;
-    border-radius: 6px;
-    letter-spacing: 0.5px;
-  }
-  .badges-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .badge {
-    background: rgba(217, 119, 6, 0.15);
-    color: #fbbf24;
-    border: 1px solid rgba(217, 119, 6, 0.35);
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-  }
-  .badge.green {
-    background: rgba(34, 197, 94, 0.15);
-    color: #4ade80;
-    border-color: rgba(34, 197, 94, 0.3);
-  }
-  .badge.blue {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-    border-color: rgba(59, 130, 246, 0.3);
   }
 
-  .main-layout {
-    display: grid;
-    grid-template-columns: 1fr 390px;
-    gap: 20px;
-  }
-  @media (max-width: 900px) {
-    body { padding: 10px; }
-    .app-container { padding: 14px; }
-    .main-layout { grid-template-columns: 1fr; }
-  }
-
-  /* Left: Preview Area */
-  .preview-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: #090a0d;
+  select, input[type="text"], input[type="number"], input[type="color"] {
+    background: var(--card);
+    color: var(--text);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-  }
-  .canvas-wrapper {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    min-height: 420px;
-    overflow: hidden;
-  }
-  canvas {
-    max-width: 100%;
-    max-height: 440px;
-    border: 1px solid #444;
     border-radius: 6px;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.55);
-    cursor: grab;
-    background: #fff;
-    touch-action: none;
-  }
-  canvas:active { cursor: grabbing; }
-
-  .toolbar {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-    margin-top: 14px;
-    flex-wrap: wrap;
+    padding: 6px 9px;
+    font-size: 12px;
+    outline: none;
   }
 
   button {
     background: var(--accent);
-    color: white;
+    color: #fff;
     border: none;
-    padding: 8px 13px;
     border-radius: 6px;
-    font-size: 13px;
+    padding: 6px 12px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
+    gap: 5px;
   }
   button:hover { background: var(--accent-hover); }
-  button:disabled { background: #2d3039; color: #6b7280; cursor: not-allowed; }
-  button.secondary { background: #242630; color: var(--text); border: 1px solid var(--border); }
-  button.secondary:hover { background: #2d303c; }
+  button.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  button.secondary:hover { background: #32323d; }
+  button.amber { background: var(--amber); color: #111; font-weight: 700; }
+  button.amber:hover { background: #d97706; }
   button.success { background: var(--success); color: #08210e; font-weight: 700; }
   button.success:hover { background: var(--success-hover); }
 
-  select, input[type="range"], input[type="color"], input[type="text"], input[type="number"] {
-    background: #242630;
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 7px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    outline: none;
+  /* 3-Panel Main Layout (Matching Desktop App) */
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 255px 1fr 330px;
+    min-height: 0;
   }
-  select { width: 100%; }
+  @media (max-width: 980px) {
+    main {
+      display: flex;
+      flex-direction: column;
+    }
+  }
 
-  /* Right Sidebar Controls */
-  .sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+  .sidebar, .inspector {
+    background: var(--panel);
+    padding: 14px;
+    overflow-y: auto;
   }
-  .card-group {
+  .sidebar { border-right: 1px solid var(--border); }
+  .inspector { border-left: 1px solid var(--border); }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 12px 0 6px;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  /* 10-LED Film Counter Card */
+  .led-card {
     background: var(--card-inner);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 12px 14px;
+    padding: 10px;
+    margin-bottom: 12px;
   }
-  .card-title {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .tabs-nav {
-    display: flex;
-    gap: 4px;
-    background: #17181f;
-    padding: 3px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-  }
-  .tab-btn {
-    flex: 1;
-    background: transparent;
-    color: var(--text-dim);
-    font-size: 12px;
-    padding: 6px;
-    border-radius: 4px;
-  }
-  .tab-btn.active {
-    background: var(--accent);
-    color: white;
-  }
-
-  .field-row { margin-bottom: 10px; }
-  .field-row:last-child { margin-bottom: 0; }
-  .field-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    margin-bottom: 4px;
-    color: var(--text-dim);
-  }
-  .field-value { font-family: monospace; color: var(--text); }
-
   .led-row {
     display: flex;
     gap: 6px;
@@ -226,7 +140,7 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #383a45;
+    background: #3f3f4b;
     transition: background 0.2s, box-shadow 0.2s;
   }
   .led.on {
@@ -238,324 +152,433 @@
     box-shadow: 0 0 6px #f59e0b;
   }
 
-  .bar-wrap { margin-top: 10px; }
-  .bar-bg {
-    width: 100%;
-    height: 7px;
-    background: #1a1b22;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  .bar-fill {
-    width: 0%;
-    height: 100%;
-    background: var(--success);
-    transition: width 0.15s;
-  }
-
-  .log-console {
-    background: #090a0d;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px;
-    font-family: Consolas, monospace;
-    font-size: 10px;
-    color: #4ade80;
-    height: 95px;
-    overflow-y: auto;
-    margin-top: 10px;
-    white-space: pre-wrap;
-  }
-
-  .bridge-banner {
-    background: rgba(34, 197, 94, 0.12);
-    border: 1px solid rgba(34, 197, 94, 0.35);
-    color: #86efac;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 12px;
-    margin-bottom: 16px;
-    display: none;
+  /* Center: Classic Polaroid Frame Preview */
+  .preview-area {
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: space-between;
+    padding: 18px;
+    background: #0d0d10;
+    overflow-y: auto;
+  }
+  .polaroid-frame {
+    background: #f8f7f2;
+    padding: 18px 18px 36px 18px;
+    border-radius: 12px;
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.65);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 90%;
+  }
+  canvas {
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,0.15);
+    max-height: 430px;
+    width: auto;
+    cursor: grab;
+    touch-action: none;
+    background: #fff;
+  }
+  canvas:active { cursor: grabbing; }
+
+  .polaroid-footer {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #71717a;
+  }
+
+  .action-buttons-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Right: Inspector Tabs & Controls */
+  .tabs-nav {
+    display: flex;
+    gap: 4px;
+    background: #15151a;
+    padding: 3px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  .tab-btn {
+    flex: 1;
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 6px 4px;
+    border-radius: 4px;
+    border: none;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .control-group { margin-bottom: 11px; }
+  .control-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 4px;
+    color: #d4d4d8;
+  }
+  input[type="range"] { width: 100%; }
+
+  /* Bottom Status & Activity Bar */
+  footer {
+    background: #181820;
+    border-top: 1px solid var(--border);
+    padding: 8px 16px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  /* Wi-Fi Diagnostic Modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 14px;
+  }
+  .modal-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 650px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+  }
+  .modal-header {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-body {
+    padding: 16px 18px;
+    overflow-y: auto;
+    font-size: 12px;
+  }
+  .wifi-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  .wifi-table th, .wifi-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  .wifi-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+  .instax-highlight {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    font-weight: 700;
   }
 </style>
 </head>
 <body>
 
-<div class="app-container">
+  <!-- Top Wi-Fi Direct Connection Bar (matching Legacy Instax Printer application) -->
   <header>
-    <div>
-      <h1>
-        <span class="brand-badge">SP-1 • SP-2 • SP-3</span>
-        Legacy Instax Printer — Wi-Fi Direct Web Studio
-      </h1>
-      <div style="font-size: 12px; color: var(--text-dim); margin-top: 3px;">
-        100% offline TCP protocol studio for Fujifilm Instax SHARE — supports iPhone &amp; iPad Safari over Local Wi-Fi
-      </div>
+    <div class="brand">
+      <span class="brand-badge">SP-1 • SP-2 • SP-3</span>
+      <span>Legacy Instax Printer</span>
     </div>
-    <div class="badges-row">
-      <a href="../../Web-Bluetooth-Offline/InstaxPrinterWeb.html" style="font-size: 11px; font-weight: 600; color: #60a5fa; text-decoration: none; background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(59, 130, 246, 0.35); padding: 4px 9px; border-radius: 6px;">🔵 Modern BLE Link Printer? Switch Here →</a>
-      <span class="badge" id="badgeFilm">Film: --/10</span>
-      <span class="badge" id="badgeBattery">Battery: --/4</span>
-      <span class="badge green">100% Offline</span>
+
+    <!-- Wi-Fi Direct Selector & Scanner -->
+    <div style="display: flex; align-items: center; gap: 5px;">
+      <select id="wifiSelect" style="min-width: 240px;" onchange="actionWifiSelectChange()">
+        <option value="default-sp">🎯 Default Instax SHARE (192.168.0.251:8080)</option>
+        <option value="alt-gw">📡 Alternate Router Gateway (192.168.0.1:8080)</option>
+        <option value="simulator">🧪 Virtual SP-1/2/3 Simulator (127.0.0.1:18080)</option>
+      </select>
+      <button class="secondary" id="btnScan" onclick="scanWiFi()">🔍 Scan Wi-Fi</button>
+      <button class="secondary" id="btnTest" onclick="openWiFiDiagnostics()" title="View all detected Wi-Fi points & probe results">📶 Wi-Fi Test / Points</button>
     </div>
+
+    <!-- Model Selector -->
+    <select id="modelSelect" onchange="actionModelChange()">
+      <option value="SP-2" selected>Instax SHARE SP-2 (Mini HD • 600×800)</option>
+      <option value="SP-1">Instax SHARE SP-1 (Mini • 600×800)</option>
+      <option value="SP-3">Instax SHARE SP-3 (SQUARE • 800×800)</option>
+    </select>
+
+    <!-- IP, Port & PIN -->
+    <label style="font-size:12px; display:flex; align-items:center; gap:3px;">
+      IP <input type="text" id="printerIp" value="192.168.0.251" style="width:105px;" />
+    </label>
+    <label style="font-size:12px; display:flex; align-items:center; gap:3px;">
+      Port <input type="number" id="printerPort" value="8080" style="width:60px;" />
+    </label>
+    <label style="font-size:12px; display:flex; align-items:center; gap:3px;">
+      PIN <input type="text" id="printerPin" value="1111" style="width:50px;" />
+    </label>
+
+    <button id="connectBtn" onclick="connectPrinter()">📡 Connect / Status</button>
+
+    <label style="font-size:12px; display:flex; align-items:center; gap:5px; margin-left:auto; cursor:pointer;">
+      <input type="checkbox" id="simToggle" onchange="actionSimToggleChange()" /> Virtual SP Simulator
+    </label>
+    <label style="font-size:12px; display:flex; align-items:center; gap:5px; color:var(--amber); cursor:pointer;">
+      <input type="checkbox" id="dryRunToggle" /> Dry Run (0-Film)
+    </label>
   </header>
 
-  <!-- Dynamic Wi-Fi Bridge Banner -->
-  <div id="bridgeBanner" class="bridge-banner">
-    <div id="bridgeBannerText">🟢 <b>Local Wi-Fi Bridge Active</b> • iPhone Safari Ready</div>
-    <div id="bridgeBannerUrl" style="font-family: monospace; font-weight: 700;"></div>
-  </div>
+  <!-- 3-Panel Main Layout (Matching Desktop App) -->
+  <main>
+    <!-- Left Panel: 10-LED Gauge & Photo Source -->
+    <aside class="sidebar">
+      <div class="section-title">10-LED Film Counter</div>
+      <div class="led-card">
+        <div class="led-row" id="ledRow"></div>
+        <div id="telemetryLabel" style="font-size:11px; color:var(--muted); margin-top:2px;">Not Connected • —/10 • Batt —</div>
+        <div id="historyLabel" style="font-size:10px; color:var(--muted); margin-top:3px;">Lifetime Counter: — (Offline)</div>
+      </div>
 
-  <div class="main-layout">
-    <!-- Left: Preview Canvas & Editing Controls -->
-    <div class="preview-section">
-      <div class="canvas-wrapper">
+      <div class="section-title">Photo Source</div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none;" />
+      <button class="secondary" style="width:100%; justify-content:center; padding:8px; margin-bottom:6px;" onclick="document.getElementById('fileInput').click()">📂 Open Image File...</button>
+      <button class="secondary" style="width:100%; justify-content:center; padding:7px; margin-bottom:6px;" onclick="actionTestCard()">✨ Generate Test Card</button>
+      <button class="secondary" style="width:100%; justify-content:center; padding:7px; margin-bottom:12px;" onclick="actionRotate(90)">🔄 Rotate 90°</button>
+
+      <div class="section-title">Wi-Fi Direct Guide</div>
+      <div style="font-size:11px; line-height:1.45; color:var(--muted); background:var(--card-inner); padding:10px; border-radius:6px; border:1px solid var(--border);">
+        1. Power on your <b>Instax SHARE SP-1, SP-2 or SP-3</b>.<br>
+        2. Open Wi-Fi settings on your device and join <b>INSTAX-XXXXXXXX</b>.<br>
+        3. Factory default Wi-Fi password is <code>11111111</code>, default PIN is <code>1111</code>.<br>
+        4. Tap <b>Connect / Status</b> or <b>Print Over Wi-Fi Direct</b>!
+      </div>
+    </aside>
+
+    <!-- Center Panel: Polaroid Frame Preview -->
+    <section class="preview-area">
+      <div class="polaroid-frame">
         <canvas id="photoCanvas" width="600" height="800"></canvas>
-      </div>
-
-      <!-- Quick Action Toolbar -->
-      <div class="toolbar">
-        <input type="file" id="fileInput" accept="image/*" style="display: none;">
-        <button class="secondary" onclick="document.getElementById('fileInput').click()">📁 Add Photo...</button>
-        <button class="secondary" onclick="actionRotate(-90)">↺ Rotate 90°</button>
-        <button class="secondary" onclick="actionRotate(90)">Rotate 90° ↻</button>
-        <button class="secondary" onclick="actionResetFraming()">Reset Framing</button>
-        <button class="secondary" onclick="actionTestCard()">🎨 Test Card</button>
-        <button class="secondary" onclick="actionSaveImage()">💾 Save Image</button>
-      </div>
-
-      <div style="display: flex; justify-content: space-between; width: 100%; font-size: 11px; color: var(--text-dim); margin-top: 8px;">
-        <span id="canvasInfo">Target: 600 × 800 px (Instax SHARE SP-2)</span>
-        <span>Drag photo to pan</span>
-      </div>
-    </div>
-
-    <!-- Right Sidebar Controls -->
-    <div class="sidebar">
-      <!-- 1. Connection Card -->
-      <div class="card-group">
-        <div class="card-title">
-          <span>1. Instax SHARE Wi-Fi</span>
-          <span id="statusBadge" style="color: #9ca3af; text-transform: none; font-size: 11px;">Not connected</span>
+        <div class="polaroid-footer">
+          <span id="frameModelBadge">FUJIFILM instax SHARE SP-2</span>
+          <span id="frameCollageBadge">Single Photo</span>
         </div>
+      </div>
 
-        <div class="field-row">
-          <div class="field-label"><span>Discovered Wi-Fi / IP Option</span></div>
-          <select id="wifiSelect" onchange="actionWifiSelectChange()">
-            <option value="default-sp">📡 Default Instax SHARE (192.168.0.251:8080)</option>
-            <option value="alt-gw">📡 Alternate Router Gateway (192.168.0.1:8080)</option>
-            <option value="simulator">🧪 Built-in Virtual SP Simulator (127.0.0.1:18080)</option>
+      <!-- Action Buttons -->
+      <div class="action-buttons-row">
+        <button class="success" id="printBtn" style="padding:10px 18px; font-size:13px;" onclick="runPrint(false)">🖨 Print Over Wi-Fi Direct</button>
+        <button class="amber" id="dryRunBtn" style="padding:10px 16px; font-size:13px;" onclick="runPrint(true)">🧪 Dry Run (0-Film Verification)</button>
+        <button class="secondary" id="exportPngBtn" onclick="actionSaveImage()">💾 Export Framed PNG</button>
+        <button class="secondary" onclick="actionResetFraming()">↺ Reset</button>
+      </div>
+    </section>
+
+    <!-- Right Panel: Creative Studio Inspector -->
+    <aside class="inspector">
+      <div class="tabs-nav">
+        <button class="tab-btn active" id="tabFramingBtn" onclick="showTab('framing')">Framing</button>
+        <button class="tab-btn" id="tabFilterBtn" onclick="showTab('filter')">Filters</button>
+        <button class="tab-btn" id="tabCollageBtn" onclick="showTab('collage')">Collage</button>
+        <button class="tab-btn" id="tabQRBtn" onclick="showTab('qr')">QR &amp; Text</button>
+      </div>
+
+      <!-- Tab 1: Framing -->
+      <div id="tabFramingContent">
+        <div class="control-group">
+          <label>Fit Mode</label>
+          <select id="fitMode" onchange="renderCanvas()">
+            <option value="fill">Fill Canvas (Crop)</option>
+            <option value="fit">Fit Entire Image (Letterbox Border)</option>
           </select>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 75px 65px; gap: 6px; margin-bottom: 8px;">
-          <div>
-            <div class="field-label"><span>IP Address</span></div>
-            <input type="text" id="printerIp" value="192.168.0.251" style="width: 100%;">
-          </div>
-          <div>
-            <div class="field-label"><span>Port</span></div>
-            <input type="number" id="printerPort" value="8080" style="width: 100%;">
-          </div>
-          <div>
-            <div class="field-label"><span>PIN</span></div>
-            <input type="text" id="printerPin" value="1111" style="width: 100%;">
-          </div>
+        <div class="control-group">
+          <label><span>Zoom</span><span id="valZoom">1.00×</span></label>
+          <input type="range" id="sliderZoom" min="1.0" max="3.0" step="0.05" value="1.0" oninput="renderCanvas()" />
         </div>
 
-        <div style="display: flex; gap: 8px;">
-          <button id="btnConnect" onclick="connectPrinter()" style="flex: 1;">📡 Connect / Status</button>
-          <button class="secondary" id="btnScan" onclick="scanWiFi()">🔍 Scan Wi-Fi</button>
+        <div class="control-group">
+          <label><span>Horizontal Pan (X)</span><span id="valPanX">0.00</span></label>
+          <input type="range" id="sliderPanX" min="-1.0" max="1.0" step="0.01" value="0.0" oninput="renderCanvas()" />
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px;">
-          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-            <input type="checkbox" id="simToggle" onchange="actionSimToggleChange()"> Virtual SP Simulator
-          </label>
-          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #f59e0b;">
-            <input type="checkbox" id="dryRunToggle"> Dry Run (0 Film)
-          </label>
+        <div class="control-group">
+          <label><span>Vertical Pan (Y)</span><span id="valPanY">0.00</span></label>
+          <input type="range" id="sliderPanY" min="-1.0" max="1.0" step="0.01" value="0.0" oninput="renderCanvas()" />
         </div>
 
-        <!-- 10-LED Hardware Gauge -->
-        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border);">
-          <div class="field-label">
-            <span>10-LED Film Counter</span>
-            <span id="telemetryText" style="color: var(--text-dim);">Offline</span>
-          </div>
-          <div class="led-row" id="ledRow"></div>
-          <div id="lifetimeText" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">Lifetime Prints: —</div>
+        <div class="control-group">
+          <label>Letterbox Matte Color</label>
+          <input type="color" id="bgColorPicker" value="#ffffff" onchange="renderCanvas()" style="width:100%; height:32px; padding:2px;" />
         </div>
       </div>
 
-      <!-- 2. Settings Tabs -->
-      <div class="card-group">
-        <div class="tabs-nav">
-          <button class="tab-btn active" id="tabFramingBtn" onclick="showTab('framing')">Framing</button>
-          <button class="tab-btn" id="tabColorBtn" onclick="showTab('color')">Film & Filters</button>
-          <button class="tab-btn" id="tabCollageBtn" onclick="showTab('collage')">Collage</button>
-          <button class="tab-btn" id="tabQRBtn" onclick="showTab('qr')">QR & Text</button>
+      <!-- Tab 2: Filters -->
+      <div id="tabFilterContent" style="display:none;">
+        <div class="control-group">
+          <label>Artistic Preset</label>
+          <select id="filterPreset" onchange="renderCanvas()">
+            <option value="none">Normal (Original Natural)</option>
+            <option value="fuji">Fujifilm Intelligence (Vibrant Contrast)</option>
+            <option value="mono">Monochrome (Rich B&amp;W)</option>
+            <option value="sepia">Vintage Sepia Warmth</option>
+            <option value="vivid">Vivid Velvia (Punchy Saturation)</option>
+          </select>
         </div>
 
-        <!-- Framing Tab Content -->
-        <div id="tabFramingContent">
-          <div class="field-row">
-            <div class="field-label"><span>Printer Model</span></div>
-            <select id="modelSelect" onchange="actionModelChange()">
-              <option value="SP-2" selected>Instax SHARE SP-2 (Mini HD • 600×800)</option>
-              <option value="SP-1">Instax SHARE SP-1 (Mini • 600×800)</option>
-              <option value="SP-3">Instax SHARE SP-3 (SQUARE • 800×800)</option>
-            </select>
-          </div>
-
-          <div class="field-row">
-            <div class="field-label"><span>Fit Mode</span></div>
-            <select id="fitModeSelect" onchange="renderCanvas()">
-              <option value="crop">Fill Canvas (Crop)</option>
-              <option value="fit">Fit Entire Image (Matte Border)</option>
-            </select>
-          </div>
-
-          <div class="field-row">
-            <div class="field-label"><span>Zoom</span><span class="field-value" id="valZoom">1.00×</span></div>
-            <input type="range" id="sliderZoom" min="1.0" max="3.0" step="0.05" value="1.0" oninput="renderCanvas()" style="width: 100%;">
-          </div>
-
-          <div class="field-row">
-            <div class="field-label"><span>Pan X</span><span class="field-value" id="valPanX">0.00</span></div>
-            <input type="range" id="sliderPanX" min="-1.0" max="1.0" step="0.01" value="0.0" oninput="renderCanvas()" style="width: 100%;">
-          </div>
-
-          <div class="field-row">
-            <div class="field-label"><span>Pan Y</span><span class="field-value" id="valPanY">0.00</span></div>
-            <input type="range" id="sliderPanY" min="-1.0" max="1.0" step="0.01" value="0.0" oninput="renderCanvas()" style="width: 100%;">
-          </div>
-
-          <div class="field-row">
-            <div class="field-label"><span>Border Matte Color</span></div>
-            <input type="color" id="bgColorPicker" value="#ffffff" onchange="renderCanvas()" style="width: 100%; height: 32px; padding: 2px;">
-          </div>
+        <div class="control-group">
+          <label><span>Brightness</span><span id="valBright">0.00</span></label>
+          <input type="range" id="sliderBright" min="-0.5" max="0.5" step="0.02" value="0.0" oninput="renderCanvas()" />
         </div>
 
-        <!-- Film & Filters Tab Content -->
-        <div id="tabColorContent" style="display: none;">
-          <div class="field-row">
-            <div class="field-label"><span>Artistic Filter Preset</span></div>
-            <select id="filterPresetSelect" onchange="renderCanvas()">
-              <option value="none">None (Original Natural)</option>
-              <option value="fuji">Fujifilm Intelligence (Vibrant + Contrast)</option>
-              <option value="vivid">Vivid Velvia (Punchy Saturation)</option>
-              <option value="mono">Monochrome (Rich Black &amp; White)</option>
-              <option value="sepia">Vintage Sepia Warmth</option>
-            </select>
-          </div>
-
-          <div class="field-row">
-            <div class="field-label"><span>Brightness</span><span class="field-value" id="valBright">0.00</span></div>
-            <input type="range" id="sliderBright" min="-0.5" max="0.5" step="0.02" value="0.0" oninput="renderCanvas()" style="width: 100%;">
-          </div>
-
-          <div class="field-row">
-            <div class="field-label"><span>Contrast</span><span class="field-value" id="valContrast">1.00</span></div>
-            <input type="range" id="sliderContrast" min="0.5" max="1.6" step="0.05" value="1.0" oninput="renderCanvas()" style="width: 100%;">
-          </div>
-
-          <div class="field-row">
-            <div class="field-label"><span>Saturation</span><span class="field-value" id="valSat">1.00</span></div>
-            <input type="range" id="sliderSat" min="0.0" max="2.0" step="0.05" value="1.0" oninput="renderCanvas()" style="width: 100%;">
-          </div>
+        <div class="control-group">
+          <label><span>Contrast</span><span id="valContrast">1.00</span></label>
+          <input type="range" id="sliderContrast" min="0.5" max="1.6" step="0.05" value="1.0" oninput="renderCanvas()" />
         </div>
 
-        <!-- Collage Tab Content -->
-        <div id="tabCollageContent" style="display: none;">
-          <div class="field-row">
-            <div class="field-label"><span>Collage Layout</span></div>
-            <select id="collageLayoutSelect" onchange="renderCanvas()">
-              <option value="single">Single Photo</option>
-              <option value="splitV">2-Photo Split (Vertical)</option>
-              <option value="splitH">2-Photo Split (Horizontal)</option>
-              <option value="grid3">3-Photo Grid</option>
-              <option value="grid4">4-Photo 2×2 Grid</option>
-              <option value="grid6">6-Photo Contact Sheet</option>
-            </select>
-          </div>
-
-          <div class="field-row">
-            <div class="field-label"><span>Border Spacing</span><span class="field-value" id="valSpacing">6 px</span></div>
-            <input type="range" id="collageSpacing" min="0" max="24" step="2" value="6" oninput="renderCanvas()" style="width: 100%;">
-          </div>
-
-          <div style="display: flex; gap: 8px; margin-top: 8px;">
-            <input type="file" id="collageInput" multiple accept="image/*" style="display: none;">
-            <button class="secondary" onclick="document.getElementById('collageInput').click()" style="flex: 1;">➕ Add Collage Photos</button>
-            <button class="secondary" onclick="actionClearCollage()">Clear</button>
-          </div>
-          <div id="collageCountText" style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">0 additional collage photos loaded.</div>
-        </div>
-
-        <!-- QR & Text Tab Content -->
-        <div id="tabQRContent" style="display: none;">
-          <div class="field-row">
-            <div class="field-label"><span>Bottom Caption Text</span></div>
-            <input type="text" id="captionText" placeholder="e.g. Kyoto, Japan 🌸" oninput="renderCanvas()" style="width: 100%;">
-          </div>
-
-          <div class="field-row">
-            <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
-              <input type="checkbox" id="dateStampToggle" onchange="renderCanvas()"> Append Today's Date Stamp (YYYY.MM.DD)
-            </label>
-          </div>
-
-          <div class="field-row" style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border);">
-            <div class="field-label"><span>Overlay Scannable QR Code</span></div>
-            <select id="qrType" onchange="renderCanvas()">
-              <option value="none">None</option>
-              <option value="url">Website URL</option>
-              <option value="text">Plain Text / Note</option>
-            </select>
-          </div>
-
-          <div class="field-row" id="qrTextInputRow">
-            <div class="field-label"><span>QR Code Content</span></div>
-            <input type="text" id="qrText" placeholder="https://..." value="https://instagram.com" oninput="renderCanvas()" style="width: 100%;">
-          </div>
+        <div class="control-group">
+          <label><span>Saturation</span><span id="valSat">1.00</span></label>
+          <input type="range" id="sliderSat" min="0.0" max="2.0" step="0.05" value="1.0" oninput="renderCanvas()" />
         </div>
       </div>
 
-      <!-- 3. Print Actions & Progress -->
-      <div class="card-group">
-        <div class="card-title">
-          <span>3. Print &amp; Telemetry</span>
-          <span id="printStateText" style="color: #9ca3af; text-transform: none; font-size: 11px;">Ready</span>
+      <!-- Tab 3: Collage -->
+      <div id="tabCollageContent" style="display:none;">
+        <div class="control-group">
+          <label>Collage Layout</label>
+          <select id="collageLayout" onchange="renderCanvas()">
+            <option value="single">Single Photo</option>
+            <option value="splitV">2-Up Split (Vertical)</option>
+            <option value="splitH">2-Up Split (Horizontal)</option>
+            <option value="grid3">3-Photo Grid</option>
+            <option value="grid4">4-Photo 2×2 Grid</option>
+            <option value="grid6">6-Photo Contact Sheet</option>
+          </select>
         </div>
 
-        <div style="display: flex; gap: 8px;">
-          <button class="success" id="btnPrint" onclick="runPrint(false)" style="flex: 1; padding: 10px;">🖨 Print Physical Photo</button>
-          <button class="secondary" id="btnDryRun" onclick="runPrint(true)">🧪 Dry Run</button>
+        <div class="control-group">
+          <label><span>Collage Border Spacing</span><span id="spacingVal">6 px</span></label>
+          <input type="range" id="collageSpacing" min="0" max="28" step="2" value="6" oninput="renderCanvas()" />
         </div>
 
-        <div class="bar-wrap">
-          <div class="bar-bg">
-            <div class="bar-fill" id="printProgressBar"></div>
+        <input type="file" id="collageInput" multiple accept="image/*" style="display:none;" />
+        <button class="secondary" style="width:100%; margin-bottom:6px; justify-content:center;" onclick="document.getElementById('collageInput').click()">+ Add Collage Photos</button>
+        <button class="secondary" style="width:100%; justify-content:center;" onclick="actionClearCollage()">Clear Slots</button>
+      </div>
+
+      <!-- Tab 4: QR & Text -->
+      <div id="tabQRContent" style="display:none;">
+        <div class="control-group">
+          <label>Bottom Caption</label>
+          <input type="text" id="captionText" placeholder="e.g. Memory in Kyoto 🌸" oninput="renderCanvas()" style="width:100%;" />
+        </div>
+
+        <div class="control-group">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="dateStampToggle" onchange="renderCanvas()" /> Include Today's Date Stamp
+          </label>
+        </div>
+
+        <div class="control-group" style="margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
+          <label>Overlay Scannable QR Code</label>
+          <select id="qrType" onchange="renderCanvas()">
+            <option value="none">Off (No QR)</option>
+            <option value="url">Website URL</option>
+            <option value="text">Custom Text</option>
+          </select>
+        </div>
+
+        <div class="control-group" id="qrTextGroup">
+          <label>QR Code Content</label>
+          <input type="text" id="qrText" value="https://instagram.com" oninput="renderCanvas()" style="width:100%;" />
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Bottom Status Bar & Protocol Toggle -->
+  <footer>
+    <div id="statusText">Not Connected — Scan or select INSTAX-XXXXXXXX Wi-Fi from dropdown</div>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <span id="specHeadline" style="font-family:monospace; font-size:11px;">600 × 800 px (SP-2)</span>
+      <button class="secondary" style="padding:4px 8px; font-size:11px;" onclick="toggleConsole()">Protocol Console</button>
+    </div>
+  </footer>
+
+  <!-- Protocol Console Drawer -->
+  <div id="protocolConsoleDrawer" style="display:none; background:#09090c; border-top:1px solid var(--border); padding:10px 16px; max-height:140px; overflow-y:auto; font-family:monospace; font-size:11px; color:#4ade80; white-space:pre-wrap;"></div>
+
+  <!-- Dedicated Wi-Fi Diagnostics & Test Modal -->
+  <div class="modal-overlay" id="wifiModal" onclick="if(event.target===this) closeWiFiDiagnostics()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;">
+          <span>📶 Wi-Fi Access Points &amp; Diagnostics</span>
+          <span id="diagConnectedBadge" style="font-size:11px; padding:2px 7px; border-radius:5px; background:rgba(34,197,94,0.2); color:#4ade80;">Checking...</span>
+        </div>
+        <button class="secondary" onclick="closeWiFiDiagnostics()" style="padding:3px 8px;">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+          <div style="background:var(--card-inner); padding:10px; border-radius:6px; border:1px solid var(--border);">
+            <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700;">Host Network IP</div>
+            <div id="diagLanIp" style="font-size:13px; font-family:monospace; font-weight:700; margin-top:3px; color:#60a5fa;">—</div>
+          </div>
+          <div style="background:var(--card-inner); padding:10px; border-radius:6px; border:1px solid var(--border);">
+            <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700;">Hardware TCP 8080 Probe</div>
+            <div id="diagHardwareProbe" style="font-size:13px; font-weight:700; margin-top:3px;">Testing...</div>
           </div>
         </div>
 
-        <div class="log-console" id="logConsole"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+          <div style="font-weight:700; font-size:12px; color:var(--muted); text-transform:uppercase;">Nearby Wi-Fi Networks Found</div>
+          <button class="secondary" onclick="runDiagnosticsNow()" style="padding:4px 8px; font-size:11px;">🔄 Re-Scan Now</button>
+        </div>
+
+        <table class="wifi-table" id="wifiTable">
+          <thead>
+            <tr>
+              <th>SSID</th>
+              <th>Signal</th>
+              <th>Type</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="wifiTableBody">
+            <tr><td colspan="4" style="color:var(--muted); text-align:center;">Scanning nearby airwaves for Wi-Fi points &amp; Instax printers...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
-</div>
 
 <script>
-  // Hardware specifications for legacy Instax SHARE Wi-Fi Direct printers
   const MODELS = {
-    'SP-1': { width: 600, height: 800, segments: 24, label: 'Instax SHARE SP-1 (Mini • 600×800)' },
-    'SP-2': { width: 600, height: 800, segments: 24, label: 'Instax SHARE SP-2 (Mini HD • 600×800)' },
-    'SP-3': { width: 800, height: 800, segments: 32, label: 'Instax SHARE SP-3 (SQUARE • 800×800)' }
+    'SP-1': { width: 600, height: 800, segments: 24, label: 'Instax SHARE SP-1' },
+    'SP-2': { width: 600, height: 800, segments: 24, label: 'Instax SHARE SP-2' },
+    'SP-3': { width: 800, height: 800, segments: 32, label: 'Instax SHARE SP-3' }
   };
 
   const canvas = document.getElementById('photoCanvas');
@@ -570,15 +593,21 @@
   let totalPrints = null;
   let discoveredItems = [];
 
-  // Pan dragging state
+  // Pan dragging
   let isDragging = false;
   let dragStartX = 0, dragStartY = 0;
   let panStartX = 0, panStartY = 0;
 
   function log(msg) {
-    const el = document.getElementById('logConsole');
-    el.textContent += msg + '\n';
+    const el = document.getElementById('protocolConsoleDrawer');
+    const ts = new Date().toLocaleTimeString();
+    el.textContent += `[${ts}] ${msg}\n`;
     el.scrollTop = el.scrollHeight;
+  }
+
+  function toggleConsole() {
+    const el = document.getElementById('protocolConsoleDrawer');
+    el.style.display = (el.style.display === 'none') ? 'block' : 'none';
   }
 
   function getBridgeBase() {
@@ -588,25 +617,8 @@
     return 'http://127.0.0.1:8089';
   }
 
-  // Detect running Wi-Fi bridge
-  async function checkBridge() {
-    try {
-      const resp = await fetch(`${getBridgeBase()}/api/bridge-ping`, { cache: 'no-store' });
-      const d = await resp.json();
-      if (d.ok) {
-        const banner = document.getElementById('bridgeBanner');
-        const bannerText = document.getElementById('bridgeBannerText');
-        const bannerUrl = document.getElementById('bridgeBannerUrl');
-        banner.style.display = 'flex';
-        bannerText.innerHTML = `🟢 <b>Local Wi-Fi Bridge Active</b> (v${d.version || '1.5.4'} on ${d.hostname || 'Host'}) • Ready for iPhone / iPad Safari`;
-        bannerUrl.innerHTML = `<a href="${d.lan_url}" target="_blank" style="color:#4ade80; text-decoration:underline;">${d.lan_url}</a>`;
-        log(`[Wi-Fi Bridge] Active at ${d.lan_url}`);
-      }
-    } catch (_) {}
-  }
-
   function showTab(name) {
-    ['framing', 'color', 'collage', 'qr'].forEach(t => {
+    ['framing', 'filter', 'collage', 'qr'].forEach(t => {
       document.getElementById(`tab${capitalize(t)}Content`).style.display = (t === name ? 'block' : 'none');
       document.getElementById(`tab${capitalize(t)}Btn`).classList.toggle('active', t === name);
     });
@@ -619,42 +631,29 @@
     const lit = (isConnected && filmLeft !== null) ? filmLeft : 0;
     for (let i = 0; i < 10; i++) {
       const d = document.createElement('div');
-      if (i < lit) {
-        d.className = 'led ' + (lit <= 2 ? 'amber' : 'on');
-      } else {
-        d.className = 'led';
-      }
+      d.className = 'led' + (i < lit ? (lit <= 2 ? ' amber' : ' on') : '');
       row.appendChild(d);
     }
-
-    const bFilm = document.getElementById('badgeFilm');
-    const bBatt = document.getElementById('badgeBattery');
-    const tele = document.getElementById('telemetryText');
-    const life = document.getElementById('lifetimeText');
-
+    const tLbl = document.getElementById('telemetryLabel');
+    const hLbl = document.getElementById('historyLabel');
     if (isConnected && filmLeft !== null && batteryLevel !== null) {
-      bFilm.textContent = `Film: ${filmLeft}/10`;
-      bFilm.className = 'badge ' + (filmLeft <= 2 ? 'badge orange' : 'badge green');
-      bBatt.textContent = `Battery: ${batteryLevel}/4`;
-      tele.textContent = `${filmLeft}/10 Film • Batt ${batteryLevel}/4`;
-      tele.style.color = '#22c55e';
-      life.textContent = `Lifetime Prints: ${totalPrints ?? 0}`;
+      tLbl.textContent = `${filmLeft}/10 Left • Batt ${batteryLevel}/4`;
+      tLbl.style.color = '#22c55e';
+      hLbl.textContent = `Lifetime Printer Counter: ${totalPrints ?? 0} prints`;
     } else {
-      bFilm.textContent = 'Film: --/10';
-      bFilm.className = 'badge';
-      bBatt.textContent = 'Battery: --/4';
-      tele.textContent = 'Offline';
-      tele.style.color = 'var(--text-dim)';
-      life.textContent = 'Lifetime Prints: —';
+      tLbl.textContent = 'Not Connected • —/10 • Batt —';
+      tLbl.style.color = 'var(--muted)';
+      hLbl.textContent = 'Lifetime Printer Counter: — (Offline)';
     }
   }
 
   function actionModelChange() {
-    const model = document.getElementById('modelSelect').value;
-    const spec = MODELS[model];
+    const m = document.getElementById('modelSelect').value;
+    const spec = MODELS[m];
     canvas.width = spec.width;
     canvas.height = spec.height;
-    document.getElementById('canvasInfo').textContent = `Target: ${spec.width} × ${spec.height} px (${spec.label})`;
+    document.getElementById('frameModelBadge').textContent = `FUJIFILM instax SHARE ${m}`;
+    document.getElementById('specHeadline').textContent = `${spec.width} × ${spec.height} px (${m})`;
     renderCanvas();
   }
 
@@ -692,13 +691,14 @@
       batteryLevel = null;
       totalPrints = null;
       renderLEDs();
-      document.getElementById('statusBadge').textContent = 'Simulator off';
-      document.getElementById('statusBadge').style.color = '#9ca3af';
+      document.getElementById('statusText').textContent = 'Simulator off — Join INSTAX-XXXXXXXX Wi-Fi & click Connect';
     }
   }
 
   async function scanWiFi() {
-    log('Scanning for INSTAX-XXXXXXXX Wi-Fi Direct networks & printers...');
+    const sEl = document.getElementById('statusText');
+    sEl.textContent = 'Scanning nearby airwaves for Wi-Fi points & INSTAX printers...';
+    log('Scanning for Wi-Fi access points & probing Instax SHARE TCP 8080...');
     try {
       const resp = await fetch(`${getBridgeBase()}/api/scan`);
       const data = await resp.json();
@@ -712,19 +712,77 @@
           opt.textContent = it.label;
           sel.appendChild(opt);
         });
-        log(`Found ${discoveredItems.length} Wi-Fi / printer option(s).`);
+        const instaxCount = data.instax_networks ? data.instax_networks.length : 0;
+        sEl.textContent = `Found ${data.networks_count || discoveredItems.length} Wi-Fi point(s) • ${instaxCount} Instax network(s) • ${data.connected_ssid || 'Ready'}`;
+        log(`Scan complete: ${discoveredItems.length} options populated.`);
         return;
       }
     } catch (_) {}
-    log('Bridge offline or scanning via browser fallback.');
+    sEl.textContent = 'Bridge offline — enter printer IP manually or start Start-iPhone-WiFi-Bridge.';
+  }
+
+  // Dedicated Wi-Fi Diagnostics Modal
+  function openWiFiDiagnostics() {
+    document.getElementById('wifiModal').style.display = 'flex';
+    runDiagnosticsNow();
+  }
+  function closeWiFiDiagnostics() {
+    document.getElementById('wifiModal').style.display = 'none';
+  }
+
+  async function runDiagnosticsNow() {
+    const tbody = document.getElementById('wifiTableBody');
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted); text-align:center;">Scanning nearby airwaves...</td></tr>';
+    try {
+      const resp = await fetch(`${getBridgeBase()}/api/wifi-test`);
+      const d = await resp.json();
+      if (d.ok) {
+        document.getElementById('diagLanIp').textContent = d.lan_ip || '127.0.0.1';
+        document.getElementById('diagConnectedBadge').textContent = d.connected_ssid || 'Not Associated';
+        document.getElementById('diagConnectedBadge').style.background = d.connected_ssid && d.connected_ssid !== 'Not Connected' ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.2)';
+        document.getElementById('diagConnectedBadge').style.color = d.connected_ssid && d.connected_ssid !== 'Not Connected' ? '#4ade80' : '#f87171';
+
+        const hwEl = document.getElementById('diagHardwareProbe');
+        if (d.hardware_printer_reachable) {
+          hwEl.textContent = '🟢 Online (192.168.0.251:8080 Reachable!)';
+          hwEl.style.color = '#4ade80';
+        } else {
+          hwEl.textContent = '⚪ Offline (Join INSTAX-XXXXXXXX Wi-Fi first)';
+          hwEl.style.color = 'var(--muted)';
+        }
+
+        tbody.innerHTML = '';
+        if (d.all_networks && d.all_networks.length > 0) {
+          d.all_networks.forEach(n => {
+            const tr = document.createElement('tr');
+            if (n.is_instax) tr.className = 'instax-highlight';
+            tr.innerHTML = `
+              <td>${n.is_instax ? '📸 <b>' + n.ssid + '</b>' : n.ssid}</td>
+              <td style="font-family:monospace;">${n.signal || 'Visible'}</td>
+              <td>${n.is_instax ? '<span style="background:#22c55e;color:#052e16;padding:2px 6px;border-radius:4px;font-weight:700;">Instax SHARE Printer</span>' : 'Wi-Fi AP'}</td>
+              <td><button class="secondary" style="padding:3px 7px; font-size:10px;" onclick="selectScannedSSID('${n.ssid}')">Select</button></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } else {
+          tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted); text-align:center;">No local broadcast SSIDs reported by host OS. Default Direct IP 192.168.0.251:8080 ready.</td></tr>';
+        }
+      }
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="4" style="color:#f87171; text-align:center;">Wi-Fi diagnostic bridge unreachable: ${e}</td></tr>`;
+    }
+  }
+
+  function selectScannedSSID(ssid) {
+    document.getElementById('statusText').textContent = `Selected Wi-Fi '${ssid}' — Please connect to this network in your OS / phone Wi-Fi settings.`;
+    closeWiFiDiagnostics();
   }
 
   async function connectPrinter() {
-    const model = document.getElementById('modelSelect').value;
+    const m = document.getElementById('modelSelect').value;
     const sim = document.getElementById('simToggle').checked;
-    const badge = document.getElementById('statusBadge');
-    badge.textContent = 'Connecting...';
-    badge.style.color = '#fbbf24';
+    const sEl = document.getElementById('statusText');
+    sEl.textContent = `Connecting to ${sim ? 'Virtual Simulator' : document.getElementById('printerIp').value + ':' + document.getElementById('printerPort').value}...`;
     log(`Connecting to ${sim ? 'Virtual Simulator' : document.getElementById('printerIp').value + ':' + document.getElementById('printerPort').value}...`);
 
     try {
@@ -735,7 +793,7 @@
           ip: document.getElementById('printerIp').value,
           port: parseInt(document.getElementById('printerPort').value, 10),
           pin: parseInt(document.getElementById('printerPin').value, 10),
-          model,
+          model: m,
           simulate: sim
         })
       });
@@ -746,9 +804,8 @@
         batteryLevel = data.status.battery;
         totalPrints = data.status.print_count;
         renderLEDs();
-        badge.textContent = `Online (${data.status.model})`;
-        badge.style.color = '#4ade80';
-        log(`✅ Connected to ${data.status.model} • ${filmLeft}/10 Film • Battery ${batteryLevel}/4 • Prints: ${totalPrints}`);
+        sEl.textContent = `✅ Connected to ${data.status.model} (${data.status.width}×${data.status.height}) • ${filmLeft}/10 Film • Batt ${batteryLevel}/4`;
+        log(`✅ Status Received: ${data.status.model} • Film: ${filmLeft}/10 • Battery: ${batteryLevel}/4 • Total Prints: ${totalPrints}`);
         return;
       }
     } catch (_) {}
@@ -759,18 +816,16 @@
       batteryLevel = 4;
       totalPrints = 42;
       renderLEDs();
-      badge.textContent = `Browser Virtual SP (${model})`;
-      badge.style.color = '#4ade80';
-      log(`✅ Connected to Browser Virtual SP Simulator (${model}) • 8/10 Film • Batt 4/4`);
+      sEl.textContent = `✅ Connected to Browser Virtual SP Simulator (${m}) • 8/10 Film • Batt 4/4`;
+      log(`Connected to Virtual SP Simulator (${m}).`);
     } else {
       isConnected = false;
       filmLeft = null;
       batteryLevel = null;
       totalPrints = null;
       renderLEDs();
-      badge.textContent = 'Offline';
-      badge.style.color = '#f87171';
-      log(`❌ Could not reach Instax SHARE at ${document.getElementById('printerIp').value}:${document.getElementById('printerPort').value}. Connect to INSTAX-XXXXXXXX Wi-Fi & run bridge.`);
+      sEl.textContent = `❌ Could not reach Instax SHARE at ${document.getElementById('printerIp').value}:${document.getElementById('printerPort').value}. Join INSTAX-XXXXXXXX Wi-Fi & click Connect.`;
+      log(`Failed to connect to ${document.getElementById('printerIp').value}:${document.getElementById('printerPort').value}.`);
     }
   }
 
@@ -786,8 +841,8 @@
   }
 
   function renderCanvas() {
-    const model = document.getElementById('modelSelect').value;
-    const spec = MODELS[model];
+    const m = document.getElementById('modelSelect').value;
+    const spec = MODELS[m];
     canvas.width = spec.width;
     canvas.height = spec.height;
 
@@ -797,8 +852,8 @@
     const bright = parseFloat(document.getElementById('sliderBright').value);
     const contrast = parseFloat(document.getElementById('sliderContrast').value);
     const sat = parseFloat(document.getElementById('sliderSat').value);
-    const fitMode = document.getElementById('fitModeSelect').value;
-    const filter = document.getElementById('filterPresetSelect').value;
+    const fit = document.getElementById('fitMode').value;
+    const filter = document.getElementById('filterPreset').value;
     const bgColor = document.getElementById('bgColorPicker').value;
 
     document.getElementById('valZoom').textContent = zoom.toFixed(2) + '×';
@@ -807,10 +862,10 @@
     document.getElementById('valBright').textContent = (bright >= 0 ? '+' : '') + bright.toFixed(2);
     document.getElementById('valContrast').textContent = contrast.toFixed(2);
     document.getElementById('valSat').textContent = sat.toFixed(2);
-    document.getElementById('valSpacing').textContent = document.getElementById('collageSpacing').value + ' px';
+    document.getElementById('spacingVal').textContent = document.getElementById('collageSpacing').value + ' px';
 
-    // Base background
-    ctx.fillStyle = (fitMode === 'fit') ? bgColor : '#ffffff';
+    // Canvas background
+    ctx.fillStyle = (fit === 'fit') ? bgColor : '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (!primaryImg && collageImgs.length === 0) {
@@ -821,17 +876,20 @@
       return;
     }
 
-    // CSS filter calculation
+    // Filter computation
     let filterStr = `brightness(${1 + bright}) contrast(${contrast}) saturate(${sat}) `;
     if (filter === 'fuji') filterStr += 'contrast(1.1) saturate(1.2) brightness(1.02) ';
     else if (filter === 'vivid') filterStr += 'saturate(1.5) contrast(1.1) ';
     else if (filter === 'mono') filterStr += 'grayscale(1) ';
     else if (filter === 'sepia') filterStr += 'sepia(0.85) ';
 
-    const layout = document.getElementById('collageLayoutSelect').value;
+    const layout = document.getElementById('collageLayout').value;
     const rects = getLayoutRects(layout);
     const spacing = rects.length > 1 ? parseInt(document.getElementById('collageSpacing').value, 10) : 0;
     const photos = primaryImg ? [primaryImg, ...collageImgs] : [...collageImgs];
+
+    document.getElementById('frameCollageBadge').textContent =
+      rects.length > 1 ? `${rects.length}-Slot Collage` : 'Single Photo';
 
     ctx.save();
     ctx.filter = filterStr.trim() || 'none';
@@ -852,7 +910,7 @@
 
       const scaleX = sw / img.width;
       const scaleY = sh / img.height;
-      const baseScale = fitMode === 'crop' ? Math.max(scaleX, scaleY) : Math.min(scaleX, scaleY);
+      const baseScale = fit === 'fill' ? Math.max(scaleX, scaleY) : Math.min(scaleX, scaleY);
       const appliedScale = baseScale * (idx === 0 ? zoom : 1.0);
 
       const dw = img.width * appliedScale;
@@ -870,7 +928,7 @@
     });
     ctx.restore();
 
-    // Bottom caption & date stamp
+    // Bottom caption & date
     const cap = document.getElementById('captionText').value.trim();
     const incDate = document.getElementById('dateStampToggle').checked;
     if (cap || incDate) {
@@ -885,7 +943,7 @@
       ctx.fillText(full, canvas.width / 2, canvas.height - barH / 2 + 7);
     }
 
-    // Overlay QR Code
+    // QR code overlay
     const qrType = document.getElementById('qrType').value;
     const qrText = document.getElementById('qrText').value.trim();
     if (qrType !== 'none' && qrText) {
@@ -895,10 +953,10 @@
 
   function drawQRBadge(text) {
     const side = Math.round(Math.min(canvas.width, canvas.height) * 0.18);
-    const bx = canvas.width - side - 24;
-    const by = canvas.height - side - 24;
+    const bx = canvas.width - side - 20;
+    const by = canvas.height - side - 20;
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(bx - 8, by - 8, side + 16, side + 16);
+    ctx.fillRect(bx - 6, by - 6, side + 12, side + 12);
     ctx.fillStyle = '#000000';
     const cells = 21;
     const cw = Math.floor(side / cells);
@@ -951,21 +1009,19 @@
   }
 
   async function runPrint(forceDryRun) {
-    const model = document.getElementById('modelSelect').value;
-    const spec = MODELS[model];
+    const m = document.getElementById('modelSelect').value;
+    const spec = MODELS[m];
     const dryRun = forceDryRun || document.getElementById('dryRunToggle').checked;
     const sim = document.getElementById('simToggle').checked;
-    const bar = document.getElementById('printProgressBar');
-    const pState = document.getElementById('printStateText');
+    const sEl = document.getElementById('statusText');
 
-    bar.style.width = '10%';
-    pState.textContent = 'Encoding image...';
-    log(`Encoding ${spec.width}×${spec.height} Planar RGB (${spec.segments} segments × 60,000 B)...`);
+    sEl.textContent = `Encoding ${spec.width}×${spec.height} Planar RGB (${spec.segments} segments)...`;
+    log(`[Print] Encoding image for ${spec.label} (${spec.segments} TCP segments × 60,000 B)...`);
 
     try {
       const b64 = encodePlanarRGBBase64();
-      bar.style.width = '35%';
-      pState.textContent = 'Transmitting TCP packets...';
+      sEl.textContent = `Transmitting ${spec.segments} segments over Wi-Fi TCP to ${document.getElementById('printerIp').value}...`;
+      log(`[TCP] Beaming Planar RGB packets to ${document.getElementById('printerIp').value}:${document.getElementById('printerPort').value}...`);
 
       const resp = await fetch(`${getBridgeBase()}/api/print`, {
         method: 'POST',
@@ -974,7 +1030,7 @@
           ip: document.getElementById('printerIp').value,
           port: parseInt(document.getElementById('printerPort').value, 10),
           pin: parseInt(document.getElementById('printerPin').value, 10),
-          model,
+          model: m,
           simulate: sim,
           dry_run: dryRun,
           planar_base64: b64
@@ -982,45 +1038,42 @@
       });
       const data = await resp.json();
       if (data.ok) {
-        bar.style.width = '100%';
-        pState.textContent = dryRun ? 'Dry run verified!' : 'Print complete!';
         if (data.result) {
           isConnected = true;
           filmLeft = data.result.film;
           batteryLevel = data.result.battery;
           renderLEDs();
         }
+        sEl.textContent = dryRun
+          ? `✅ Dry Run Verified! All ${spec.segments} TCP segments acknowledged (0 Film Used)`
+          : `✅ Print Complete on Instax SHARE ${m}! (${filmLeft ?? '--'}/10 Film Remaining)`;
         log(dryRun
-          ? `✅ Dry Run Verified! All ${spec.segments} TCP segments acknowledged (0 Film Used).`
-          : `✅ Print Complete on Instax SHARE ${model}! (${filmLeft ?? '--'}/10 Film Remaining).`);
-        setTimeout(() => { bar.style.width = '0%'; pState.textContent = 'Ready'; }, 4000);
+          ? `✅ [Dry Run Verified] 100% of ${spec.segments} segments sent & acknowledged with zero film wasted.`
+          : `✅ [Print Success] Instax SHARE ${m} printed and ejected photo.`);
         return;
       }
     } catch (_) {}
 
     if (!sim && !dryRun) {
-      bar.style.width = '0%';
-      pState.textContent = 'Failed';
-      log('❌ Cannot print without bridge or Virtual Simulator.');
+      sEl.textContent = '❌ Cannot print without bridge running or Virtual Simulator enabled.';
+      log('❌ Print failed — ensure computer is joined to INSTAX-XXXXXXXX Wi-Fi.');
       return;
     }
 
-    // Browser Virtual SP Simulator Fallback
+    // Browser Simulator fallback
     isConnected = true;
     if (filmLeft === null) filmLeft = 8;
     batteryLevel = 4;
     for (let s = 1; s <= spec.segments; s++) {
-      bar.style.width = `${Math.round((s / spec.segments) * 100)}%`;
-      pState.textContent = `Segment ${s}/${spec.segments}...`;
+      sEl.textContent = `${dryRun ? '[DRY RUN] ' : ''}Sending Planar RGB Segment ${s}/${spec.segments}...`;
       await new Promise(r => setTimeout(r, 25));
     }
     if (!dryRun && filmLeft > 0) filmLeft--;
     renderLEDs();
-    pState.textContent = 'Complete';
-    log(dryRun
-      ? `✅ Browser Dry Run Complete! Verified ${spec.segments} segments for ${model} (0 Film Used).`
-      : `✅ Simulated Print Complete for ${model}! (${filmLeft}/10 Film Remaining).`);
-    setTimeout(() => { bar.style.width = '0%'; pState.textContent = 'Ready'; }, 4000);
+    sEl.textContent = dryRun
+      ? `✅ Browser Dry Run Complete! Verified ${spec.segments} segments for ${m} (0 Film Used)`
+      : `✅ Simulated Print Complete for ${m}! (${filmLeft}/10 Film Remaining)`;
+    log(`Simulated print operation complete.`);
   }
 
   function actionRotate(deg) {
@@ -1038,14 +1091,13 @@
 
   function actionClearCollage() {
     collageImgs = [];
-    document.getElementById('collageLayoutSelect').value = 'single';
-    document.getElementById('collageCountText').textContent = '0 additional collage photos loaded.';
+    document.getElementById('collageLayout').value = 'single';
     renderCanvas();
   }
 
   function actionTestCard() {
-    const model = document.getElementById('modelSelect').value;
-    const spec = MODELS[model];
+    const m = document.getElementById('modelSelect').value;
+    const spec = MODELS[m];
     const off = document.createElement('canvas');
     off.width = spec.width;
     off.height = spec.height;
@@ -1064,7 +1116,7 @@
     gctx.fillStyle = '#fff';
     gctx.textAlign = 'center';
     gctx.font = 'bold 32px sans-serif';
-    gctx.fillText(`INSTAX SHARE ${model}`, spec.width / 2, spec.height / 2 - 8);
+    gctx.fillText(`INSTAX SHARE ${m}`, spec.width / 2, spec.height / 2 - 8);
     gctx.font = '16px monospace';
     gctx.fillText(`Wi-Fi Direct • ${spec.width}×${spec.height} Planar RGB`, spec.width / 2, spec.height / 2 + 24);
     const img = new Image();
@@ -1073,23 +1125,19 @@
   }
 
   function actionSaveImage() {
-    const model = document.getElementById('modelSelect').value;
+    const m = document.getElementById('modelSelect').value;
     const a = document.createElement('a');
-    a.download = `Instax-SHARE-${model}.png`;
+    a.download = `Instax-SHARE-${m}.png`;
     a.href = canvas.toDataURL('image/png');
     a.click();
   }
 
-  // File loading
+  // File picker handlers
   document.getElementById('fileInput').addEventListener('change', (e) => {
     const f = e.target.files[0];
     if (!f) return;
     const img = new Image();
-    img.onload = () => {
-      primaryImg = img;
-      renderCanvas();
-      log(`Loaded photo: ${img.naturalWidth} × ${img.naturalHeight} px`);
-    };
+    img.onload = () => { primaryImg = img; renderCanvas(); };
     img.src = URL.createObjectURL(f);
   });
 
@@ -1100,18 +1148,17 @@
       img.onload = () => {
         collageImgs.push(img);
         const total = 1 + collageImgs.length;
-        if (total === 2) document.getElementById('collageLayoutSelect').value = 'splitV';
-        else if (total === 3) document.getElementById('collageLayoutSelect').value = 'grid3';
-        else if (total === 4) document.getElementById('collageLayoutSelect').value = 'grid4';
-        else if (total > 4) document.getElementById('collageLayoutSelect').value = 'grid6';
-        document.getElementById('collageCountText').textContent = `${collageImgs.length} additional collage photo(s) loaded.`;
+        if (total === 2) document.getElementById('collageLayout').value = 'splitV';
+        else if (total === 3) document.getElementById('collageLayout').value = 'grid3';
+        else if (total === 4) document.getElementById('collageLayout').value = 'grid4';
+        else if (total > 4) document.getElementById('collageLayout').value = 'grid6';
         renderCanvas();
       };
       img.src = URL.createObjectURL(f);
     });
   });
 
-  // Touch and mouse drag-to-pan
+  // Drag-to-pan handlers
   function handleDragStart(clientX, clientY) {
     isDragging = true;
     dragStartX = clientX;
@@ -1157,7 +1204,6 @@
   actionModelChange();
   actionTestCard();
   scanWiFi();
-  checkBridge();
 </script>
 </body>
 </html>
