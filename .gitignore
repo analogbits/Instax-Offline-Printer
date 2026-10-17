@@ -18,3 +18,4 @@ ENV/
 # Build scratch
 build/
 *.tmp
+/tmp/test-images/
