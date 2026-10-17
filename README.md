@@ -68,11 +68,12 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
 * **🔵 BLE Link Web App (SQUARE Link, Link WIDE & Mini Link):**
   * **Live Online:** [https://analogbits.github.io/Instax-Offline-Printer/](https://analogbits.github.io/Instax-Offline-Printer/)
   * **Offline File:** [`Web-Bluetooth-Offline/InstaxPrinterWeb.html`](Web-Bluetooth-Offline/InstaxPrinterWeb.html)
-  * **OS Compatibility:** Works on **macOS, Windows 10/11, Linux, Android, and ChromeOS** in Google Chrome, Microsoft Edge, Brave, Opera, or Arc.
+  * **Desktop & Android Compatibility:** Works natively on **macOS, Windows 10/11, Linux, Android, and ChromeOS** in Google Chrome, Microsoft Edge, Brave, Opera, or Arc.
+  * **📱 iPhone & iPad Compatibility (Direct Bluetooth):** Because Apple disables Web Bluetooth in iOS Safari/Chrome, open the web app on your iPhone or iPad and tap the built-in **📲 Open This Page in Bluefy** button (uses the free [Bluefy – Web BLE Browser](https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055) on the App Store) to connect and print directly from your iPhone over Bluetooth! You can also tap **💾 Save Image** in iOS Safari anytime to save your framed Multi-Photo Collage or QR Code print directly to Apple Photos.
 * **🎞️ Legacy Wi-Fi Direct Web App (Instax SHARE SP-1, SP-2 & SP-3):**
   * **Live Online:** [https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html) *(or [`/legacy.html`](https://analogbits.github.io/Instax-Offline-Printer/legacy.html))*
   * **Offline File:** [`Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html`](Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)
-  * **OS Compatibility:** Works in **any modern browser on macOS, Windows, and Linux** (includes built-in Virtual SP-1/2/3 Simulator + `legacy_web_bridge.py` for live Wi-Fi scanning and raw TCP socket printing to `192.168.0.251:8080`).
+  * **OS Compatibility:** Works in **any modern browser on macOS, Windows, Linux, and iOS** (includes built-in Virtual SP-1/2/3 Simulator + `legacy_web_bridge.py` for live Wi-Fi scanning and raw TCP socket printing to `192.168.0.251:8080`).
 
 ---
 

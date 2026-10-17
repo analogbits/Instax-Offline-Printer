@@ -251,8 +251,8 @@
     </div>
   </header>
 
-  <div id="browserNotice" style="display:none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #fca5a5;">
-    ⚠️ <b>Browser Notice:</b> This browser (such as Apple Safari or Firefox) does not support the Web Bluetooth API. Please open this file in <b>Google Chrome</b>, <b>Microsoft Edge</b>, or <b>Brave</b> to print to your Instax printer.
+  <div id="browserNotice" style="display:none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; color: #fca5a5; line-height: 1.5;">
+    ⚠️ <b>Browser Notice:</b> This browser (such as Apple Safari or Firefox) does not support the Web Bluetooth API. Please open this page in <b>Google Chrome</b>, <b>Microsoft Edge</b>, or <b>Brave</b> on Desktop/Android, or use the free <b>Bluefy Web BLE Browser</b> on iPhone &amp; iPad.
   </div>
 
   <div class="main-layout">
@@ -269,6 +269,7 @@
         <button class="secondary" onclick="actionRotate(-90)">↺ Rotate 90°</button>
         <button class="secondary" onclick="actionRotate(90)">Rotate 90° ↻</button>
         <button class="secondary" onclick="actionReset()">Reset Framing</button>
+        <button class="secondary" onclick="actionSaveImage()" title="Save or share framed print (with collage, filter & QR code)">💾 Save Image</button>
       </div>
 
       <div style="display: flex; justify-content: space-between; width: 100%; font-size: 11px; color: var(--text-dim); margin-top: 8px;">
@@ -813,10 +814,22 @@ function buildPacket(sidHi, sidLo, payload = new Uint8Array(0)) {
 
 async function connectBluetooth() {
   if (!navigator.bluetooth) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS) {
+      const openBluefy = confirm(
+        "📱 iPhone / iPad Bluetooth Printing:\n\n" +
+        "Apple blocks Web Bluetooth in Safari and Chrome on iOS, but you can print directly from your iPhone using the free 'Bluefy – Web BLE Browser' app!\n\n" +
+        "Click OK to open this page in Bluefy (or install it from the App Store)."
+      );
+      if (openBluefy) {
+        window.location.href = "bluefy://open?url=" + encodeURIComponent(window.location.href);
+      }
+      return;
+    }
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     const msg = isSafari
-      ? "Apple Safari does not support the Web Bluetooth API.\n\nPlease open this file in Google Chrome, Microsoft Edge, or Brave to connect directly to your Instax printer."
-      : "Your current browser does not support the Web Bluetooth API.\n\nPlease open this file in Google Chrome, Microsoft Edge, or Brave.";
+      ? "Apple Safari does not support the Web Bluetooth API.\n\nPlease open this page in Google Chrome, Microsoft Edge, or Brave to connect directly to your Instax printer."
+      : "Your current browser does not support the Web Bluetooth API.\n\nPlease open this page in Google Chrome, Microsoft Edge, or Brave.";
     alert(msg);
     log("⚠️ " + msg);
     return;
@@ -824,12 +837,24 @@ async function connectBluetooth() {
 
   try {
     log("Scanning for nearby Instax printers...");
-    btDevice = await navigator.bluetooth.requestDevice({
-      filters: [{ namePrefix: "INSTAX" }],
-      optionalServices: [SERVICE_UUID]
-    });
+    try {
+      btDevice = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: "INSTAX" }, { namePrefix: "instax" }],
+        optionalServices: [SERVICE_UUID]
+      });
+    } catch (filterErr) {
+      // Fallback for iOS Bluefy / WebBLE browsers if multiple namePrefix filters aren't supported
+      if (filterErr.name === 'TypeError') {
+        btDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix: "INSTAX" }],
+          optionalServices: [SERVICE_UUID]
+        });
+      } else {
+        throw filterErr;
+      }
+    }
 
-    log(`Connecting to GATT Server on ${btDevice.name}...`);
+    log(`Connecting to GATT Server on ${btDevice.name || 'Instax Printer'}...`);
     const server = await btDevice.gatt.connect();
     const service = await server.getPrimaryService(SERVICE_UUID);
     writeChar = await service.getCharacteristic(WRITE_UUID);
@@ -839,27 +864,28 @@ async function connectBluetooth() {
     notifyChar.addEventListener('characteristicvaluechanged', handleNotify);
     await notifyChar.startNotifications();
 
-    document.getElementById('btStatusText').innerHTML = `<b style='color:#4ade80;'>Connected (${btDevice.name})</b>`;
+    document.getElementById('btStatusText').innerHTML = `<b style='color:#4ade80;'>Connected (${btDevice.name || 'Instax'})</b>`;
     document.getElementById('btnConnect').textContent = "Connected ✓";
     document.getElementById('btnConnect').disabled = true;
 
     log("GATT channel open. Querying printer status...");
     await queryPrinterStatus();
 
-    if (loadedImage) document.getElementById('btnPrint').disabled = false;
+    if (loadedImage || collageImages.some(Boolean)) document.getElementById('btnPrint').disabled = false;
   } catch (err) {
     log("Connection failed: " + err);
     let extra = "";
     if (err.name === 'NotFoundError' || (err.message && err.message.includes('User cancelled'))) {
-      extra = "\n\n💡 Tip: If your printer is not appearing in the list, please turn OFF Bluetooth on your iPhone, iPad, or Android phone so the printer is free to pair with your computer.";
+      extra = "\n\n💡 Tip: If your printer is not appearing in the list, make sure the official Fujifilm Instax app on your phone is closed (or toggle Bluetooth off/on) so the printer is free to pair.";
     }
-    alert("Bluetooth link failed: " + err.message + extra);
+    alert("Bluetooth link failed: " + (err.message || err) + extra);
   }
 }
 
 function handleNotify(event) {
   const dv = event.target.value;
-  const val = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
+  if (!dv) return;
+  const val = dv.buffer ? new Uint8Array(dv.buffer, dv.byteOffset || 0, dv.byteLength) : new Uint8Array(dv);
   const newBuf = new Uint8Array(rxBuffer.length + val.length);
   newBuf.set(rxBuffer);
   newBuf.set(val, rxBuffer.length);
@@ -921,13 +947,14 @@ async function sendCmd(sidHi, sidLo, payload = new Uint8Array(0), timeoutMs = 10
     };
   });
 
-  // MTU slicing
+  // MTU slicing (compatible with Desktop Chrome/Edge/Brave AND iOS Bluefy/WebBLE)
   const mtu = 180;
   for (let offset = 0; offset < pkt.length; offset += mtu) {
     const slice = pkt.slice(offset, offset + mtu);
-    if (typeof writeChar.writeValueWithoutResponse === 'function' && writeChar.properties.writeWithoutResponse) {
+    const props = writeChar.properties;
+    if (typeof writeChar.writeValueWithoutResponse === 'function' && (!props || props.writeWithoutResponse)) {
       await writeChar.writeValueWithoutResponse(slice);
-    } else if (typeof writeChar.writeValueWithResponse === 'function' && writeChar.properties.write) {
+    } else if (typeof writeChar.writeValueWithResponse === 'function' && (!props || props.write)) {
       await writeChar.writeValueWithResponse(slice);
     } else if (typeof writeChar.writeValue === 'function') {
       await writeChar.writeValue(slice);
@@ -1147,10 +1174,63 @@ function toggleDryRunMode() {
   }
 }
 
-// Browser capability check
+async function actionSaveImage() {
+  renderCanvas();
+  const model = document.getElementById('modelSelect').value;
+  const filename = `instax-${model}-print.jpg`;
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+  if (!blob) return;
+
+  // On iPhone / iPad, use native iOS Share Sheet so user can "Save Image" directly to Apple Photos
+  if (navigator.canShare && typeof File === 'function') {
+    const file = new File([blob], filename, { type: 'image/jpeg' });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Instax Framed Print',
+        });
+        log("Saved/shared framed print via system Share Sheet.");
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+      }
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  log(`Downloaded ${filename}`);
+}
+
+// Browser capability check (with dedicated iPhone & iPad Bluefy launcher)
 if (!navigator.bluetooth) {
   const notice = document.getElementById('browserNotice');
-  if (notice) notice.style.display = 'block';
+  if (notice) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS) {
+      const bluefyUrl = "bluefy://open?url=" + encodeURIComponent(window.location.href);
+      notice.style.background = "rgba(59, 130, 246, 0.14)";
+      notice.style.borderColor = "rgba(59, 130, 246, 0.45)";
+      notice.style.color = "#dbeafe";
+      notice.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div>📱 <b>iPhone &amp; iPad Direct Bluetooth Printing:</b> Apple disables Web Bluetooth in Safari, Chrome, and Edge on iOS — <b>but</b> you can print directly from your iPhone over Bluetooth by opening this page in the free <b>Bluefy – Web BLE Browser</b> app! (Or use <b>💾 Save Image</b> below to save your framed collage/QR print to Apple Photos).</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+            <a href="${bluefyUrl}" style="background:#3b82f6; color:#fff; font-weight:700; text-decoration:none; padding:7px 12px; border-radius:6px; font-size:12px;">📲 1. Open This Page in Bluefy</a>
+            <a href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055" target="_blank" rel="noopener" style="background:#20222a; color:#93c5fd; border:1px solid rgba(59,130,246,0.4); font-weight:600; text-decoration:none; padding:7px 12px; border-radius:6px; font-size:12px;">⬇️ Get Bluefy Free on App Store</a>
+          </div>
+        </div>
+      `;
+    }
+    notice.style.display = 'block';
+  }
 }
 
 // Initial draw
