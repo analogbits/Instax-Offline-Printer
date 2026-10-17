@@ -4,7 +4,8 @@ Legacy Instax Printer — Local Web-to-TCP Wi-Fi Direct Bridge (SP-1 • SP-2 �
 =================================================================================
 Allows any web browser (Chrome, Safari, Firefox, Edge, Brave) running
 LegacyInstaxPrinterWeb.html to communicate with Fujifilm Instax SHARE SP-1, SP-2,
-and SP-3 printers over raw TCP sockets (192.168.0.251:8080).
+and SP-3 printers over raw TCP sockets (192.168.0.251:8080) and scan for nearby
+INSTAX-XXXXXXXX Wi-Fi Direct networks.
 
 Usage:
   python3 legacy_web_bridge.py
@@ -19,7 +20,11 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "Windows"))
-from legacy_instax_printer import LegacyInstaxClient, VirtualInstaxShareServer
+from legacy_instax_printer import (
+    LegacyInstaxClient,
+    VirtualInstaxShareServer,
+    scan_wifi_and_printers,
+)
 
 SIM_SERVER = VirtualInstaxShareServer(port=18080, model="SP-2", pin=1111)
 
@@ -45,6 +50,11 @@ class BridgeHandler(BaseHTTPRequestHandler):
                 self._send_cors(200, "text/html; charset=utf-8")
                 self.wfile.write(data)
                 return
+        elif self.path == "/api/scan":
+            items = scan_wifi_and_printers(sim_port=18080)
+            self._send_cors(200)
+            self.wfile.write(json.dumps({"ok": True, "items": items}).encode("utf-8"))
+            return
         self._send_cors(404)
         self.wfile.write(json.dumps({"error": "Not found"}).encode("utf-8"))
 
@@ -55,6 +65,12 @@ class BridgeHandler(BaseHTTPRequestHandler):
             body = json.loads(raw.decode("utf-8"))
         except Exception:
             body = {}
+
+        if self.path == "/api/scan":
+            items = scan_wifi_and_printers(sim_port=18080)
+            self._send_cors(200)
+            self.wfile.write(json.dumps({"ok": True, "items": items}).encode("utf-8"))
+            return
 
         host = body.get("ip", "192.168.0.251")
         port = int(body.get("port", 8080))

@@ -102,17 +102,21 @@ manager.dryRunMode = dryRun
 
 let sema = DispatchSemaphore(value: 0)
 
-if statusOnly || imagePath == nil {
+if statusOnly || (imagePath == nil && !dryRun) {
     var done = false
-    manager.queryPrinterStatus { _ in
-        print("Model:        \(manager.telemetry.modelName)")
-        print("Firmware:     \(manager.telemetry.firmwareVersion)")
-        print("Resolution:   \(manager.telemetry.maxWidth)×\(manager.telemetry.maxHeight)")
-        print("Film Left:    \(manager.telemetry.filmRemaining)/10")
-        print("Battery:      \(manager.telemetry.batteryLevel)/4")
-        print("Total Prints: \(manager.telemetry.totalPrintHistory)")
+    manager.queryPrinterStatus(completion: { ok in
+        if ok {
+            print("Model:        \(manager.telemetry.modelName ?? "Unknown")")
+            print("Firmware:     \(manager.telemetry.firmwareVersion ?? "Unknown")")
+            print("Resolution:   \(manager.telemetry.maxWidth)×\(manager.telemetry.maxHeight)")
+            print("Film Left:    \(manager.telemetry.filmRemaining ?? 0)/10")
+            print("Battery:      \(manager.telemetry.batteryLevel ?? 0)/4")
+            print("Total Prints: \(manager.telemetry.totalPrintHistory ?? 0)")
+        } else {
+            print("❌ \(manager.statusHeadline)")
+        }
         done = true
-    }
+    })
     let deadline = Date(timeIntervalSinceNow: 8.0)
     while !done && Date() < deadline {
         RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.05))
@@ -120,18 +124,27 @@ if statusOnly || imagePath == nil {
     exit(manager.isConnected ? 0 : 1)
 }
 
-guard let path = imagePath, let nsImg = NSImage(contentsOfFile: path) else {
-    print("❌ Failed to load image at path: \(imagePath ?? "")")
-    exit(1)
+var sourceImage: NSImage? = nil
+if let path = imagePath {
+    guard let loaded = NSImage(contentsOfFile: path) else {
+        print("❌ Failed to load image at path: \(path)")
+        exit(1)
+    }
+    sourceImage = loaded
 }
 
-guard let rendered = LegacyImageProcessor.renderPreviewAndCGImage(primaryImage: nsImg, options: options) else {
+guard let rendered = LegacyImageProcessor.renderPreviewAndCGImage(primaryImage: sourceImage, options: options) else {
     print("❌ Failed to render image for \(model.displayName)")
     exit(1)
 }
 
 var exitSuccess = false
 manager.printCGImage(rendered.cgImage, model: model) { ok in
+    if ok {
+        print("✅ \(manager.statusHeadline)")
+    } else {
+        print("❌ \(manager.statusHeadline)")
+    }
     exitSuccess = ok
     sema.signal()
 }

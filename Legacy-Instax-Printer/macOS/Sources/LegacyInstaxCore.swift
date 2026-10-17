@@ -3,6 +3,7 @@ import AppKit
 import CoreGraphics
 import CoreImage
 import Combine
+import CoreWLAN
 import Darwin
 
 // MARK: - Printer Models (Instax SHARE SP-1, SP-2, SP-3)
@@ -37,6 +38,7 @@ public enum LegacyPrinterModel: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Portrait canvas width shown in the UI and reported as `maxWidth` by SpecificationsCommand (0x4F)
     public var width: Int {
         switch self {
         case .sp1, .sp2: return 600
@@ -44,6 +46,7 @@ public enum LegacyPrinterModel: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Portrait canvas height shown in the UI and reported as `maxHeight` by SpecificationsCommand (0x4F)
     public var height: Int {
         switch self {
         case .sp1, .sp2, .sp3: return 800
@@ -64,6 +67,34 @@ public enum LegacyPrinterModel: String, CaseIterable, Identifiable {
 
     public var segmentCount: Int {
         totalBytes / segmentSize
+    }
+}
+
+// MARK: - Wi-Fi & Subnet Discovery Item
+
+public struct LegacyWiFiDiscoveryItem: Identifiable, Hashable {
+    public enum Kind: String, Hashable {
+        case instaxWiFiSSID
+        case currentWiFiSSID
+        case reachablePrinterEndpoint
+        case defaultPrinterEndpoint
+        case virtualSimulator
+    }
+
+    public let id: String
+    public let title: String
+    public let ssid: String?
+    public let host: String
+    public let port: UInt16
+    public let kind: Kind
+
+    public init(id: String, title: String, ssid: String?, host: String, port: UInt16, kind: Kind) {
+        self.id = id
+        self.title = title
+        self.ssid = ssid
+        self.host = host
+        self.port = port
+        self.kind = kind
     }
 }
 
@@ -252,7 +283,7 @@ public struct LegacyPrintOptions {
     }
 }
 
-// MARK: - Image Processor & Planar RGB Encoder
+// MARK: - Image Processor & Bit-Exact Instax SHARE Planar RGB Encoder
 
 public enum LegacyImageProcessor {
     private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
@@ -285,7 +316,6 @@ public enum LegacyImageProcessor {
         ctx.setFillColor(options.matteColor.cgColor)
         ctx.fill(canvasRect)
 
-        // Assemble source images for single or multi-photo collage
         var slotImages: [NSImage] = []
         if let first = primaryImage {
             slotImages.append(first)
@@ -322,7 +352,6 @@ public enum LegacyImageProcessor {
             }
         }
 
-        // Outer border when collage spacing > 0
         if isMultiCell && spacing > 0 {
             ctx.saveGState()
             ctx.setStrokeColor(options.matteColor.cgColor)
@@ -331,13 +360,11 @@ public enum LegacyImageProcessor {
             ctx.restoreGState()
         }
 
-        // Optional Caption & Date Stamp bar
         let hasCaption = !options.captionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         if hasCaption || options.includeDateStamp {
             drawCaptionOverlay(in: ctx, canvasW: CGFloat(targetW), canvasH: CGFloat(targetH), options: options)
         }
 
-        // Optional QR Code Overlay
         if let qrPayload = options.encodedQRPayload(), !qrPayload.isEmpty {
             drawQROverlay(in: ctx, payload: qrPayload, canvasW: CGFloat(targetW), canvasH: CGFloat(targetH), options: options)
         }
@@ -352,7 +379,6 @@ public enum LegacyImageProcessor {
             return nil
         }
 
-        // Apply 90-degree step rotations if requested
         let normRot = ((options.rotationDegrees % 360) + 360) % 360
         if normRot != 0, let rotated = rotateCGImage(cgImage, degrees: normRot) {
             cgImage = rotated
@@ -364,7 +390,6 @@ public enum LegacyImageProcessor {
         case .normal:
             break
         case .fujiIntelligence:
-            // Emulates Fujifilm Image Intelligence: lift shadows, crisp contrast, subtle warmth
             if let controls = CIFilter(name: "CIColorControls") {
                 controls.setValue(ciImage, forKey: kCIInputImageKey)
                 controls.setValue(0.04, forKey: kCIInputBrightnessKey)
@@ -409,7 +434,7 @@ public enum LegacyImageProcessor {
         return ciContext.createCGImage(ciImage, from: ciImage.extent) ?? cgImage
     }
 
-    private static func rotateCGImage(_ cgImage: CGImage, degrees: Int) -> CGImage? {
+    public static func rotateCGImage(_ cgImage: CGImage, degrees: Int) -> CGImage? {
         let w = cgImage.width
         let h = cgImage.height
         let swap = (degrees == 90 || degrees == 270)
@@ -586,49 +611,74 @@ public enum LegacyImageProcessor {
     }
 
     /// Encodes a CGImage into the exact Fujifilm Instax SHARE SP-1 / SP-2 / SP-3 Column-Major Planar RGB format.
-    /// - SP-1 / SP-2: 600 × 800 = 1,440,000 bytes (24 segments × 60,000 bytes)
-    /// - SP-3: 800 × 800 = 1,920,000 bytes (32 segments × 60,000 bytes), rotated 90° clockwise before column encoding.
-    public static func encodePlanarRGB(cgImage: CGImage, model: LegacyPrinterModel) -> Data {
-        let targetW = model.width
-        let targetH = model.height
+    /// Verified bit-for-bit against `instax_api/instaxImage.py`:
+    /// - Portrait image (`maxWidth × maxHeight`, e.g. 600×800 on SP-1/SP-2 or 800×800 on SP-3) is rotated 90° clockwise
+    ///   so `printWidth = maxHeight (800)` and `printHeight = maxWidth (600 or 800)`.
+    /// - Then for each scanline column `w` in `0..<printWidth`:
+    ///   `R[0..<printHeight]`, `G[0..<printHeight]`, `B[0..<printHeight]`.
+    public static func encodePlanarRGB(
+        cgImage: CGImage,
+        model: LegacyPrinterModel,
+        reportedMaxWidth: Int? = nil,
+        reportedMaxHeight: Int? = nil
+    ) -> Data {
+        let portraitW = reportedMaxWidth ?? model.width
+        let portraitH = reportedMaxHeight ?? model.height
 
-        // Note: instax_api rotates SP-3 (Square 800x800) 90 degrees clockwise before column-major planar encoding
-        let workingImage: CGImage
-        if model == .sp3, let rotated = rotateCGImage(cgImage, degrees: 90) {
-            workingImage = rotated
+        // First ensure image is scaled to portraitW × portraitH if needed
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let baseImage: CGImage
+        if cgImage.width != portraitW || cgImage.height != portraitH,
+           let scaleCtx = CGContext(
+               data: nil,
+               width: portraitW,
+               height: portraitH,
+               bitsPerComponent: 8,
+               bytesPerRow: portraitW * 4,
+               space: colorSpace,
+               bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+           ) {
+            scaleCtx.interpolationQuality = .high
+            scaleCtx.draw(cgImage, in: CGRect(x: 0, y: 0, width: portraitW, height: portraitH))
+            baseImage = scaleCtx.makeImage() ?? cgImage
         } else {
-            workingImage = cgImage
+            baseImage = cgImage
         }
 
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        var rgba = [UInt8](repeating: 255, count: targetW * targetH * 4)
+        // Rotate 90° clockwise (`rotate(-90, expand=True)` in PIL) so dimensions become `printWidth = portraitH`, `printHeight = portraitW`
+        let rotatedImage = rotateCGImage(baseImage, degrees: 90) ?? baseImage
+        let printWidth = portraitH   // 800 scanlines along the print feed direction
+        let printHeight = portraitW  // 600 dots (SP-1/SP-2) or 800 dots (SP-3) across the print head
+
+        var rgba = [UInt8](repeating: 255, count: printWidth * printHeight * 4)
         rgba.withUnsafeMutableBytes { ptr in
             if let ctx = CGContext(
                 data: ptr.baseAddress,
-                width: targetW,
-                height: targetH,
+                width: printWidth,
+                height: printHeight,
                 bitsPerComponent: 8,
-                bytesPerRow: targetW * 4,
+                bytesPerRow: printWidth * 4,
                 space: colorSpace,
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             ) {
                 ctx.interpolationQuality = .high
-                ctx.draw(workingImage, in: CGRect(x: 0, y: 0, width: targetW, height: targetH))
+                ctx.draw(rotatedImage, in: CGRect(x: 0, y: 0, width: printWidth, height: printHeight))
             }
         }
 
-        var planar = [UInt8](repeating: 0, count: targetW * targetH * 3)
-        for h in 0..<targetH {
-            for w in 0..<targetW {
-                let pixelIdx = (h * targetW + w) * 4
+        var planar = [UInt8](repeating: 0, count: printWidth * printHeight * 3)
+        for h in 0..<printHeight {
+            let rowBase = h * printWidth * 4
+            for w in 0..<printWidth {
+                let pixelIdx = rowBase + w * 4
                 let r = rgba[pixelIdx]
                 let g = rgba[pixelIdx + 1]
                 let b = rgba[pixelIdx + 2]
 
-                let colBase = w * targetH * 3
+                let colBase = w * printHeight * 3
                 planar[colBase + h] = r
-                planar[colBase + targetH + h] = g
-                planar[colBase + (targetH * 2) + h] = b
+                planar[colBase + printHeight + h] = g
+                planar[colBase + (printHeight * 2) + h] = b
             }
         }
 
@@ -672,19 +722,23 @@ public struct LegacyInstaxResponse {
         switch returnCode {
         case 0:   return "OK (Ready)"
         case 127: return "Syntax / Parameter Error (0x7F)"
-        case 160: return "Printer Busy / Processing (0xA0)"
+        case 160: return "Printer Busy / In Use by Another Device (0xA0)"
+        case 161: return "Invalid Image Data Format (0xA1)"
         case 162: return "Battery Too Low to Print (0xA2)"
         case 163: return "Printing in Progress (0xA3)"
         case 164: return "Ejecting Film (0xA4)"
+        case 180: return "Printer Charging / Voltage Wait (0xB4)"
         case 244: return "Out of Instax Film (0xF4)"
+        case 245: return "Cam Point / Mechanism Error (0xF5)"
+        case 246: return "Film Motor Jam Error (0xF6)"
         case 247: return "Incorrect Printer PIN Code (0xF7 — Factory Default is 1111)"
+        case 248: return "PI Sensor Error (0xF8)"
         default:  return "Status Code \(returnCode) (0x\(String(format: "%02X", returnCode)))"
         }
     }
 }
 
 public enum LegacyInstaxPacket {
-    /// Builds a big-endian command packet (`0x24`) with 12-byte header, variable payload, 2-byte checksum, and `\r\n` trailer.
     public static func buildCommand(
         type: LegacyInstaxCommandType,
         sessionTime: UInt32,
@@ -695,7 +749,6 @@ public enum LegacyInstaxPacket {
         var bytes = [UInt8]()
         bytes.reserveCapacity(totalLength)
 
-        // Header (12 bytes)
         bytes.append(0x24) // Command mode = 36
         bytes.append(type.rawValue)
         bytes.append(UInt8((totalLength >> 8) & 0xFF))
@@ -711,10 +764,8 @@ public enum LegacyInstaxPacket {
         bytes.append(0x00)
         bytes.append(0x00)
 
-        // Payload
         bytes.append(contentsOf: payload)
 
-        // Checksum + Trailer (4 bytes)
         var sum: Int = 0
         for b in bytes { sum += Int(b) }
         let chk = (sum ^ 0xFFFF) & 0xFFFF
@@ -726,7 +777,6 @@ public enum LegacyInstaxPacket {
         return Data(bytes)
     }
 
-    /// Parses a response packet (`0x2A`) from the Instax SHARE printer.
     public static func parseResponse(_ data: Data) -> LegacyInstaxResponse? {
         guard data.count >= 16 else { return nil }
         let bytes = [UInt8](data)
@@ -736,7 +786,7 @@ public enum LegacyInstaxPacket {
         let sessionTime = (UInt32(bytes[4]) << 24) | (UInt32(bytes[5]) << 16) | (UInt32(bytes[6]) << 8) | UInt32(bytes[7])
         let returnCode = bytes[12]
         let unknown1 = bytes[13]
-        let ejecting = bytes[14]
+        let ejecting = (bytes[14] >> 2) & 0xFF
         let battAndPrints = bytes[15]
         let batteryLevel = Int((battAndPrints >> 4) & 0x07)
         let filmRemaining = Int(battAndPrints & 0x0F)
@@ -841,7 +891,6 @@ public final class LegacyVirtualPrinterServer {
         var buffer = [UInt8](repeating: 0, count: 65536)
 
         while isRunning {
-            // Read 4-byte header first
             guard let hdr = readExact(sock: sock, count: 4, scratch: &buffer) else { break }
             let totalLen = (Int(hdr[2]) << 8) | Int(hdr[3])
             guard totalLen >= 16, totalLen <= 70000 else { break }
@@ -881,8 +930,7 @@ public final class LegacyVirtualPrinterServer {
             case LegacyInstaxCommandType.modelName.rawValue:
                 payload = Array(simulatedModel.rawValue.utf8)
             case LegacyInstaxCommandType.version.rawValue:
-                // unknown1(2B), firmware(2B = 0x0112 -> v1.18), hardware(2B = 0x0100)
-                payload = [0x00, 0x01, 0x01, 0x12, 0x01, 0x00, 0x00, 0x00]
+                payload = [0x00, 0xFE, 0x01, 0x13, 0x00, 0x00, 0x00, 0x00]
             case LegacyInstaxCommandType.printCount.rawValue:
                 let total = UInt32(simulatedTotalPrints)
                 payload = [
@@ -900,36 +948,35 @@ public final class LegacyVirtualPrinterServer {
                     UInt8((w >> 8) & 0xFF), UInt8(w & 0xFF),
                     UInt8((h >> 8) & 0xFF), UInt8(h & 0xFF),
                     0x01, 0x00,
-                    0x00, 0x10,
+                    0x00, 0x0A,
                     0, 0, 0, 0,
                     UInt8((msgSz >> 8) & 0xFF), UInt8(msgSz & 0xFF),
-                    0x00, 0x18,
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                    0x10, 0x00,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
                 ]
             case LegacyInstaxCommandType.prePrint.rawValue:
                 let cmdNo = packet.count >= 16 ? packet[15] : 1
-                payload = [0x00, cmdNo, 0x00, 0x00]
+                let respNo: UInt8 = (cmdNo <= 3) ? 2 : ((cmdNo <= 5) ? 1 : 0)
+                payload = [0x00, cmdNo, 0x00, respNo]
             case LegacyInstaxCommandType.printerLock.rawValue:
                 payload = []
             case LegacyInstaxCommandType.reset.rawValue:
                 payload = []
             case LegacyInstaxCommandType.prepImage.rawValue:
-                payload = [0x00, 0x1E, 0x00, 0x00]
+                let maxLen = UInt16(simulatedModel.segmentSize)
+                payload = [0x00, 0x00, UInt8((maxLen >> 8) & 0xFF), UInt8(maxLen & 0xFF)]
             case LegacyInstaxCommandType.sendImage.rawValue:
-                if packet.count >= 16 {
-                    payload = Array(packet[12..<16])
-                } else {
-                    payload = [0, 0, 0, 0]
-                }
+                let seq = packet.count >= 16 ? packet[15] : 0
+                payload = [0, 0, 0, seq]
             case LegacyInstaxCommandType.triggerPrint.rawValue:
                 printPollCounter = 2
                 if simulatedFilmRemaining > 0 {
                     simulatedFilmRemaining -= 1
                 }
                 simulatedTotalPrints += 1
-                payload = [0, 0, 0, 0]
+                payload = []
             case LegacyInstaxCommandType.lockState.rawValue:
-                payload = [0, 0, 0, 1]
+                payload = [0, 0, 0, 100]
             case LegacyInstaxCommandType.printStatus.rawValue:
                 if printPollCounter > 0 {
                     printPollCounter -= 1
@@ -937,9 +984,9 @@ public final class LegacyVirtualPrinterServer {
                 } else {
                     returnCode = 0 // Complete
                 }
-                payload = [0, 0, 0, 0]
+                payload = []
             default:
-                payload = [0, 0, 0, 0]
+                payload = []
             }
         }
 
@@ -973,7 +1020,7 @@ public final class LegacyVirtualPrinterServer {
     }
 }
 
-// MARK: - Synchronous POSIX TCP Session Client (With Non-Blocking Connect Timeout)
+// MARK: - Synchronous POSIX TCP Session Client (With Automatic Retry for Hardware RTOS Sockets)
 
 public enum LegacyTCPClientError: LocalizedError {
     case connectionFailed(String)
@@ -1011,18 +1058,32 @@ public final class LegacyTCPSession {
         close()
     }
 
-    public func connect(timeoutSeconds: Double = 3.5) throws {
+    public func connect(timeoutSeconds: Double = 3.5, retries: Int = 3) throws {
+        var lastError: Error?
+        for attempt in 0..<max(1, retries) {
+            do {
+                try connectOnce(timeoutSeconds: timeoutSeconds)
+                return
+            } catch {
+                lastError = error
+                if attempt + 1 < retries {
+                    Thread.sleep(forTimeInterval: 0.45)
+                }
+            }
+        }
+        throw lastError ?? LegacyTCPClientError.connectionFailed("Unable to connect to \(host):\(port).")
+    }
+
+    private func connectOnce(timeoutSeconds: Double) throws {
         close()
         let fd = Darwin.socket(AF_INET, SOCK_STREAM, 0)
         guard fd >= 0 else {
             throw LegacyTCPClientError.connectionFailed("Unable to create TCP socket.")
         }
 
-        // Prevent SIGPIPE crashes on broken pipe
         var noSigPipe: Int32 = 1
         setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, socklen_t(MemoryLayout<Int32>.size))
 
-        // Set non-blocking for connect timeout
         let flags = fcntl(fd, F_GETFL, 0)
         _ = fcntl(fd, F_SETFL, flags | O_NONBLOCK)
 
@@ -1040,7 +1101,7 @@ public final class LegacyTCPSession {
 
         if res < 0 && errno != EINPROGRESS {
             Darwin.close(fd)
-            throw LegacyTCPClientError.connectionFailed("Cannot reach \(host):\(port). Join your printer's INSTAX-XXXXXXXX Wi-Fi network first (or enable Virtual Simulator).")
+            throw LegacyTCPClientError.connectionFailed("Cannot reach \(host):\(port). Select your printer's INSTAX-XXXXXXXX Wi-Fi from the dropdown first (or enable Virtual Simulator).")
         }
 
         if res != 0 {
@@ -1055,7 +1116,7 @@ public final class LegacyTCPSession {
             let sel = Darwin.select(fd + 1, nil, &writeSet, nil, &tv)
             if sel <= 0 {
                 Darwin.close(fd)
-                throw LegacyTCPClientError.connectionFailed("Connection timed out to \(host):\(port). Make sure your Mac is connected to the INSTAX-XXXXXXXX Wi-Fi Direct hotspot.")
+                throw LegacyTCPClientError.connectionFailed("Connection timed out to \(host):\(port). Join your printer's INSTAX-XXXXXXXX Wi-Fi network first.")
             }
 
             var soError: Int32 = 0
@@ -1067,10 +1128,9 @@ public final class LegacyTCPSession {
             }
         }
 
-        // Restore blocking mode with 6-second send/recv timeouts
         _ = fcntl(fd, F_SETFL, flags & ~O_NONBLOCK)
-        var rcvTimeout = timeval(tv_sec: 6, tv_usec: 0)
-        var sndTimeout = timeval(tv_sec: 6, tv_usec: 0)
+        var rcvTimeout = timeval(tv_sec: 8, tv_usec: 0)
+        var sndTimeout = timeval(tv_sec: 8, tv_usec: 0)
         setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &rcvTimeout, socklen_t(MemoryLayout<timeval>.size))
         setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &sndTimeout, socklen_t(MemoryLayout<timeval>.size))
 
@@ -1146,32 +1206,45 @@ public final class LegacyTCPSession {
     }
 }
 
-// MARK: - High-Level Printer Manager (ObservableObject for SwiftUI + CLI)
+// MARK: - High-Level Printer Manager (Real Telemetry + Wi-Fi & Subnet Discovery)
 
 public struct LegacyPrinterTelemetry {
-    public var modelName: String = "SP-2"
-    public var firmwareVersion: String = "v1.18"
-    public var batteryLevel: Int = 4     // 0..4
-    public var filmRemaining: Int = 10   // 0..10
-    public var totalPrintHistory: Int = 0
+    public var modelName: String? = nil
+    public var firmwareVersion: String? = nil
+    public var batteryLevel: Int? = nil       // nil when disconnected; 0..4 when connected
+    public var filmRemaining: Int? = nil      // nil when disconnected; 0..10 when connected
+    public var totalPrintHistory: Int? = nil  // nil when disconnected
     public var maxWidth: Int = 600
     public var maxHeight: Int = 800
+    public var maxMsgSize: Int = 60000
 }
 
 public final class LegacyPrinterManager: ObservableObject {
     @Published public var printerIP: String = "192.168.0.251"
     @Published public var printerPort: String = "8080"
     @Published public var pinCode: String = "1111"
+    @Published public var wifiPassword: String = "1111"
+
+    @Published public var discoveryItems: [LegacyWiFiDiscoveryItem] = []
+    @Published public var selectedDiscoveryID: String = "default-192.168.0.251"
+    @Published public var isScanningWiFi: Bool = false
+
     @Published public var useVirtualSimulator: Bool = false {
         didSet {
             if useVirtualSimulator {
                 _ = LegacyVirtualPrinterServer.shared.start(port: 18080)
                 printerIP = "127.0.0.1"
                 printerPort = "18080"
+                selectedDiscoveryID = "virtual-sim"
                 appendLog("🟢 Built-in Virtual Instax SHARE Simulator started at 127.0.0.1:18080")
+                queryPrinterStatus()
             } else {
                 printerIP = "192.168.0.251"
                 printerPort = "8080"
+                selectedDiscoveryID = "default-192.168.0.251"
+                isConnected = false
+                telemetry = LegacyPrinterTelemetry()
+                statusHeadline = "Not Connected — Scan or select INSTAX Wi-Fi from dropdown"
                 appendLog("📡 Switched target to physical Instax SHARE Wi-Fi Direct (192.168.0.251:8080)")
             }
         }
@@ -1180,14 +1253,14 @@ public final class LegacyPrinterManager: ObservableObject {
 
     @Published public var isConnected: Bool = false
     @Published public var isBusy: Bool = false
-    @Published public var statusHeadline: String = "Ready to connect over Wi-Fi Direct (192.168.0.251:8080)"
+    @Published public var statusHeadline: String = "Not Connected — Scan or select INSTAX Wi-Fi from dropdown"
     @Published public var progressValue: Double = 0.0
     @Published public var telemetry = LegacyPrinterTelemetry()
-    @Published public var detectedWiFiSSID: String = "Checking Wi-Fi..."
+    @Published public var detectedWiFiSSID: String = "Scanning Wi-Fi..."
     @Published public var logs: [String] = []
 
     public init() {
-        refreshWiFiEnvironment()
+        scanWiFiAndPrinters(autoConnectIfFound: false)
     }
 
     public func appendLog(_ message: String) {
@@ -1205,23 +1278,88 @@ public final class LegacyPrinterManager: ObservableObject {
         }
     }
 
-    public func refreshWiFiEnvironment() {
-        DispatchQueue.global(qos: .utility).async {
-            var ssid = "Wi-Fi Active"
-            // Check local IP on 192.168.0.x subnet
-            var onInstaxSubnet = false
+    /// Scans nearby Wi-Fi SSIDs via CoreWLAN + checks local subnet for active Instax SHARE TCP endpoints on port 8080.
+    public func scanWiFiAndPrinters(autoConnectIfFound: Bool = false, onModelDetected: ((LegacyPrinterModel) -> Void)? = nil) {
+        guard !isScanningWiFi else { return }
+        isScanningWiFi = true
+        appendLog("📡 Scanning nearby Wi-Fi networks & local subnet for Instax SHARE printers...")
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            var items: [LegacyWiFiDiscoveryItem] = []
+            var seenIDs = Set<String>()
+
+            func addItem(_ item: LegacyWiFiDiscoveryItem) {
+                guard !seenIDs.contains(item.id) else { return }
+                seenIDs.insert(item.id)
+                items.append(item)
+            }
+
+            // 1. Check current Wi-Fi interface & scan nearby SSIDs via CoreWLAN
+            var currentSSID: String? = nil
+            if let iface = CWWiFiClient.shared().interface() {
+                currentSSID = iface.ssid()
+                if let ssid = currentSSID, !ssid.isEmpty {
+                    let isInstax = ssid.uppercased().contains("INSTAX")
+                    addItem(LegacyWiFiDiscoveryItem(
+                        id: "ssid-\(ssid)",
+                        title: isInstax ? "📶 Connected INSTAX Wi-Fi: \(ssid) (192.168.0.251)" : "📶 Current Wi-Fi: \(ssid)",
+                        ssid: ssid,
+                        host: "192.168.0.251",
+                        port: 8080,
+                        kind: isInstax ? .instaxWiFiSSID : .currentWiFiSSID
+                    ))
+                }
+
+                if let networks = try? iface.scanForNetworks(withName: nil) {
+                    let sorted = networks.sorted { ($0.ssid ?? "") < ($1.ssid ?? "") }
+                    for net in sorted {
+                        guard let ssid = net.ssid, !ssid.isEmpty else { continue }
+                        if ssid.uppercased().contains("INSTAX") {
+                            addItem(LegacyWiFiDiscoveryItem(
+                                id: "ssid-\(ssid)",
+                                title: "📸 Join Printer Wi-Fi: \(ssid) (RSSI \(net.rssiValue) dBm)",
+                                ssid: ssid,
+                                host: "192.168.0.251",
+                                port: 8080,
+                                kind: .instaxWiFiSSID
+                            ))
+                        }
+                    }
+                    for net in sorted {
+                        guard let ssid = net.ssid, !ssid.isEmpty, !ssid.uppercased().contains("INSTAX") else { continue }
+                        addItem(LegacyWiFiDiscoveryItem(
+                            id: "ssid-\(ssid)",
+                            title: "Wi-Fi Network: \(ssid)",
+                            ssid: ssid,
+                            host: "192.168.0.251",
+                            port: 8080,
+                            kind: .currentWiFiSSID
+                        ))
+                    }
+                }
+            }
+
+            // 2. Check local IPv4 subnet & probe candidate Instax SHARE IPs on TCP port 8080
+            var candidateIPs = ["192.168.0.251", "192.168.0.1"]
+            var localInstaxIP: String? = nil
+
             var ifaddr: UnsafeMutablePointer<ifaddrs>?
             if getifaddrs(&ifaddr) == 0, let first = ifaddr {
                 var ptr: UnsafeMutablePointer<ifaddrs>? = first
                 while let cur = ptr {
-                    let addr = cur.pointee.ifa_addr
-                    if let addr = addr, addr.pointee.sa_family == UInt8(AF_INET) {
+                    if let addr = cur.pointee.ifa_addr, addr.pointee.sa_family == UInt8(AF_INET) {
                         var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
                         if getnameinfo(addr, socklen_t(addr.pointee.sa_len), &hostname, socklen_t(hostname.count), nil, 0, NI_NUMERICHOST) == 0 {
                             let ip = String(cString: hostname)
                             if ip.hasPrefix("192.168.0.") {
-                                onInstaxSubnet = true
-                                ssid = "Instax Subnet (\(ip))"
+                                localInstaxIP = ip
+                            } else if ip.hasPrefix("192.168.") || ip.hasPrefix("10.") {
+                                let parts = ip.split(separator: ".")
+                                if parts.count == 4 {
+                                    let prefix = "\(parts[0]).\(parts[1]).\(parts[2])"
+                                    if !candidateIPs.contains("\(prefix).251") { candidateIPs.append("\(prefix).251") }
+                                    if !candidateIPs.contains("\(prefix).1") { candidateIPs.append("\(prefix).1") }
+                                }
                             }
                         }
                     }
@@ -1229,23 +1367,162 @@ public final class LegacyPrinterManager: ObservableObject {
                 }
                 freeifaddrs(ifaddr)
             }
+
+            var reachableEndpoint: LegacyWiFiDiscoveryItem? = nil
+            for ip in candidateIPs {
+                if Self.quickProbeTCP(host: ip, port: 8080, timeoutSeconds: 0.45) {
+                    let item = LegacyWiFiDiscoveryItem(
+                        id: "live-\(ip):8080",
+                        title: "🟢 Discovered Instax SHARE Printer (\(ip):8080)",
+                        ssid: nil,
+                        host: ip,
+                        port: 8080,
+                        kind: .reachablePrinterEndpoint
+                    )
+                    addItem(item)
+                    if reachableEndpoint == nil { reachableEndpoint = item }
+                }
+            }
+
+            // 3. Always include the factory default endpoint and Virtual Simulator option
+            addItem(LegacyWiFiDiscoveryItem(
+                id: "default-192.168.0.251",
+                title: "🎯 Instax SHARE Default (192.168.0.251:8080)",
+                ssid: nil,
+                host: "192.168.0.251",
+                port: 8080,
+                kind: .defaultPrinterEndpoint
+            ))
+
+            addItem(LegacyWiFiDiscoveryItem(
+                id: "virtual-sim",
+                title: "🧪 Virtual SP-1/2/3 Simulator (127.0.0.1:18080)",
+                ssid: nil,
+                host: "127.0.0.1",
+                port: 18080,
+                kind: .virtualSimulator
+            ))
+
             DispatchQueue.main.async {
+                self.discoveryItems = items
+                self.isScanningWiFi = false
+
                 if self.useVirtualSimulator {
-                    self.detectedWiFiSSID = "Virtual SP-1/2/3 Simulator (127.0.0.1:18080)"
-                } else if onInstaxSubnet {
-                    self.detectedWiFiSSID = "Connected to \(ssid)"
+                    self.detectedWiFiSSID = "Virtual SP Simulator (127.0.0.1:18080)"
+                } else if let ssid = currentSSID, !ssid.isEmpty {
+                    self.detectedWiFiSSID = "Wi-Fi: \(ssid)"
+                } else if let lip = localInstaxIP {
+                    self.detectedWiFiSSID = "On Instax Subnet (\(lip))"
                 } else {
-                    self.detectedWiFiSSID = "Join 'INSTAX-XXXXXXXX' in macOS Wi-Fi Menu"
+                    self.detectedWiFiSSID = "Select INSTAX-XXXXXXXX from Wi-Fi dropdown"
+                }
+
+                if let found = reachableEndpoint {
+                    self.selectedDiscoveryID = found.id
+                    self.printerIP = found.host
+                    self.printerPort = String(found.port)
+                    self.appendLog("🟢 Found live Instax SHARE TCP endpoint at \(found.host):\(found.port)!")
+                    if autoConnectIfFound {
+                        self.queryPrinterStatus(onModelDetected: onModelDetected)
+                    }
+                } else {
+                    self.appendLog("📡 Scan complete (\(items.count) options in dropdown).")
                 }
             }
         }
     }
 
-    /// Queries the printer's Model Name (0xC2), Version (0xC0), Specifications (0x4F), and Print Count (0xC1).
-    public func queryPrinterStatus(onModelDetected: ((LegacyPrinterModel) -> Void)? = nil) {
-        guard !isBusy else { return }
+    /// Handles user selecting an item from the Wi-Fi / Printer discovery dropdown.
+    public func applyDiscoverySelection(_ itemID: String, onModelDetected: ((LegacyPrinterModel) -> Void)? = nil) {
+        selectedDiscoveryID = itemID
+        guard let item = discoveryItems.first(where: { $0.id == itemID }) else { return }
+
+        switch item.kind {
+        case .virtualSimulator:
+            if !useVirtualSimulator {
+                useVirtualSimulator = true
+            } else {
+                queryPrinterStatus(onModelDetected: onModelDetected)
+            }
+        case .instaxWiFiSSID, .currentWiFiSSID:
+            if useVirtualSimulator { useVirtualSimulator = false }
+            printerIP = item.host
+            printerPort = String(item.port)
+            if let targetSSID = item.ssid {
+                joinWiFiAndConnect(ssid: targetSSID, onModelDetected: onModelDetected)
+            }
+        case .reachablePrinterEndpoint, .defaultPrinterEndpoint:
+            if useVirtualSimulator { useVirtualSimulator = false }
+            printerIP = item.host
+            printerPort = String(item.port)
+            queryPrinterStatus(onModelDetected: onModelDetected)
+        }
+    }
+
+    /// Joins a selected `INSTAX-XXXXXXXX` Wi-Fi network using CoreWLAN and then connects to the printer.
+    public func joinWiFiAndConnect(ssid: String, onModelDetected: ((LegacyPrinterModel) -> Void)? = nil) {
+        appendLog("📶 Attempting to join Wi-Fi network '\(ssid)'...")
+        statusHeadline = "Joining Wi-Fi '\(ssid)'..."
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            var joined = false
+            if let iface = CWWiFiClient.shared().interface() {
+                if iface.ssid() == ssid {
+                    joined = true
+                } else if let nets = try? iface.scanForNetworks(withName: ssid), let net = nets.first {
+                    let pass = self.wifiPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+                    do {
+                        try iface.associate(to: net, password: pass.isEmpty ? nil : pass)
+                        joined = true
+                    } catch {
+                        // Try open association if password wasn't required
+                        try? iface.associate(to: net, password: nil)
+                        joined = (iface.ssid() == ssid)
+                    }
+                }
+            }
+
+            DispatchQueue.main.async {
+                if joined {
+                    self.detectedWiFiSSID = "Wi-Fi: \(ssid)"
+                    self.appendLog("✅ Joined Wi-Fi '\(ssid)'. Querying printer at \(self.printerIP):\(self.printerPort)...")
+                    self.queryPrinterStatus(onModelDetected: onModelDetected)
+                } else {
+                    self.appendLog("ℹ️ Could not auto-associate to '\(ssid)'. Opening macOS Wi-Fi Settings so you can click '\(ssid)'...")
+                    self.openSystemWiFiSettings()
+                }
+            }
+        }
+    }
+
+    public func openSystemWiFiSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.wifi-settings-extension") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    private static func quickProbeTCP(host: String, port: UInt16, timeoutSeconds: Double) -> Bool {
+        let s = LegacyTCPSession(host: host, port: port, pinCode: 1111, sessionTime: 12345)
+        do {
+            try s.connect(timeoutSeconds: timeoutSeconds, retries: 1)
+            s.close()
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Queries the printer's Version (0xC0), Model Name (0xC2), Specifications (0x4F), and Print Count (0xC1)
+    /// in the exact order used by `instax_api` (`sp2.py` / `sp3.py`).
+    public func queryPrinterStatus(
+        onModelDetected: ((LegacyPrinterModel) -> Void)? = nil,
+        completion: ((Bool) -> Void)? = nil
+    ) {
+        guard !isBusy else {
+            completion?(false)
+            return
+        }
         isBusy = true
-        refreshWiFiEnvironment()
 
         let host = printerIP.trimmingCharacters(in: .whitespacesAndNewlines)
         let port = UInt16(printerPort.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 8080
@@ -1257,35 +1534,51 @@ public final class LegacyPrinterManager: ObservableObject {
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 let session = LegacyTCPSession(host: host, port: port, pinCode: pin, sessionTime: sessionTime)
-                try session.connect(timeoutSeconds: 3.5)
+                try session.connect(timeoutSeconds: 3.5, retries: 2)
                 defer { session.close() }
 
-                let modelResp = try session.sendAndReceive(type: .modelName)
-                if !modelResp.isOK {
-                    throw LegacyTCPClientError.printerError(modelResp.returnCodeDescription)
-                }
-                let rawName = String(data: modelResp.payload, encoding: .utf8)?.trimmingCharacters(in: .controlCharacters.union(.whitespacesAndNewlines)) ?? "SP-2"
-
+                // 1. Version (0xC0)
                 let verResp = try session.sendAndReceive(type: .version)
+                if !verResp.isOK {
+                    throw LegacyTCPClientError.printerError(verResp.returnCodeDescription)
+                }
                 var fwString = "v1.0"
                 if verResp.payload.count >= 4 {
                     let fwHi = verResp.payload[2]
                     let fwLo = verResp.payload[3]
-                    fwString = String(format: "v%d.%02d", fwHi, fwLo)
+                    fwString = String(format: "%02X.%02X", fwHi, fwLo)
                 }
 
+                // 2. Model Name (0xC2)
+                let modelResp = try session.sendAndReceive(type: .modelName)
+                if !modelResp.isOK {
+                    throw LegacyTCPClientError.printerError(modelResp.returnCodeDescription)
+                }
+                let rawName = String(data: modelResp.payload, encoding: .utf8)?
+                    .trimmingCharacters(in: .controlCharacters.union(.whitespacesAndNewlines)) ?? "SP-2"
+
+                // 3. Specifications (0x4F)
                 let specResp = try session.sendAndReceive(type: .specifications)
                 var maxW = 600
                 var maxH = 800
+                var maxMsgSz = 60000
                 if specResp.payload.count >= 4 {
                     maxW = (Int(specResp.payload[0]) << 8) | Int(specResp.payload[1])
                     maxH = (Int(specResp.payload[2]) << 8) | Int(specResp.payload[3])
                 }
+                if specResp.payload.count >= 14 {
+                    let reportedSeg = (Int(specResp.payload[12]) << 8) | Int(specResp.payload[13])
+                    if reportedSeg > 0 { maxMsgSz = reportedSeg }
+                }
 
+                // 4. Print Count (0xC1)
                 let countResp = try session.sendAndReceive(type: .printCount)
                 var totalPrints = 0
                 if countResp.payload.count >= 4 {
-                    totalPrints = (Int(countResp.payload[0]) << 24) | (Int(countResp.payload[1]) << 16) | (Int(countResp.payload[2]) << 8) | Int(countResp.payload[3])
+                    totalPrints = (Int(countResp.payload[0]) << 24)
+                        | (Int(countResp.payload[1]) << 16)
+                        | (Int(countResp.payload[2]) << 8)
+                        | Int(countResp.payload[3])
                 }
 
                 let detectedModel: LegacyPrinterModel
@@ -1301,24 +1594,28 @@ public final class LegacyPrinterManager: ObservableObject {
                     self.telemetry = LegacyPrinterTelemetry(
                         modelName: rawName.isEmpty ? detectedModel.rawValue : rawName,
                         firmwareVersion: fwString,
-                        batteryLevel: modelResp.batteryLevel,
-                        filmRemaining: modelResp.filmRemaining,
+                        batteryLevel: verResp.batteryLevel,
+                        filmRemaining: verResp.filmRemaining,
                         totalPrintHistory: totalPrints,
                         maxWidth: maxW,
-                        maxHeight: maxH
+                        maxHeight: maxH,
+                        maxMsgSize: maxMsgSz
                     )
                     self.isConnected = true
                     self.isBusy = false
-                    self.statusHeadline = "Connected to \(self.telemetry.modelName) • \(self.telemetry.filmRemaining)/10 Film Left • Battery \(self.telemetry.batteryLevel)/4"
-                    self.appendLog("✅ Connected: \(self.telemetry.modelName) (\(fwString)) | Resolution: \(maxW)×\(maxH) | Film: \(self.telemetry.filmRemaining)/10 | Total Prints: \(totalPrints)")
+                    self.statusHeadline = "Connected to \(rawName) • \(verResp.filmRemaining)/10 Film Left • Battery \(verResp.batteryLevel)/4"
+                    self.appendLog("✅ Connected: \(rawName) (FW \(fwString)) | Specs: \(maxW)×\(maxH) (Seg \(maxMsgSz)B) | Film: \(verResp.filmRemaining)/10 | Battery: \(verResp.batteryLevel)/4 | Total Prints: \(totalPrints)")
                     onModelDetected?(detectedModel)
+                    completion?(true)
                 }
             } catch {
                 DispatchQueue.main.async {
                     self.isConnected = false
+                    self.telemetry = LegacyPrinterTelemetry()
                     self.isBusy = false
                     self.statusHeadline = error.localizedDescription
                     self.appendLog("❌ Connection Error: \(error.localizedDescription)")
+                    completion?(false)
                 }
             }
         }
@@ -1338,6 +1635,8 @@ public final class LegacyPrinterManager: ObservableObject {
         let port = UInt16(printerPort.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 8080
         let pin = UInt16(pinCode.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 1111
         let isDryRun = dryRunMode
+        let isLocalhost = (host == "127.0.0.1" || host == "localhost")
+        let interSessionDelay: TimeInterval = isLocalhost ? 0.15 : 0.90
         let sessionTime = UInt32(truncatingIfNeeded: Int64(Date().timeIntervalSince1970 * 1000))
 
         appendLog(isDryRun
@@ -1346,22 +1645,61 @@ public final class LegacyPrinterManager: ObservableObject {
 
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                // Encode Column-Major Planar RGB
-                let planarData = LegacyImageProcessor.encodePlanarRGB(cgImage: cgImage, model: model)
-                let totalBytes = planarData.count
-                let segmentSize = model.segmentSize
-                let numSegments = totalBytes / segmentSize
+                // Step 0: Query live Specifications (0x4F) so SP-1 / SP-2 / SP-3 hardware dimensions & segment size are 100% matched
+                var hwWidth = model.width
+                var hwHeight = model.height
+                var segmentSize = model.segmentSize
 
-                self.appendLog("📐 Encoded Planar RGB payload: \(totalBytes) bytes (\(numSegments) segments × \(segmentSize) B)")
+                do {
+                    let s0 = LegacyTCPSession(host: host, port: port, pinCode: pin, sessionTime: sessionTime)
+                    try s0.connect(timeoutSeconds: 3.5, retries: 3)
+                    defer { s0.close() }
+                    let specResp = try s0.sendAndReceive(type: .specifications)
+                    if !specResp.isOK {
+                        throw LegacyTCPClientError.printerError("Specifications query failed: \(specResp.returnCodeDescription)")
+                    }
+                    if specResp.payload.count >= 4 {
+                        let w = (Int(specResp.payload[0]) << 8) | Int(specResp.payload[1])
+                        let h = (Int(specResp.payload[2]) << 8) | Int(specResp.payload[3])
+                        if w >= 320 && h >= 320 {
+                            hwWidth = w
+                            hwHeight = h
+                        }
+                    }
+                    if specResp.payload.count >= 14 {
+                        let seg = (Int(specResp.payload[12]) << 8) | Int(specResp.payload[13])
+                        if seg >= 1024 {
+                            segmentSize = seg
+                        }
+                    }
+                    DispatchQueue.main.async {
+                        self.telemetry.batteryLevel = specResp.batteryLevel
+                        self.telemetry.filmRemaining = specResp.filmRemaining
+                        self.isConnected = true
+                    }
+                }
+                Thread.sleep(forTimeInterval: interSessionDelay)
+
+                // Encode Column-Major Planar RGB with 90° clockwise scanline orientation matching `instaxImage.py`
+                let planarData = LegacyImageProcessor.encodePlanarRGB(
+                    cgImage: cgImage,
+                    model: model,
+                    reportedMaxWidth: hwWidth,
+                    reportedMaxHeight: hwHeight
+                )
+                let totalBytes = planarData.count
+                let numSegments = max(1, (totalBytes + segmentSize - 1) / segmentSize)
+
+                self.appendLog("📐 Encoded Planar RGB (\(hwHeight)×\(hwWidth) rotated scanlines): \(totalBytes) bytes (\(numSegments) segments × \(segmentSize) B)")
 
                 // PHASE 1: Pre-Print Commands 1..8
                 DispatchQueue.main.async {
                     self.statusHeadline = "Phase 1/5: Negotiating Pre-Print Handshake (1..8)..."
-                    self.progressValue = 0.08
+                    self.progressValue = 0.10
                 }
                 do {
                     let s1 = LegacyTCPSession(host: host, port: port, pinCode: pin, sessionTime: sessionTime)
-                    try s1.connect()
+                    try s1.connect(timeoutSeconds: 4.0, retries: 3)
                     defer { s1.close() }
                     for cmdNum in 1...8 {
                         let resp = try s1.sendAndReceive(type: .prePrint, payload: [0x00, 0x00, 0x00, UInt8(cmdNum)])
@@ -1371,16 +1709,16 @@ public final class LegacyPrinterManager: ObservableObject {
                     }
                 }
                 self.appendLog("✓ Phase 1 complete: PrePrint 1..8 acknowledged.")
-                Thread.sleep(forTimeInterval: 0.35)
+                Thread.sleep(forTimeInterval: interSessionDelay)
 
                 // PHASE 2: Lock Printer
                 DispatchQueue.main.async {
                     self.statusHeadline = "Phase 2/5: Locking Instax SHARE Print Engine..."
-                    self.progressValue = 0.15
+                    self.progressValue = 0.18
                 }
                 do {
                     let s2 = LegacyTCPSession(host: host, port: port, pinCode: pin, sessionTime: sessionTime)
-                    try s2.connect()
+                    try s2.connect(timeoutSeconds: 4.0, retries: 3)
                     defer { s2.close() }
                     let resp = try s2.sendAndReceive(type: .printerLock, payload: [0x01, 0x00, 0x00, 0x00])
                     if !resp.isOK {
@@ -1388,16 +1726,16 @@ public final class LegacyPrinterManager: ObservableObject {
                     }
                 }
                 self.appendLog("✓ Phase 2 complete: Printer locked for exclusive transfer.")
-                Thread.sleep(forTimeInterval: 0.35)
+                Thread.sleep(forTimeInterval: interSessionDelay)
 
                 // PHASE 3: Reset Printer Buffer
                 DispatchQueue.main.async {
                     self.statusHeadline = "Phase 3/5: Resetting Printer Image Buffer..."
-                    self.progressValue = 0.22
+                    self.progressValue = 0.25
                 }
                 do {
                     let s3 = LegacyTCPSession(host: host, port: port, pinCode: pin, sessionTime: sessionTime)
-                    try s3.connect()
+                    try s3.connect(timeoutSeconds: 4.0, retries: 3)
                     defer { s3.close() }
                     let resp = try s3.sendAndReceive(type: .reset)
                     if !resp.isOK {
@@ -1405,12 +1743,12 @@ public final class LegacyPrinterManager: ObservableObject {
                     }
                 }
                 self.appendLog("✓ Phase 3 complete: Printer buffer cleared.")
-                Thread.sleep(forTimeInterval: 0.35)
+                Thread.sleep(forTimeInterval: interSessionDelay)
 
                 // PHASE 4: PrepImage + SendImage Segments (0..<numSegments) + TriggerPrint
                 do {
                     let s4 = LegacyTCPSession(host: host, port: port, pinCode: pin, sessionTime: sessionTime)
-                    try s4.connect()
+                    try s4.connect(timeoutSeconds: 4.0, retries: 3)
                     defer { s4.close() }
 
                     let lenU32 = UInt32(totalBytes)
@@ -1430,9 +1768,9 @@ public final class LegacyPrinterManager: ObservableObject {
                     let allBytes = [UInt8](planarData)
                     for seg in 0..<numSegments {
                         let start = seg * segmentSize
-                        let end = start + segmentSize
+                        let end = min(allBytes.count, start + segmentSize)
                         var segPayload = [UInt8]()
-                        segPayload.reserveCapacity(4 + segmentSize)
+                        segPayload.reserveCapacity(4 + (end - start))
                         let seq = UInt32(seg)
                         segPayload.append(UInt8((seq >> 24) & 0xFF))
                         segPayload.append(UInt8((seq >> 16) & 0xFF))
@@ -1445,7 +1783,7 @@ public final class LegacyPrinterManager: ObservableObject {
                             throw LegacyTCPClientError.printerError("Segment \(seg + 1)/\(numSegments) failed: \(segResp.returnCodeDescription)")
                         }
 
-                        let frac = 0.25 + (Double(seg + 1) / Double(numSegments)) * 0.60
+                        let frac = 0.28 + (Double(seg + 1) / Double(numSegments)) * 0.58
                         DispatchQueue.main.async {
                             self.progressValue = frac
                             self.statusHeadline = "Phase 4/5: Transmitting Planar RGB Segment \(seg + 1)/\(numSegments)..."
@@ -1462,12 +1800,12 @@ public final class LegacyPrinterManager: ObservableObject {
                         self.appendLog("✓ Phase 4 complete: All \(numSegments) segments sent & physical print triggered!")
                     }
                 }
-                Thread.sleep(forTimeInterval: 0.35)
+                Thread.sleep(forTimeInterval: interSessionDelay)
 
                 // PHASE 5: Final Status Poll (or Dry Run Buffer Reset)
                 if isDryRun {
                     let s5 = LegacyTCPSession(host: host, port: port, pinCode: pin, sessionTime: sessionTime)
-                    try s5.connect()
+                    try s5.connect(timeoutSeconds: 4.0, retries: 3)
                     defer { s5.close() }
                     _ = try? s5.sendAndReceive(type: .reset)
                     let finalInfo = try s5.sendAndReceive(type: .modelName)
@@ -1477,7 +1815,7 @@ public final class LegacyPrinterManager: ObservableObject {
                         self.progressValue = 1.0
                         self.isBusy = false
                         self.isConnected = true
-                        self.statusHeadline = "✅ Dry Run Passed! 100% of \(totalBytes / 1000) KB Verified (0 Film Used)"
+                        self.statusHeadline = "✅ Dry Run Passed! 100% of \(totalBytes / 1000) KB Verified (0 Film Used • \(finalInfo.filmRemaining)/10 Left)"
                         self.appendLog("🎉 DRY RUN COMPLETE: Connection, PIN, and \(numSegments) segments verified with 0 film used.")
                         completion?(true)
                     }
@@ -1487,7 +1825,7 @@ public final class LegacyPrinterManager: ObservableObject {
                         self.progressValue = 0.90
                     }
                     let s5 = LegacyTCPSession(host: host, port: port, pinCode: pin, sessionTime: sessionTime)
-                    try s5.connect()
+                    try s5.connect(timeoutSeconds: 4.0, retries: 3)
                     defer { s5.close() }
                     _ = try? s5.sendAndReceive(type: .lockState)
                     _ = try? s5.sendAndReceive(type: .version)
@@ -1500,17 +1838,17 @@ public final class LegacyPrinterManager: ObservableObject {
                         finalFilm = poll.filmRemaining
                         finalBatt = poll.batteryLevel
                         if poll.isOK { break }
-                        Thread.sleep(forTimeInterval: 0.5)
+                        Thread.sleep(forTimeInterval: 0.8)
                     }
 
                     DispatchQueue.main.async {
                         self.telemetry.filmRemaining = finalFilm
                         self.telemetry.batteryLevel = finalBatt
-                        self.telemetry.totalPrintHistory += 1
+                        self.telemetry.totalPrintHistory = (self.telemetry.totalPrintHistory ?? 0) + 1
                         self.progressValue = 1.0
                         self.isBusy = false
                         self.isConnected = true
-                        self.statusHeadline = "✅ Print Complete! (\(finalFilm)/10 Film Remaining)"
+                        self.statusHeadline = "✅ Print Complete! (\(finalFilm)/10 Film Remaining • Battery \(finalBatt)/4)"
                         self.appendLog("🎉 Print finished! Remaining film: \(finalFilm)/10 | Battery: \(finalBatt)/4")
                         completion?(true)
                     }

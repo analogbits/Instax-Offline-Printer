@@ -4,16 +4,20 @@ Legacy Instax Printer GUI (Windows & Linux) — Wi-Fi Direct Studio (SP-1 • SP
 ======================================================================================
 Complete offline desktop studio for Fujifilm Instax SHARE SP-1, SP-2, and SP-3 printers.
 Features:
-  - Wi-Fi Direct TCP Connection Bar (192.168.0.251:8080, PIN 1111)
+  - Wi-Fi Direct Network & Subnet Discovery Dropdown + One-Click Scan
+  - Authentic 10-LED Film & Battery Telemetry (Unlit when offline; real hardware status when connected)
   - Built-in Virtual SP-1 / SP-2 / SP-3 Simulator (127.0.0.1:18080)
   - Dry Run (0-Film Verification) Mode
   - Multi-Photo Collage Studio with live Border Spacing slider (0..28 px)
   - Scannable QR Code Generator & Overlay (URL, Text, Phone, Email, Wi-Fi, Location)
   - Fujifilm SHARE Artistic Filters & Exposure Controls
-  - Exact Column-Major Planar RGB Encoder (600x800 Mini & 800x800 Square)
+  - Bit-Exact 90° Scanline Column-Major Planar RGB Encoder (600x800 Mini & 800x800 Square)
 """
 
 import os
+import platform
+import socket
+import subprocess
 import sys
 import threading
 import time
@@ -37,12 +41,13 @@ class LegacyInstaxPrinterGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Legacy Instax Printer — Wi-Fi Direct Studio (SP-1 • SP-2 • SP-3)")
-        self.geometry("1160x760")
-        self.minsize(1040, 680)
+        self.geometry("1200x760")
+        self.minsize(1060, 680)
         self.configure(bg="#18181B")
 
         # State
         self.model_var = tk.StringVar(value="SP-2")
+        self.wifi_choice_var = tk.StringVar(value="🎯 Default Instax SHARE (192.168.0.251:8080)")
         self.ip_var = tk.StringVar(value="192.168.0.251")
         self.port_var = tk.StringVar(value="8080")
         self.pin_var = tk.StringVar(value="1111")
@@ -50,11 +55,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.dry_run_var = tk.BooleanVar(value=False)
 
         self.fit_mode_var = tk.StringVar(value="fill")
-        self.matte_var = tk.StringVar(value="#FFFFFF")
         self.filter_var = tk.StringVar(value="Normal")
-        self.brightness_var = tk.DoubleVar(value=1.0)
-        self.contrast_var = tk.DoubleVar(value=1.0)
-        self.saturation_var = tk.DoubleVar(value=1.0)
         self.rotation_deg = 0
 
         self.collage_layout_var = tk.StringVar(value="Single")
@@ -63,13 +64,16 @@ class LegacyInstaxPrinterGUI(tk.Tk):
 
         self.qr_type_var = tk.StringVar(value="Off")
         self.qr_text_var = tk.StringVar(value="https://github.com/analogbits/Instax-Offline-Printer")
-        self.qr_corner_var = tk.StringVar(value="Bottom Right")
         self.caption_var = tk.StringVar(value="")
         self.date_stamp_var = tk.BooleanVar(value=False)
 
-        self.status_var = tk.StringVar(value="Ready — Join 'INSTAX-XXXXXXXX' Wi-Fi (192.168.0.251:8080, PIN 1111)")
-        self.film_remaining = 10
-        self.battery_level = 4
+        # Authentic Telemetry State (None when disconnected!)
+        self.is_connected = False
+        self.film_remaining = None
+        self.battery_level = None
+        self.status_var = tk.StringVar(value="Not Connected — Scan or select INSTAX-XXXXXXXX Wi-Fi from dropdown")
+        self.led_header_var = tk.StringVar(value="Not Connected • —/10 • Batt —")
+        self.led_dots = []
 
         self.sim_server = VirtualInstaxShareServer(port=18080, model="SP-2", pin=1111)
         self.primary_image = self._make_test_card("SP-2")
@@ -78,57 +82,73 @@ class LegacyInstaxPrinterGUI(tk.Tk):
 
         self._build_ui()
         self.refresh_preview()
+        self.scan_wifi_and_printers()
 
     def _build_ui(self):
-        # Top Wi-Fi Bar
+        # Top Wi-Fi Discovery & Connection Bar
         top = tk.Frame(self, bg="#27272A", padx=12, pady=8)
         top.pack(fill=tk.X)
 
-        tk.Label(top, text="📡 Legacy Instax Printer", fg="#F4F4F5", bg="#27272A", font=("Segoe UI", 12, "bold")).pack(side=tk.LEFT, padx=(0, 12))
+        tk.Label(top, text="📡 Legacy Instax Printer", fg="#F4F4F5", bg="#27272A", font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT, padx=(0, 10))
 
-        tk.Label(top, text="Model:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT)
-        model_cb = ttk.Combobox(top, textvariable=self.model_var, values=["SP-1", "SP-2", "SP-3"], width=7, state="readonly")
-        model_cb.pack(side=tk.LEFT, padx=6)
+        tk.Label(top, text="Wi-Fi / Printer:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT)
+        self.wifi_cb = ttk.Combobox(top, textvariable=self.wifi_choice_var, width=32, state="readonly")
+        self.wifi_cb.pack(side=tk.LEFT, padx=4)
+        self.wifi_cb.bind("<<ComboboxSelected>>", lambda _e: self.on_wifi_choice_selected())
+
+        tk.Button(top, text="Scan Wi-Fi", bg="#3F3F46", fg="white", relief=tk.FLAT, padx=8, command=self.scan_wifi_and_printers).pack(side=tk.LEFT, padx=4)
+
+        tk.Label(top, text="Model:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT, padx=(8, 2))
+        model_cb = ttk.Combobox(top, textvariable=self.model_var, values=["SP-1", "SP-2", "SP-3"], width=6, state="readonly")
+        model_cb.pack(side=tk.LEFT, padx=4)
         model_cb.bind("<<ComboboxSelected>>", lambda _e: self.on_model_changed())
 
-        tk.Label(top, text="IP:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT, padx=(8, 2))
-        tk.Entry(top, textvariable=self.ip_var, width=14).pack(side=tk.LEFT, padx=2)
-
-        tk.Label(top, text="Port:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT, padx=(6, 2))
-        tk.Entry(top, textvariable=self.port_var, width=6).pack(side=tk.LEFT, padx=2)
+        tk.Label(top, text="IP:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT, padx=(6, 2))
+        tk.Entry(top, textvariable=self.ip_var, width=13).pack(side=tk.LEFT, padx=2)
 
         tk.Label(top, text="PIN:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT, padx=(6, 2))
-        tk.Entry(top, textvariable=self.pin_var, width=6).pack(side=tk.LEFT, padx=2)
+        tk.Entry(top, textvariable=self.pin_var, width=5).pack(side=tk.LEFT, padx=2)
 
-        tk.Button(top, text="Connect / Status", bg="#2563EB", fg="white", relief=tk.FLAT, padx=10, command=self.query_status).pack(side=tk.LEFT, padx=10)
+        tk.Button(top, text="Connect", bg="#2563EB", fg="white", relief=tk.FLAT, padx=10, command=self.query_status).pack(side=tk.LEFT, padx=8)
 
         tk.Checkbutton(
             top,
-            text="Virtual SP Simulator (127.0.0.1)",
+            text="Simulator",
             variable=self.sim_var,
             bg="#27272A",
             fg="#E4E4E7",
             selectcolor="#18181B",
             command=self.toggle_simulator,
-        ).pack(side=tk.RIGHT, padx=6)
+        ).pack(side=tk.RIGHT, padx=4)
 
         tk.Checkbutton(
             top,
-            text="Dry Run (0-Film Test)",
+            text="Dry Run (0-Film)",
             variable=self.dry_run_var,
             bg="#27272A",
             fg="#FBBF24",
             selectcolor="#18181B",
-        ).pack(side=tk.RIGHT, padx=6)
+        ).pack(side=tk.RIGHT, padx=4)
 
         # Main 3-Column Body
         body = tk.Frame(self, bg="#18181B")
         body.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
 
-        # Left Panel
-        left = tk.Frame(body, bg="#222226", width=230, padx=10, pady=10)
+        # Left Panel (Authentic 10-LED Card + Photo Source)
+        left = tk.Frame(body, bg="#222226", width=245, padx=10, pady=10)
         left.pack(side=tk.LEFT, fill=tk.Y)
         left.pack_propagate(False)
+
+        led_card = tk.Frame(left, bg="#18181B", padx=8, pady=8)
+        led_card.pack(fill=tk.X, pady=(0, 12))
+        tk.Label(led_card, textvariable=self.led_header_var, fg="#A1A1AA", bg="#18181B", font=("Segoe UI", 8, "bold")).pack(anchor="w")
+        dots_row = tk.Frame(led_card, bg="#18181B", pady=4)
+        dots_row.pack(fill=tk.X)
+        self.led_dots = []
+        for _ in range(10):
+            lbl = tk.Label(dots_row, text="●", fg="#3F3F46", bg="#18181B", font=("Segoe UI", 11))
+            lbl.pack(side=tk.LEFT, padx=2)
+            self.led_dots.append(lbl)
 
         tk.Label(left, text="PHOTO SOURCE", fg="#A1A1AA", bg="#222226", font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(0, 6))
         tk.Button(left, text="📂 Open Image File...", bg="#3B82F6", fg="white", relief=tk.FLAT, pady=6, command=self.open_primary_image).pack(fill=tk.X, pady=3)
@@ -138,9 +158,8 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         tk.Label(left, text="\nWI-FI DIRECT GUIDE", fg="#A1A1AA", bg="#222226", font=("Segoe UI", 9, "bold")).pack(anchor="w")
         guide = (
             "1. Power on your Instax SHARE\n   SP-1, SP-2, or SP-3 printer.\n"
-            "2. Connect Wi-Fi to\n   'INSTAX-XXXXXXXX'.\n"
-            "3. Default IP: 192.168.0.251\n   Port: 8080 • PIN: 1111\n"
-            "4. Use Dry Run to verify full\n   data transfer with 0 film!"
+            "2. Click 'Scan Wi-Fi' and pick\n   'INSTAX-XXXXXXXX' from the\n   dropdown list.\n"
+            "3. Default IP: 192.168.0.251\n   Port: 8080 • PIN: 1111"
         )
         tk.Label(left, text=guide, fg="#D4D4D8", bg="#222226", justify=tk.LEFT, font=("Segoe UI", 9)).pack(anchor="w", pady=6)
 
@@ -252,6 +271,89 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         status_bar.pack(fill=tk.X, side=tk.BOTTOM)
         tk.Label(status_bar, textvariable=self.status_var, fg="#E4E4E7", bg="#27272A", font=("Segoe UI", 9)).pack(side=tk.LEFT)
 
+    def update_led_display(self):
+        if self.is_connected and self.film_remaining is not None and self.battery_level is not None:
+            self.led_header_var.set(f"{self.model_var.get()} FILM LEDs • {self.film_remaining}/10 Left • Batt {self.battery_level}/4")
+            for idx, lbl in enumerate(self.led_dots):
+                lbl.configure(fg="#22C55E" if idx < self.film_remaining else "#3F3F46")
+        else:
+            self.led_header_var.set("Not Connected • —/10 • Batt —")
+            for lbl in self.led_dots:
+                lbl.configure(fg="#3F3F46")
+
+    def scan_wifi_and_printers(self):
+        def worker():
+            choices = []
+            sys_name = platform.system().lower()
+            try:
+                if "windows" in sys_name:
+                    out = subprocess.check_output(["netsh", "wlan", "show", "networks"], text=True, errors="ignore", timeout=4)
+                    for line in out.splitlines():
+                        if "SSID" in line and ":" in line:
+                            ssid = line.split(":", 1)[1].strip()
+                            if ssid:
+                                prefix = "📸 Join INSTAX Wi-Fi: " if "INSTAX" in ssid.upper() else "📶 Wi-Fi: "
+                                choices.append(f"{prefix}{ssid}")
+                elif "linux" in sys_name:
+                    out = subprocess.check_output(["nmcli", "-t", "-f", "SSID", "dev", "wifi", "list"], text=True, errors="ignore", timeout=4)
+                    for line in out.splitlines():
+                        ssid = line.strip()
+                        if ssid:
+                            prefix = "📸 Join INSTAX Wi-Fi: " if "INSTAX" in ssid.upper() else "📶 Wi-Fi: "
+                            choices.append(f"{prefix}{ssid}")
+            except Exception:
+                pass
+
+            # Probe TCP 8080 on 192.168.0.251 & 192.168.0.1
+            for ip in ("192.168.0.251", "192.168.0.1"):
+                try:
+                    with socket.create_connection((ip, 8080), timeout=0.45):
+                        choices.insert(0, f"🟢 Discovered Printer ({ip}:8080)")
+                except Exception:
+                    pass
+
+            choices.append("🎯 Default Instax SHARE (192.168.0.251:8080)")
+            choices.append("🧪 Virtual SP-1/2/3 Simulator (127.0.0.1:18080)")
+
+            def update_cb():
+                self.wifi_cb["values"] = choices
+                if choices:
+                    self.wifi_choice_var.set(choices[0])
+
+            self.after(0, update_cb)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def on_wifi_choice_selected(self):
+        val = self.wifi_choice_var.get()
+        if "Virtual SP" in val:
+            self.sim_var.set(True)
+            self.toggle_simulator()
+        elif "Wi-Fi:" in val:
+            ssid = val.split("Wi-Fi:", 1)[1].strip()
+            self.sim_var.set(False)
+            self.ip_var.set("192.168.0.251")
+            self.port_var.set("8080")
+            self.status_var.set(f"Joining Wi-Fi '{ssid}'...")
+            threading.Thread(target=self._join_wifi_ssid, args=(ssid,), daemon=True).start()
+        elif "(" in val and ":8080)" in val:
+            ip = val.split("(", 1)[1].split(":8080)", 1)[0]
+            self.sim_var.set(False)
+            self.ip_var.set(ip)
+            self.port_var.set("8080")
+            self.query_status()
+
+    def _join_wifi_ssid(self, ssid: str):
+        sys_name = platform.system().lower()
+        try:
+            if "windows" in sys_name:
+                subprocess.run(["netsh", "wlan", "connect", f"name={ssid}"], timeout=5)
+            elif "linux" in sys_name:
+                subprocess.run(["nmcli", "dev", "wifi", "connect", ssid], timeout=8)
+        except Exception:
+            pass
+        self.after(1000, self.query_status)
+
     def on_model_changed(self):
         m = self.model_var.get()
         self.sim_server.model = m
@@ -263,11 +365,15 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             self.sim_server.start()
             self.ip_var.set("127.0.0.1")
             self.port_var.set("18080")
-            self.status_var.set(f"🟢 Virtual Instax SHARE {self.model_var.get()} Simulator active at 127.0.0.1:18080")
+            self.query_status()
         else:
             self.ip_var.set("192.168.0.251")
             self.port_var.set("8080")
-            self.status_var.set("Switched to physical Instax SHARE Wi-Fi Direct (192.168.0.251:8080)")
+            self.is_connected = False
+            self.film_remaining = None
+            self.battery_level = None
+            self.update_led_display()
+            self.status_var.set("Not Connected — Switched to physical Instax SHARE Wi-Fi Direct (192.168.0.251:8080)")
 
     def on_spacing_changed(self):
         if self.collage_layout_var.get() == "Single" and self.collage_images:
@@ -436,14 +542,26 @@ class LegacyInstaxPrinterGUI(tk.Tk):
                     pin=int(self.pin_var.get().strip() or 1111),
                 )
                 st = client.get_printer_status()
-                self.after(
-                    0,
-                    lambda: self.status_var.set(
+
+                def on_ok():
+                    self.is_connected = True
+                    self.film_remaining = st["film"]
+                    self.battery_level = st["battery"]
+                    self.update_led_display()
+                    self.status_var.set(
                         f"✅ Connected to {st['model']} ({st['firmware']}) • {st['film']}/10 Film Left • Battery {st['battery']}/4 • Total Prints: {st['total_prints']}"
-                    ),
-                )
+                    )
+
+                self.after(0, on_ok)
             except Exception as exc:
-                self.after(0, lambda: self.status_var.set(f"❌ Connection Error: {exc}"))
+                def on_err():
+                    self.is_connected = False
+                    self.film_remaining = None
+                    self.battery_level = None
+                    self.update_led_display()
+                    self.status_var.set(f"❌ Connection Error: {exc}")
+
+                self.after(0, on_err)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -467,8 +585,16 @@ class LegacyInstaxPrinterGUI(tk.Tk):
                     dry_run=dry,
                     progress_cb=lambda frac, msg: self.after(0, lambda: self.status_var.set(f"[{int(frac * 100)}%] {msg}")),
                 )
-                if dry:
-                    self.after(0, lambda: messagebox.showinfo("Dry Run Verified (0 Film Used)", f"All {len(planar) // 1000} KB verified by {model}! Film remaining: {res['film']}/10"))
+
+                def on_done():
+                    self.is_connected = True
+                    self.film_remaining = res["film"]
+                    self.battery_level = res["battery"]
+                    self.update_led_display()
+                    if dry:
+                        messagebox.showinfo("Dry Run Verified (0 Film Used)", f"All {len(planar) // 1000} KB verified by {model}! Film remaining: {res['film']}/10")
+
+                self.after(0, on_done)
             except Exception as exc:
                 self.after(0, lambda: self.status_var.set(f"❌ Print Error: {exc}"))
 

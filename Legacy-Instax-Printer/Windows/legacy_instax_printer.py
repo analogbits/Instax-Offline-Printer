@@ -37,8 +37,8 @@ CMD_PRINT_STATUS   = 0xC3  # 195
 CMD_PRE_PRINT      = 0xC4  # 196
 
 MODELS = {
-    "SP-1": {"width": 600, "height": 800, "segment_size": 60000, "segments": 24, "rotate_cw": False},
-    "SP-2": {"width": 600, "height": 800, "segment_size": 60000, "segments": 24, "rotate_cw": False},
+    "SP-1": {"width": 600, "height": 800, "segment_size": 60000, "segments": 24, "rotate_cw": True},
+    "SP-2": {"width": 600, "height": 800, "segment_size": 60000, "segments": 24, "rotate_cw": True},
     "SP-3": {"width": 800, "height": 800, "segment_size": 60000, "segments": 32, "rotate_cw": True},
 }
 
@@ -46,11 +46,16 @@ RETURN_CODE_LABELS = {
     0: "OK (Ready)",
     127: "Parameter / Syntax Error (0x7F)",
     160: "Printer Busy (0xA0)",
+    161: "Invalid Image Data Format (0xA1)",
     162: "Battery Too Low to Print (0xA2)",
     163: "Printing in Progress (0xA3)",
     164: "Ejecting Film (0xA4)",
+    180: "Printer Charging / Voltage Wait (0xB4)",
     244: "Out of Instax Film (0xF4)",
+    245: "Cam Point / Mechanism Error (0xF5)",
+    246: "Film Motor Jam Error (0xF6)",
     247: "Incorrect Printer PIN Code (0xF7 — Default is 1111)",
+    248: "PI Sensor Error (0xF8)",
 }
 
 
@@ -77,7 +82,7 @@ def parse_response_packet(data: bytes) -> dict:
     mode, cmd_type, length, session_time = struct.unpack(">BBHI", data[:8])
     return_code = data[12]
     unknown1 = data[13]
-    ejecting = data[14]
+    ejecting = (data[14] >> 2) & 0xFF
     batt_and_prints = data[15]
     battery = (batt_and_prints >> 4) & 0x07
     film = batt_and_prints & 0x0F
@@ -98,23 +103,25 @@ def parse_response_packet(data: bytes) -> dict:
     }
 
 
-def encode_planar_rgb(pil_image: "Image.Image", model_name: str = "SP-2") -> bytes:
+def encode_planar_rgb(pil_image: "Image.Image", model_name: str = "SP-2", hw_width: Optional[int] = None, hw_height: Optional[int] = None) -> bytes:
     spec = MODELS.get(model_name.upper(), MODELS["SP-2"])
-    w, h = spec["width"], spec["height"]
-    img = pil_image.convert("RGB").resize((w, h), Image.Resampling.LANCZOS)
-    if spec["rotate_cw"]:
-        img = img.rotate(-90, expand=False)
+    portrait_w = hw_width or spec["width"]
+    portrait_h = hw_height or spec["height"]
+    img = pil_image.convert("RGB").resize((portrait_w, portrait_h), Image.Resampling.LANCZOS)
+    # Rotate 90 degrees clockwise so printWidth = portrait_h (800 scanlines) and printHeight = portrait_w (600 or 800 dots)
+    img = img.rotate(-90, expand=True)
+    print_w, print_h = img.size
 
     raw_rgb = img.tobytes()
-    planar = bytearray(w * h * 3)
-    for y in range(h):
-        row_offset = y * w * 3
-        for x in range(w):
-            px = row_offset + x * 3
-            col_base = x * h * 3
-            planar[col_base + y] = raw_rgb[px]
-            planar[col_base + h + y] = raw_rgb[px + 1]
-            planar[col_base + (h * 2) + y] = raw_rgb[px + 2]
+    planar = bytearray(print_w * print_h * 3)
+    for h in range(print_h):
+        row_offset = h * print_w * 3
+        for w in range(print_w):
+            px = row_offset + w * 3
+            col_base = w * print_h * 3
+            planar[col_base + h] = raw_rgb[px]
+            planar[col_base + print_h + h] = raw_rgb[px + 1]
+            planar[col_base + (print_h * 2) + h] = raw_rgb[px + 2]
     return bytes(planar)
 
 

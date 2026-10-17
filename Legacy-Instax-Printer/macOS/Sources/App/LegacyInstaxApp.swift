@@ -11,7 +11,7 @@ struct LegacyInstaxPrinterApp: App {
     var body: some Scene {
         WindowGroup("Legacy Instax Printer — Wi-Fi Direct Studio (SP-1 • SP-2 • SP-3)") {
             LegacyMainStudioView()
-                .frame(minWidth: 1120, minHeight: 740)
+                .frame(minWidth: 1180, minHeight: 750)
         }
         .windowStyle(.titleBar)
     }
@@ -151,7 +151,7 @@ struct LegacyMainStudioView: View {
 
             HStack(spacing: 0) {
                 leftQueueSidebar
-                    .frame(width: 255)
+                    .frame(width: 265)
                 Divider()
 
                 centerPolaroidPreview
@@ -215,120 +215,179 @@ struct LegacyMainStudioView: View {
         }
     }
 
-    // MARK: - Top Wi-Fi Direct Toolbar
+    // MARK: - Top Wi-Fi Direct Discovery & Connection Bar
 
     private var topWiFiConnectionBar: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: "wifi.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundColor(printer.isConnected ? .green : .orange)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Legacy Instax Printer")
-                        .font(.system(size: 14, weight: .bold))
-                    Text(printer.detectedWiFiSSID)
-                        .font(.system(size: 11))
+        VStack(spacing: 6) {
+            HStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: printer.isConnected ? "wifi.circle.fill" : "wifi.exclamationmark")
+                        .font(.system(size: 22))
+                        .foregroundColor(printer.isConnected ? .green : .secondary)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Legacy Instax Printer")
+                            .font(.system(size: 13, weight: .bold))
+                        Text(printer.detectedWiFiSSID)
+                            .font(.system(size: 10))
+                            .foregroundColor(printer.isConnected ? .green : .secondary)
+                            .lineLimit(1)
+                    }
+                }
+                .frame(width: 195, alignment: .leading)
+
+                Divider().frame(height: 26)
+
+                // Wi-Fi / Printer Search Dropdown
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.caption)
                         .foregroundColor(.secondary)
+                    Picker("Wi-Fi / Printer", selection: Binding(
+                        get: { printer.selectedDiscoveryID },
+                        set: { newID in
+                            printer.applyDiscoverySelection(newID) { detected in
+                                vm.options.model = detected
+                                vm.refreshPreview()
+                            }
+                        }
+                    )) {
+                        ForEach(printer.discoveryItems) { item in
+                            Text(item.title).tag(item.id)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 260)
+
+                    Button {
+                        printer.scanWiFiAndPrinters(autoConnectIfFound: true) { detected in
+                            vm.options.model = detected
+                            vm.refreshPreview()
+                        }
+                    } label: {
+                        Label(printer.isScanningWiFi ? "Scanning..." : "Scan Wi-Fi", systemImage: "dot.radiowaves.left.and.right")
+                    }
+                    .disabled(printer.isScanningWiFi || printer.isBusy)
+                    .help("Scan nearby Wi-Fi networks for INSTAX-XXXXXXXX hotspots and probe subnet for active SP-1/SP-2/SP-3 printers")
                 }
-            }
 
-            Divider().frame(height: 28)
+                Divider().frame(height: 26)
 
-            Picker("Model", selection: Binding(
-                get: { vm.options.model },
-                set: { newModel in
-                    vm.options.model = newModel
-                    LegacyVirtualPrinterServer.shared.simulatedModel = newModel
-                    vm.refreshPreview()
+                Picker("Model", selection: Binding(
+                    get: { vm.options.model },
+                    set: { newModel in
+                        vm.options.model = newModel
+                        LegacyVirtualPrinterServer.shared.simulatedModel = newModel
+                        vm.refreshPreview()
+                    }
+                )) {
+                    ForEach(LegacyPrinterModel.allCases) { m in
+                        Text(m.displayName).tag(m)
+                    }
                 }
-            )) {
-                ForEach(LegacyPrinterModel.allCases) { m in
-                    Text(m.displayName).tag(m)
+                .labelsHidden()
+                .frame(width: 195)
+
+                HStack(spacing: 4) {
+                    Text("IP:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    TextField("192.168.0.251", text: $printer.printerIP)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 102)
+                        .disabled(printer.useVirtualSimulator)
+
+                    Text("PIN:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    TextField("1111", text: $printer.pinCode)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 52)
                 }
-            }
-            .frame(width: 230)
 
-            HStack(spacing: 6) {
-                Text("IP:")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                TextField("192.168.0.251", text: $printer.printerIP)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 112)
-                    .disabled(printer.useVirtualSimulator)
-
-                Text("Port:")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                TextField("8080", text: $printer.printerPort)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 58)
-                    .disabled(printer.useVirtualSimulator)
-
-                Text("PIN:")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                TextField("1111", text: $printer.pinCode)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 56)
-            }
-
-            Button {
-                printer.queryPrinterStatus { detected in
-                    vm.options.model = detected
-                    vm.refreshPreview()
+                Button {
+                    printer.queryPrinterStatus { detected in
+                        vm.options.model = detected
+                        vm.refreshPreview()
+                    }
+                } label: {
+                    Label(printer.isConnected ? "Refresh" : "Connect", systemImage: "bolt.horizontal.circle.fill")
                 }
-            } label: {
-                Label(printer.isConnected ? "Refresh Status" : "Connect Wi-Fi", systemImage: "antenna.radiowaves.left.and.right")
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(printer.isConnected ? .green : .blue)
-            .disabled(printer.isBusy)
+                .buttonStyle(.borderedProminent)
+                .tint(printer.isConnected ? .green : .blue)
+                .disabled(printer.isBusy)
 
-            Spacer()
+                Spacer()
 
-            Toggle(isOn: $printer.useVirtualSimulator) {
-                Text("Virtual SP Simulator")
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .toggleStyle(.switch)
-            .controlSize(.small)
+                Toggle(isOn: $printer.useVirtualSimulator) {
+                    Text("Simulator")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .help("Test locally against the built-in virtual SP-1/2/3 server (127.0.0.1:18080)")
 
-            Toggle(isOn: $printer.dryRunMode) {
-                Label("Dry Run (0-Film)", systemImage: "checkmark.shield.fill")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(printer.dryRunMode ? .orange : .primary)
+                Toggle(isOn: $printer.dryRunMode) {
+                    Text("Dry Run (0-Film)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(printer.dryRunMode ? .orange : .primary)
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .help("Send 100% of planar RGB image segments to verify Wi-Fi & PIN, then skip physical print trigger so 0 film is used")
             }
-            .toggleStyle(.switch)
-            .controlSize(.small)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(Color(NSColor.windowBackgroundColor))
     }
 
-    // MARK: - Left Sidebar
+    // MARK: - Left Sidebar (Authentic Hardware Telemetry + Photos + Queue)
 
     private var leftQueueSidebar: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Authentic 10-LED Film Counter Card (Only lights up when actually connected!)
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("\(vm.options.model.rawValue) FILM LEDs")
+                    Text("\(printer.telemetry.modelName ?? vm.options.model.rawValue) FILM LEDs")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.secondary)
                     Spacer()
-                    Text("\(printer.telemetry.filmRemaining)/10 Left • Batt \(printer.telemetry.batteryLevel)/4")
-                        .font(.system(size: 10, weight: .semibold))
+                    if printer.isConnected,
+                       let film = printer.telemetry.filmRemaining,
+                       let batt = printer.telemetry.batteryLevel {
+                        Text("\(film)/10 Left • Batt \(batt)/4")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.green)
+                    } else {
+                        Text("Not Connected • —/10 • Batt —")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
                 }
                 HStack(spacing: 5) {
+                    let activeFilm = printer.isConnected ? (printer.telemetry.filmRemaining ?? 0) : 0
                     ForEach(0..<10, id: \.self) { idx in
                         Circle()
-                            .fill(idx < printer.telemetry.filmRemaining ? Color.green : Color.gray.opacity(0.28))
+                            .fill(idx < activeFilm ? Color.green : Color.gray.opacity(0.22))
                             .frame(width: 9, height: 9)
-                            .shadow(color: idx < printer.telemetry.filmRemaining ? Color.green.opacity(0.6) : .clear, radius: 2)
+                            .shadow(color: idx < activeFilm ? Color.green.opacity(0.6) : .clear, radius: 2)
                     }
                 }
                 .padding(.vertical, 2)
+
+                if !printer.isConnected {
+                    HStack(spacing: 6) {
+                        Text("Join printer Wi-Fi to read live LEDs")
+                            .font(.system(size: 9))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Button("Wi-Fi Settings") {
+                            printer.openSystemWiFiSettings()
+                        }
+                        .font(.system(size: 9))
+                        .buttonStyle(.link)
+                    }
+                }
             }
             .padding(10)
             .background(RoundedRectangle(cornerRadius: 8).fill(Color(NSColor.controlBackgroundColor)))
@@ -436,9 +495,9 @@ struct LegacyMainStudioView: View {
             Spacer()
 
             VStack(alignment: .leading, spacing: 4) {
-                Label("How to Connect SP-1 / SP-2 / SP-3", systemImage: "info.circle.fill")
+                Label("Wi-Fi Direct Connection Checklist", systemImage: "checkmark.circle.fill")
                     .font(.system(size: 11, weight: .bold))
-                Text("1. Power on your Instax SHARE printer.\n2. Join Wi-Fi 'INSTAX-XXXXXXXX' on your Mac.\n3. Default IP is 192.168.0.251, PIN is 1111.")
+                Text("1. Turn on SP-1, SP-2, or SP-3.\n2. Click 'Scan Wi-Fi' and select 'INSTAX-XXXXXXXX' from the dropdown.\n3. Default PIN is 1111 (IP 192.168.0.251).")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -988,15 +1047,21 @@ struct LegacyMainStudioView: View {
     private var bottomStatusBar: some View {
         HStack(spacing: 12) {
             Circle()
-                .fill(printer.isConnected ? Color.green : Color.orange)
+                .fill(printer.isConnected ? Color.green : Color.gray)
                 .frame(width: 8, height: 8)
             Text(printer.statusHeadline)
                 .font(.system(size: 11, weight: .medium))
                 .lineLimit(1)
             Spacer()
-            Text("Lifetime Printer Counter: \(printer.telemetry.totalPrintHistory)")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
+            if printer.isConnected, let total = printer.telemetry.totalPrintHistory {
+                Text("Lifetime Printer Counter: \(total)")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            } else {
+                Text("Lifetime Printer Counter: — (Offline)")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
             Button {
                 vm.showProtocolConsole.toggle()
             } label: {

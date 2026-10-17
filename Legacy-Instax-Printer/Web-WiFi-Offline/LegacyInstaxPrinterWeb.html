@@ -34,7 +34,7 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
     .brand {
       display: flex;
@@ -108,6 +108,10 @@
       background: #22c55e;
       box-shadow: 0 0 6px #22c55e;
     }
+    .led.amber {
+      background: #f59e0b;
+      box-shadow: 0 0 6px #f59e0b;
+    }
     .preview-area {
       display: flex;
       flex-direction: column;
@@ -172,12 +176,18 @@
       <option value="SP-2" selected>Instax SHARE SP-2 (Mini HD • 600×800)</option>
       <option value="SP-3">Instax SHARE SP-3 (SQUARE • 800×800)</option>
     </select>
-    <label style="font-size:12px;">IP <input type="text" id="printerIp" value="192.168.0.251" style="width:110px;" /></label>
-    <label style="font-size:12px;">Port <input type="number" id="printerPort" value="8080" style="width:68px;" /></label>
-    <label style="font-size:12px;">PIN <input type="text" id="printerPin" value="1111" style="width:58px;" /></label>
+    <select id="wifiSelect" style="min-width:210px;">
+      <option value="default-sp">📡 Default Instax SHARE (192.168.0.251:8080)</option>
+      <option value="alt-gw">📡 Alternate Router IP (192.168.0.1:8080)</option>
+      <option value="simulator">🧪 Virtual SP Simulator (127.0.0.1:18080)</option>
+    </select>
+    <button class="secondary" id="scanBtn">🔍 Scan Wi-Fi</button>
+    <label style="font-size:12px;">IP <input type="text" id="printerIp" value="192.168.0.251" style="width:105px;" /></label>
+    <label style="font-size:12px;">Port <input type="number" id="printerPort" value="8080" style="width:62px;" /></label>
+    <label style="font-size:12px;">PIN <input type="text" id="printerPin" value="1111" style="width:52px;" /></label>
     <button id="connectBtn">📡 Connect / Status</button>
     <label style="font-size:12px; display:flex; align-items:center; gap:5px; margin-left:auto;">
-      <input type="checkbox" id="simToggle" checked /> Virtual SP Simulator
+      <input type="checkbox" id="simToggle" /> Virtual SP Simulator
     </label>
     <label style="font-size:12px; display:flex; align-items:center; gap:5px; color:var(--amber);">
       <input type="checkbox" id="dryRunToggle" /> Dry Run (0-Film Test)
@@ -188,7 +198,8 @@
     <aside class="sidebar">
       <div class="section-title" style="margin-top:0;">10-LED Film Counter</div>
       <div class="led-row" id="ledRow"></div>
-      <div id="telemetryLabel" style="font-size:11px; color:var(--muted);">10/10 Film Remaining • Battery 4/4</div>
+      <div id="telemetryLabel" style="font-size:11px; color:var(--muted);">Not Connected • —/10 • Batt —</div>
+      <div id="historyLabel" style="font-size:10px; color:var(--muted); margin-top:4px;">Lifetime Printer Counter: — (Offline)</div>
 
       <div class="section-title">Photo Source</div>
       <input type="file" id="fileInput" accept="image/*" style="display:none;" />
@@ -199,8 +210,9 @@
       <div class="section-title">How Wi-Fi Direct Works</div>
       <p style="font-size:11px; color:var(--muted); line-height:1.5;">
         1. Turn on your Instax SHARE SP-1, SP-2, or SP-3.<br/>
-        2. Join Wi-Fi <b>INSTAX-XXXXXXXX</b>.<br/>
-        3. Run <code>python3 legacy_web_bridge.py</code> for live TCP printing from browser, or use Virtual Simulator &amp; Dry Run anytime!
+        2. Click <b>🔍 Scan Wi-Fi</b> or join <b>INSTAX-XXXXXXXX</b>.<br/>
+        3. Click <b>📡 Connect / Status</b> to read live battery &amp; 10-LED film status.<br/>
+        4. Run <code>python3 legacy_web_bridge.py</code> for live TCP printing from browser, or enable <b>Virtual SP Simulator</b> anytime!
       </p>
     </aside>
 
@@ -292,8 +304,8 @@
   </main>
 
   <footer>
-    <span id="statusText">Ready — Virtual SP Simulator enabled (or connect via legacy_web_bridge.py to 192.168.0.251:8080)</span>
-    <span>Protocol: Fujifilm Instax SHARE TCP/IP Big-Endian 0x24/0x2A • Column-Major Planar RGB</span>
+    <span id="statusText">Not Connected — Select an INSTAX-XXXXXXXX Wi-Fi network or click Connect / Status</span>
+    <span>Protocol: Fujifilm Instax SHARE TCP/IP Big-Endian 0x24/0x2A • 90° Scanline Planar RGB</span>
   </footer>
 
   <script>
@@ -308,17 +320,59 @@
     let primaryImg = null;
     let collageImgs = [];
     let rotationDeg = 0;
-    let filmLeft = 8;
+    let isConnected = false;
+    let filmLeft = null;
+    let batteryLevel = null;
+    let totalPrints = null;
+    let discoveredItems = [];
 
-    function renderLEDs(count) {
+    function renderLEDs() {
       const row = document.getElementById('ledRow');
       row.innerHTML = '';
+      const lit = isConnected && filmLeft !== null ? filmLeft : 0;
       for (let i = 0; i < 10; i++) {
         const d = document.createElement('div');
-        d.className = 'led' + (i < count ? ' on' : '');
+        if (i < lit) {
+          d.className = 'led ' + (lit <= 2 ? 'amber' : 'on');
+        } else {
+          d.className = 'led';
+        }
         row.appendChild(d);
       }
-      document.getElementById('telemetryLabel').textContent = `${count}/10 Film Remaining • Battery 4/4`;
+      if (isConnected && filmLeft !== null && batteryLevel !== null) {
+        document.getElementById('telemetryLabel').textContent = `${filmLeft}/10 Left • Batt ${batteryLevel}/4`;
+        document.getElementById('telemetryLabel').style.color = '#22c55e';
+        document.getElementById('historyLabel').textContent = `Lifetime Printer Counter: ${totalPrints ?? 0} prints`;
+      } else {
+        document.getElementById('telemetryLabel').textContent = 'Not Connected • —/10 • Batt —';
+        document.getElementById('telemetryLabel').style.color = 'var(--muted)';
+        document.getElementById('historyLabel').textContent = 'Lifetime Printer Counter: — (Offline)';
+      }
+    }
+
+    async function scanWiFi() {
+      const statusEl = document.getElementById('statusText');
+      statusEl.textContent = 'Scanning for INSTAX-XXXXXXXX Wi-Fi Direct networks and active printers...';
+      try {
+        const resp = await fetch('http://127.0.0.1:8089/api/scan');
+        const data = await resp.json();
+        if (data.ok && Array.isArray(data.items)) {
+          discoveredItems = data.items;
+          const sel = document.getElementById('wifiSelect');
+          sel.innerHTML = '';
+          discoveredItems.forEach((it, idx) => {
+            const opt = document.createElement('option');
+            opt.value = String(idx);
+            opt.textContent = it.label;
+            sel.appendChild(opt);
+          });
+          statusEl.textContent = `Found ${discoveredItems.length} Wi-Fi / Printer option(s). Select one or click Connect / Status.`;
+          return;
+        }
+      } catch (_e) {
+        // Bridge not running
+      }
+      statusEl.textContent = 'Bridge offline — run python3 legacy_web_bridge.py for live OS Wi-Fi scanning, or enter IP manually.';
     }
 
     function createTestCard(model) {
@@ -466,16 +520,28 @@
     }
 
     function encodePlanarRGBBase64() {
-      const w = canvas.width, h = canvas.height;
-      const imgData = ctx.getImageData(0, 0, w, h).data;
-      const planar = new Uint8Array(w * h * 3);
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const idx = (y * w + x) * 4;
-          const colBase = x * h * 3;
-          planar[colBase + y] = imgData[idx];
-          planar[colBase + h + y] = imgData[idx + 1];
-          planar[colBase + h * 2 + y] = imgData[idx + 2];
+      const srcW = canvas.width, srcH = canvas.height;
+      // Rotate 90° clockwise to match instaxImage.py hardware scanline orientation:
+      // SP-1/SP-2 (600×800 portrait) -> rotated 800×600 (scanlineCount=800, scanlineHeight=600)
+      // SP-3 (800×800 square)        -> rotated 800×800 (scanlineCount=800, scanlineHeight=800)
+      const rotCanvas = document.createElement('canvas');
+      rotCanvas.width = srcH;
+      rotCanvas.height = srcW;
+      const rctx = rotCanvas.getContext('2d');
+      rctx.translate(rotCanvas.width / 2, rotCanvas.height / 2);
+      rctx.rotate(Math.PI / 2);
+      rctx.drawImage(canvas, -srcW / 2, -srcH / 2);
+
+      const scanW = rotCanvas.width, scanH = rotCanvas.height;
+      const imgData = rctx.getImageData(0, 0, scanW, scanH).data;
+      const planar = new Uint8Array(scanW * scanH * 3);
+      for (let h = 0; h < scanH; h++) {
+        for (let w = 0; w < scanW; w++) {
+          const idx = (h * scanW + w) * 4;
+          const colBase = w * scanH * 3;
+          planar[colBase + h] = imgData[idx];
+          planar[colBase + scanH + h] = imgData[idx + 1];
+          planar[colBase + scanH * 2 + h] = imgData[idx + 2];
         }
       }
       let binary = '';
@@ -486,6 +552,53 @@
       return btoa(binary);
     }
 
+    async function connectPrinter() {
+      const model = document.getElementById('modelSelect').value;
+      const sim = document.getElementById('simToggle').checked;
+      const statusEl = document.getElementById('statusText');
+      statusEl.textContent = `Connecting to ${sim ? 'Virtual Simulator' : document.getElementById('printerIp').value + ':' + document.getElementById('printerPort').value}...`;
+      try {
+        const resp = await fetch('http://127.0.0.1:8089/api/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ip: document.getElementById('printerIp').value,
+            port: parseInt(document.getElementById('printerPort').value, 10),
+            pin: parseInt(document.getElementById('printerPin').value, 10),
+            model,
+            simulate: sim
+          })
+        });
+        const data = await resp.json();
+        if (data.ok && data.status) {
+          isConnected = true;
+          filmLeft = data.status.film;
+          batteryLevel = data.status.battery;
+          totalPrints = data.status.print_count;
+          renderLEDs();
+          statusEl.textContent = `✅ Connected to ${data.status.model} (${data.status.width}×${data.status.height}) • ${filmLeft}/10 Film • Battery ${batteryLevel}/4`;
+          return;
+        }
+      } catch (_e) {
+        // If Virtual Simulator is checked and bridge is offline, use browser simulator
+      }
+      if (sim) {
+        isConnected = true;
+        if (filmLeft === null) filmLeft = 8;
+        batteryLevel = 4;
+        totalPrints = 42;
+        renderLEDs();
+        statusEl.textContent = `✅ Connected to Browser Virtual SP Simulator (${model}) • ${filmLeft}/10 Film • Battery 4/4`;
+      } else {
+        isConnected = false;
+        filmLeft = null;
+        batteryLevel = null;
+        totalPrints = null;
+        renderLEDs();
+        statusEl.textContent = `❌ Could not reach Instax SHARE at ${document.getElementById('printerIp').value}:${document.getElementById('printerPort').value}. Join INSTAX-XXXXXXXX Wi-Fi & run legacy_web_bridge.py, or enable Virtual SP Simulator.`;
+      }
+    }
+
     async function runPrint(forceDryRun) {
       const model = document.getElementById('modelSelect').value;
       const spec = MODELS[model];
@@ -494,7 +607,7 @@
       const statusEl = document.getElementById('statusText');
 
       try {
-        statusEl.textContent = `Encoding ${spec.width}×${spec.height} Column-Major Planar RGB (${spec.segments} segments)...`;
+        statusEl.textContent = `Encoding ${spec.width}×${spec.height} (90° CW Scanline Planar RGB • ${spec.segments} segments)...`;
         const b64 = encodePlanarRGBBase64();
         const resp = await fetch('http://127.0.0.1:8089/api/print', {
           method: 'POST',
@@ -511,29 +624,76 @@
         });
         const data = await resp.json();
         if (data.ok) {
+          isConnected = true;
           filmLeft = data.result.film;
-          renderLEDs(filmLeft);
+          batteryLevel = data.result.battery;
+          renderLEDs();
           statusEl.textContent = dryRun
             ? `✅ Dry Run Verified! All ${spec.segments} TCP segments acknowledged (0 Film Used)`
             : `✅ Print Complete on Instax SHARE ${model}! (${filmLeft}/10 Film Remaining)`;
           return;
         }
       } catch (_e) {
-        // Fallback to built-in browser simulation if legacy_web_bridge.py is not running
+        // Fallback if bridge is not running
       }
 
+      if (!sim && !dryRun) {
+        statusEl.textContent = '❌ Cannot print to physical printer without legacy_web_bridge.py running or Virtual SP Simulator enabled.';
+        return;
+      }
+
+      isConnected = true;
+      if (filmLeft === null) filmLeft = 8;
+      batteryLevel = 4;
       for (let s = 1; s <= spec.segments; s++) {
         statusEl.textContent = `${dryRun ? '[DRY RUN] ' : ''}Sending Planar RGB Segment ${s}/${spec.segments} (60,000 B) to ${model}...`;
         await new Promise(r => setTimeout(r, 35));
       }
       if (!dryRun && filmLeft > 0) filmLeft--;
-      renderLEDs(filmLeft);
+      renderLEDs();
       statusEl.textContent = dryRun
         ? `✅ Browser Dry Run Complete! Verified ${spec.segments} segments × 60,000 B for ${model} (0 Film Used)`
         : `✅ Simulated Print Complete for ${model}! (${filmLeft}/10 Film Remaining)`;
     }
 
     document.getElementById('modelSelect').addEventListener('change', (e) => createTestCard(e.target.value));
+    document.getElementById('wifiSelect').addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val === 'default-sp') {
+        document.getElementById('simToggle').checked = false;
+        document.getElementById('printerIp').value = '192.168.0.251';
+        document.getElementById('printerPort').value = '8080';
+      } else if (val === 'alt-gw') {
+        document.getElementById('simToggle').checked = false;
+        document.getElementById('printerIp').value = '192.168.0.1';
+        document.getElementById('printerPort').value = '8080';
+      } else if (val === 'simulator') {
+        document.getElementById('simToggle').checked = true;
+        connectPrinter();
+      } else {
+        const idx = parseInt(val, 10);
+        const item = discoveredItems[idx];
+        if (item) {
+          document.getElementById('simToggle').checked = !!item.is_simulator;
+          document.getElementById('printerIp').value = item.ip || '192.168.0.251';
+          document.getElementById('printerPort').value = String(item.port || 8080);
+          connectPrinter();
+        }
+      }
+    });
+    document.getElementById('scanBtn').addEventListener('click', scanWiFi);
+    document.getElementById('simToggle').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        connectPrinter();
+      } else {
+        isConnected = false;
+        filmLeft = null;
+        batteryLevel = null;
+        totalPrints = null;
+        renderLEDs();
+        document.getElementById('statusText').textContent = 'Virtual Simulator disabled — Click Connect / Status after joining INSTAX-XXXXXXXX Wi-Fi.';
+      }
+    });
     document.getElementById('fitMode').addEventListener('change', renderCanvas);
     document.getElementById('filterPreset').addEventListener('change', renderCanvas);
     document.getElementById('collageLayout').addEventListener('change', renderCanvas);
@@ -586,14 +746,11 @@
     });
     document.getElementById('dryRunBtn').addEventListener('click', () => runPrint(true));
     document.getElementById('printBtn').addEventListener('click', () => runPrint(false));
-    document.getElementById('connectBtn').addEventListener('click', () => {
-      const m = document.getElementById('modelSelect').value;
-      renderLEDs(filmLeft);
-      document.getElementById('statusText').textContent = `✅ Connected to Instax SHARE ${m} (${MODELS[m].width}×${MODELS[m].height}) • ${filmLeft}/10 Film Left`;
-    });
+    document.getElementById('connectBtn').addEventListener('click', connectPrinter);
 
-    renderLEDs(filmLeft);
+    renderLEDs();
     createTestCard('SP-2');
+    scanWiFi();
   </script>
 </body>
 </html>
