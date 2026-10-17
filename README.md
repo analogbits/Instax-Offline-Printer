@@ -191,7 +191,7 @@ working directory.
 ## 🙏 Contributors & Acknowledgments
 
 Special thanks to our open-source contributors:
-* **[@orangekittysoftware](https://github.com/orangekittysoftware)** (`u/wolf-in-tuxedo`):
+* **[Clinton Wolfe (`@clintoncwolfe`)](https://github.com/clintoncwolfe) / [`@orangekittysoftware`](https://github.com/orangekittysoftware)** (`u/wolf-in-tuxedo`):
   * **[PR #1](https://github.com/analogbits/Instax-Offline-Printer/pull/1):** Adobe Lightroom Classic plugin testing on Instax Mini Link 3, `LrToolkitIdentifier` & `LrExportSession` fixes, generic `INSTAX-` prefix matching, and the `InstaxCLIHelper.app` macOS TCC Bluetooth helper bundle.
   * **[PR #2](https://github.com/analogbits/Instax-Offline-Printer/pull/2):** Cross-platform Instax test card generator (`bin/test-image-maker.sh`) for stamping prints with the app, code version, and OS details across Wide, Square, and Mini formats.
 
