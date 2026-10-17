@@ -42,7 +42,7 @@ done
 case "$format" in
     wide) width=1260; height=840 ;;
     square) width=800; height=800 ;;
-    mini) width=600; height=800 ;;
+    mini) width=800; height=600 ;;
     *) fail "Invalid format: $format. Choose wide, square, or mini." ;;
 esac
 
@@ -103,8 +103,9 @@ output_file="$output_dir/test-image-$format-$app-$file_version.jpg"
 text=$(printf 'This image was printed with:\nanalogbits/Instax-Offline-Printer\nCode Version: %s\nApp: %s\nOS: %s\nOS Version: %s' "$code_version" "$app" "$os_name" "$os_version")
 
 mkdir -p "$output_dir"
-magick -size "$((width - 80))x$((height - 80))" \
+margin=20
+magick -size "$((width - 2 * margin))x$((height - 2 * margin))" \
     -background white -fill black -font "$font" -gravity center \
-    label:"$text" -bordercolor white -border 40 \
+    label:"$text" -bordercolor white -border "$margin" \
     -colorspace sRGB -strip -quality 95 "$output_file"
 printf '%s\n' "$output_file"

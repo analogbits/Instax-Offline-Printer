@@ -158,7 +158,8 @@ available, otherwise its kernel name and release. On Windows, run in Bash
 
 `--app` is required: `win`, `mac`, `linux`, `lrcplugin`, or `dtplugin`.
 `--format` defaults to `square` (800 x 800 pixels); `wide` is 1260 x 840 and
-`mini` is 600 x 800. The code version is the nearest Git tag reachable from HEAD
+`mini` is landscape at 800 x 600. Text is automatically sized to fit within a
+20-pixel margin on all formats. The code version is the nearest Git tag reachable from HEAD
 (`git describe --tags --abbrev=0`); generation fails if no tag is available.
 Output is written to the repository's
 `tmp/test-images/test-image-FORMAT-APP-CODEVERSION.jpg`, regardless of the current
