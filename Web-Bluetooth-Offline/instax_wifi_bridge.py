@@ -31,6 +31,14 @@ from urllib.parse import parse_qs, urlparse
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 WEB_HTML_PATH = os.path.join(SCRIPT_DIR, "InstaxPrinterWeb.html")
+for _html_candidate in (
+    os.path.join(SCRIPT_DIR, "InstaxPrinterWeb.html"),
+    os.path.join(REPO_ROOT, "Web-Bluetooth-Offline", "InstaxPrinterWeb.html"),
+    os.path.join(SCRIPT_DIR, "Web-Bluetooth-Offline", "InstaxPrinterWeb.html"),
+):
+    if os.path.isfile(_html_candidate):
+        WEB_HTML_PATH = _html_candidate
+        break
 
 
 def get_lan_ip() -> str:
@@ -59,18 +67,23 @@ def find_cli_command(args_list):
     """Return the platform-appropriate CLI command to talk to the Instax BLE printer."""
     sys_name = platform.system()
     if sys_name == "Darwin":
-        mac_bin = os.path.join(REPO_ROOT, "macOS", "instax-square")
-        root_bin = os.path.join(REPO_ROOT, "instax-square")
-        lr_bin = os.path.join(
-            REPO_ROOT, "Lightroom-Classic-Plugin", "Instax-Printer.lrplugin", "bin", "mac", "instax-square"
-        )
-        for candidate in (mac_bin, root_bin, lr_bin):
+        for candidate in (
+            os.path.join(SCRIPT_DIR, "instax-square"),
+            os.path.join(REPO_ROOT, "macOS", "instax-square"),
+            os.path.join(SCRIPT_DIR, "macOS", "instax-square"),
+            os.path.join(REPO_ROOT, "instax-square"),
+            os.path.join(REPO_ROOT, "Lightroom-Classic-Plugin", "Instax-Printer.lrplugin", "bin", "mac", "instax-square"),
+        ):
             if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
                 return [candidate] + args_list
     # Fallback / Windows / Linux: use instax_printer.py
-    win_py = os.path.join(REPO_ROOT, "Windows", "instax_printer.py")
-    lin_py = os.path.join(REPO_ROOT, "Linux", "instax_printer.py")
-    for py_script in (win_py, lin_py):
+    for py_script in (
+        os.path.join(SCRIPT_DIR, "instax_printer.py"),
+        os.path.join(REPO_ROOT, "Windows", "instax_printer.py"),
+        os.path.join(REPO_ROOT, "Linux", "instax_printer.py"),
+        os.path.join(SCRIPT_DIR, "Windows", "instax_printer.py"),
+        os.path.join(SCRIPT_DIR, "Linux", "instax_printer.py"),
+    ):
         if os.path.isfile(py_script):
             return [sys.executable, py_script] + args_list
     raise FileNotFoundError("Could not locate instax-square binary or instax_printer.py in repository.")
@@ -324,7 +337,21 @@ def main():
     print("     (Press Ctrl+C to stop the bridge)")
     print("=" * 74)
 
-    server = ThreadingHTTPServer((args.host, args.port), InstaxWiFiBridgeHandler)
+    class ReusableThreadingHTTPServer(ThreadingHTTPServer):
+        allow_reuse_address = True
+
+    try:
+        server = ReusableThreadingHTTPServer((args.host, args.port), InstaxWiFiBridgeHandler)
+    except OSError as e:
+        print(f"  ℹ️  Note: Port {args.port} is already active ({e}).")
+        print(f"  🟢 Your Local Wi-Fi Bridge is already running at: {lan_url}")
+        if not args.no_browser:
+            try:
+                webbrowser.open(local_url)
+            except Exception:
+                pass
+        return
+
     if not args.no_browser:
         try:
             webbrowser.open(local_url)
