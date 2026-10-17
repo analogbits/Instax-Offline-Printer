@@ -39,6 +39,7 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
 | :--- | :--- | :--- |
 | **`Instax Printer.app`** | Double-click in Finder | Full native Swift desktop app for BLE Link printers (WIDE, SQUARE, Mini). Apple Photos/iCloud browser, interactive pan/zoom/rotate framing, artistic filters, live film/battery gauges, Multi-Photo Collage Studio, QR Print, debug console (`⌘D`), and offline guide (`⌘?`). |
 | **`Legacy Instax Printer.app`** | Double-click in Finder | Dedicated native Swift desktop app for Wi-Fi Direct **Instax SHARE SP-1, SP-2 & SP-3** printers with built-in Wi-Fi network scanner dropdown (`INSTAX-XXXXXXXX`), live 10-LED film counter, Collage Studio, QR Print, and built-in Virtual SP Simulator. |
+| **`Start-iPhone-WiFi-Bridge.command`** | Double-click in Finder | **Local Wi-Fi Bluetooth Bridge for iPhone / iPad / Mac Safari.** Hosts the Web App on your home Wi-Fi (`http://192.168.1.x:8765`) with a scannable QR code so you can print directly from regular iPhone Safari via your Mac's Bluetooth. |
 | **`instax-square`** / **`legacy-instax`** | `./instax-square print photo.jpg` | High-performance standalone CLI binaries for BLE and Wi-Fi Direct printers. No Python or runtime needed. |
 | **`macOS-Run.command`** | Double-click in Finder | Emergency drag-and-drop terminal launcher. |
 | **`install-cli.sh`** | Run in Terminal | Installs `instax-square` system-wide to `/usr/local/bin`. |
@@ -49,8 +50,9 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
 | Component | How to Run | Description |
 | :--- | :--- | :--- |
 | **`Instax-Printer.vbs`** *(Recommended)* | Double-click in Explorer | **Zero-Install Standalone App.** Opens instantly in a dedicated native desktop window with zero command-line popups. Uses the pre-installed Windows 10/11 Microsoft Edge engine to connect directly to the Windows Bluetooth stack (WinRT). No Python needed! |
+| **`Start-iPhone-WiFi-Bridge.bat`** | Double-click in Explorer | **Local Wi-Fi Bluetooth Bridge for iPhone / iPad Safari.** Hosts the Web App on your home Wi-Fi (`http://192.168.1.x:8765`) with a scannable QR code so you can print directly from regular iPhone Safari via your Windows PC's Bluetooth. |
 | **`Windows-Run.bat`** | Double-click | Python GUI launcher (`InstaxPrinterGUI.pyw` / `LegacyInstaxPrinterGUI.py`). Auto-detects dependencies and falls back to the All-in-One app if Python is not installed. |
-| **`instax_printer.py`** / **`legacy_instax_printer.py`** | `python instax_printer.py print photo.jpg` | Cross-platform BLE and Wi-Fi Direct command-line engines with Collage, QR Code, Caption, and Dry Run support. |
+| **`instax_printer.py`** / **`legacy_instax_printer.py`** | `python instax_printer.py print photo.jpg` | Cross-platform BLE and Wi-Fi Direct command-line engines with Collage, QR Code, Caption, Dry Run, and `--serve` Wi-Fi Bridge support. |
 
 ---
 
@@ -58,9 +60,10 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
 | Component | How to Run | Description |
 | :--- | :--- | :--- |
 | **`Instax-Printer-Linux.sh`** *(Recommended)* | Double-click or `./Instax-Printer-Linux.sh` | **Zero-Install Standalone App.** Launches immediately in a borderless native window using Chromium, Google Chrome, Brave, or Edge. No Python, pip, or Tkinter required! |
+| **`Start-iPhone-WiFi-Bridge.sh`** | Double-click or `./Start-iPhone-WiFi-Bridge.sh` | **Local Wi-Fi Bluetooth Bridge for iPhone / iPad Safari & Firefox.** Hosts the Web App on your home Wi-Fi (`http://192.168.1.x:8765`) with a scannable QR code so you can print directly from regular iPhone Safari via your Linux machine's Bluetooth. |
 | **`linux-run.sh`** | Double-click or `./linux-run.sh` | Python Tkinter desktop GUI launcher (`InstaxPrinterGUI.py` / `LegacyInstaxPrinterGUI.py`). |
 | **`instax-printer.desktop`** | Copy to `~/.local/share/applications/` | Adds Instax Printer to your Linux application menu. |
-| **`instax_printer.py`** / **`legacy_instax_printer.py`** | `python3 instax_printer.py print photo.jpg` | Standalone Linux command-line printers for BLE (BlueZ) and Wi-Fi Direct (`SP-1/2/3`). |
+| **`instax_printer.py`** / **`legacy_instax_printer.py`** | `python3 instax_printer.py print photo.jpg` | Standalone Linux command-line printers for BLE (BlueZ) and Wi-Fi Direct (`SP-1/2/3`), plus `--serve` Wi-Fi Bridge support. |
 
 ---
 
@@ -73,8 +76,12 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
     * Apple intentionally disables the W3C **Web Bluetooth API** (`navigator.bluetooth`) inside WebKit on iOS (which affects iPhone Safari, iOS Chrome, iOS Edge, and iOS Firefox) as well as macOS Safari.
     * To make sure iPhone, iPad, and Safari users can still print effortlessly without relying on Fujifilm's cloud apps, we built **two ways** to print from iOS:
     1. **🏠 Option A — Print in Regular iPhone / iPad Safari at Home (`--serve` Local Wi-Fi Bluetooth Bridge — Zero iOS Apps Required):**
-       * **What it is:** A lightweight local bridge (`Web-Bluetooth-Offline/instax_wifi_bridge.py`) that runs on your Mac, Windows PC, or Linux computer and hosts the Instax Web App on your home Wi-Fi network (e.g., `http://192.168.1.x:8765`).
-       * **How to use it:** Double-click **`Start-iPhone-WiFi-Bridge.command`** (macOS), **`Start-iPhone-WiFi-Bridge.bat`** (Windows), or **`Start-iPhone-WiFi-Bridge.sh`** (Linux) — or run `python3 Windows/instax_printer.py --serve`.
+       * **What it is:** A lightweight local bridge ([`Web-Bluetooth-Offline/instax_wifi_bridge.py`](Web-Bluetooth-Offline/instax_wifi_bridge.py)) that runs on your Mac, Windows PC, or Linux computer and hosts the Instax Web App on your home Wi-Fi network (e.g., `http://192.168.1.x:8765`).
+       * **How to use it:** Double-click the launcher inside your operating system's folder (or in [`Web-Bluetooth-Offline/`](Web-Bluetooth-Offline/)):
+         * **macOS:** [`macOS/Start-iPhone-WiFi-Bridge.command`](macOS/Start-iPhone-WiFi-Bridge.command)
+         * **Windows:** [`Windows/Start-iPhone-WiFi-Bridge.bat`](Windows/Start-iPhone-WiFi-Bridge.bat)
+         * **Linux:** [`Linux/Start-iPhone-WiFi-Bridge.sh`](Linux/Start-iPhone-WiFi-Bridge.sh)
+         * *(Or run `python3 Windows/instax_printer.py --serve` / `python3 Linux/instax_printer.py --serve`)*
        * **Effortless QR Scan:** Your computer opens a browser window with a **scannable QR code**. Point your iPhone camera at the QR code to open the Web App in **regular iPhone Safari**, pick any photo from your iPhone Camera Roll, frame it, and tap **🖨 Print Physical Photo** — your iPhone sends the framed image over Wi-Fi to your computer, which immediately beams it over Bluetooth to your Instax printer! (Also works in **macOS Safari** and **Firefox**).
     2. **🎒 Option B — Direct iPhone-to-Printer Bluetooth Anywhere on the Go (via Bluefy):**
        * When away from home without a computer, open the Web App on your iPhone/iPad and tap the built-in **📲 Open This Page in Bluefy** button (uses the free [Bluefy – Web BLE Browser](https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055) on the App Store) to connect directly from your iPhone to your Instax printer over Bluetooth.

@@ -72,6 +72,15 @@ Run "./install-cli.sh" to copy 'instax-square' into /usr/local/bin so you can
 type 'instax-square' from any terminal directory.
 
 --------------------------------------------------------------------------------
+5. PRINT FROM IPHONE / IPAD / MAC SAFARI: "Start-iPhone-WiFi-Bridge.command"
+--------------------------------------------------------------------------------
+Apple disables the Web Bluetooth API inside iPhone Safari, iPad Safari, and
+macOS Safari. Double-click "Start-iPhone-WiFi-Bridge.command" to host the
+Web App on your home Wi-Fi (http://192.168.1.x:8765) with a scannable QR code.
+Scan the QR code with your iPhone camera to open it in regular iPhone Safari
+and print any photo from your iPhone Camera Roll via your Mac's Bluetooth!
+
+--------------------------------------------------------------------------------
 TROUBLESHOOTING & macOS ADVICE:
 --------------------------------------------------------------------------------
 * macOS Bluetooth Permission:

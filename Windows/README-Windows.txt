@@ -54,6 +54,15 @@ To print directly from Command Prompt or PowerShell:
   Windows-Print-Console.bat photo.jpg
 
 --------------------------------------------------------------------------------
+OPTION 4: PRINT FROM IPHONE / IPAD SAFARI: "Start-iPhone-WiFi-Bridge.bat"
+--------------------------------------------------------------------------------
+Apple disables the Web Bluetooth API inside iPhone Safari and iPad Safari.
+Double-click "Start-iPhone-WiFi-Bridge.bat" (or run `python instax_printer.py --serve`)
+to host the Web App on your home Wi-Fi (http://192.168.1.x:8765) with a scannable
+QR code. Point your iPhone camera at the QR code to open it in regular iPhone
+Safari and print any photo from your iPhone Camera Roll via your PC's Bluetooth!
+
+--------------------------------------------------------------------------------
 WINDOWS TROUBLESHOOTING & HELP:
 --------------------------------------------------------------------------------
 * Windows Bluetooth Pairing:

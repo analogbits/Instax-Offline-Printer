@@ -49,6 +49,16 @@ For users who prefer running the native Python / Tkinter GUI:
     launch the All-in-One Standalone app instead, so you can always print!
 
 --------------------------------------------------------------------------------
+OPTION 3: PRINT FROM IPHONE / IPAD SAFARI & FIREFOX: "Start-iPhone-WiFi-Bridge.sh"
+--------------------------------------------------------------------------------
+Apple disables the Web Bluetooth API inside iPhone Safari and iPad Safari (and
+Mozilla disables it in Firefox). Run "./Start-iPhone-WiFi-Bridge.sh" (or
+`python3 instax_printer.py --serve`) to host the Web App on your home Wi-Fi
+(http://192.168.1.x:8765) with a scannable QR code. Scan the QR code with your
+iPhone camera to open it in regular iPhone Safari and print via your Linux
+machine's BlueZ Bluetooth stack!
+
+--------------------------------------------------------------------------------
 INSTALLING THE DESKTOP SHORTCUT:
 --------------------------------------------------------------------------------
 To add Instax Printer to your Linux application launcher menu:
