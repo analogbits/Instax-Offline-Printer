@@ -178,10 +178,11 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 				"--bg", string.format('"%s"', exportParams.bgColor or "#FFFFFF"),
 			}
 
-			if exportParams.customDevice and exportParams.customDevice ~= "" then
-				table.insert(cmdArgs, "--device")
-				table.insert(cmdArgs, string.format('"%s"', exportParams.customDevice))
-			end
+			table.insert(cmdArgs, "--device")
+			table.insert(cmdArgs, string.format(
+				'"%s"',
+				exportParams.customDevice and exportParams.customDevice ~= "" and exportParams.customDevice or "INSTAX-"
+			))
 
 			local fullCmd = table.concat(cmdArgs, " ")
 			local exitCode, output = executeWithOutput(fullCmd)

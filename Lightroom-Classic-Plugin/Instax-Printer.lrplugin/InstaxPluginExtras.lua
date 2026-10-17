@@ -128,7 +128,7 @@ LrTasks.startAsyncTask(function()
 			local success, pathOrMessage = rendition:waitForRender()
 			if success then
 				count = count + 1
-				local cmd = string.format('"%s" print "%s" --model %s --mode %s --fit %s',
+				local cmd = string.format('"%s" print "%s" --device "INSTAX-" --model %s --mode %s --fit %s',
 					cliPath, pathOrMessage, props.printerModel, props.printMode, props.fitMode)
 				local code, output = executeWithOutput(cmd)
 				LrFileUtils.delete(pathOrMessage)
