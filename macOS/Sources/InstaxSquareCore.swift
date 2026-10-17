@@ -486,6 +486,14 @@ public enum InstaxPacket {
 public enum InstaxImageRenderer {
     /// Extract a normalized, upright CGImage from an NSImage with EXIF orientation transforms applied.
     public static func getNormalizedCGImage(from sourceImage: NSImage) -> CGImage? {
+        for rep in sourceImage.representations {
+            if let bmp = rep as? NSBitmapImageRep, let cg = bmp.cgImage {
+                return cg
+            }
+        }
+        if let cg = sourceImage.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+            return cg
+        }
         if let tiff = sourceImage.tiffRepresentation,
            let source = CGImageSourceCreateWithData(tiff as CFData, nil),
            let cg = CGImageSourceCreateImageAtIndex(source, 0, [
@@ -493,11 +501,6 @@ public enum InstaxImageRenderer {
                kCGImageSourceCreateThumbnailFromImageAlways: true
            ] as CFDictionary) {
             return cg
-        }
-        for rep in sourceImage.representations {
-            if let bmp = rep as? NSBitmapImageRep, let cg = bmp.cgImage {
-                return cg
-            }
         }
         return nil
     }
@@ -968,7 +971,7 @@ public enum InstaxImageRenderer {
         return outImg
     }
 
-    /// Compress an 800x800 NSImage into a JPEG guaranteed to be <= `maxBytes` (default 75 KB).
+    /// Compress an 800x800 NSImage into a JPEG guaranteed to be <= `maxBytes` (default 60 KB).
     public static func compressToJPEG(
         _ image: NSImage,
         maxBytes: Int = InstaxConstants.maxJpegBytes
@@ -976,19 +979,79 @@ public enum InstaxImageRenderer {
         guard let cgImage = getNormalizedCGImage(from: image) else {
             return nil
         }
-        let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
-        var quality = 0.94
-        while quality >= 0.15 {
+
+        // Re-draw into a clean DeviceRGB bitmap so NSBitmapImageRep does not embed a ~4 KB ICC color profile
+        let w = cgImage.width
+        let h = cgImage.height
+        var activeCG = cgImage
+        if let ctx = CGContext(
+            data: nil,
+            width: w,
+            height: h,
+            bitsPerComponent: 8,
+            bytesPerRow: w * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+        ) {
+            ctx.interpolationQuality = .high
+            ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: w, height: h))
+            if let stripped = ctx.makeImage() {
+                activeCG = stripped
+            }
+        }
+
+        let bitmapRep = NSBitmapImageRep(cgImage: activeCG)
+        var bestCandidate: (data: Data, quality: Double)? = nil
+
+        for qInt in stride(from: 94, through: 4, by: -4) {
+            let quality = Double(qInt) / 100.0
             if let jpegData = bitmapRep.representation(
                 using: .jpeg,
                 properties: [.compressionFactor: NSNumber(value: quality), .progressive: NSNumber(value: false)]
             ) {
-                if jpegData.count <= maxBytes || quality <= 0.16 {
-                    InstaxLogger.log("[IMG] JPEG encoded: \(jpegData.count) bytes (quality: \(Int((quality * 100.0).rounded()))%, target budget: \(maxBytes / 1024) KB)")
+                if bestCandidate == nil || jpegData.count < bestCandidate!.data.count {
+                    bestCandidate = (jpegData, quality)
+                }
+                if jpegData.count <= maxBytes {
+                    InstaxLogger.log("[IMG] JPEG encoded: \(jpegData.count) bytes (quality: \(qInt)%, target budget: \(maxBytes / 1024) KB)")
                     return (jpegData, quality)
                 }
             }
-            quality -= 0.04
+        }
+
+        // If an extremely noisy / high-frequency image still exceeds maxBytes at 4% quality,
+        // apply a subtle high-frequency smoothing pass (imperceptible on physical Instax film)
+        let ciCtx = CIContext(options: [.useSoftwareRenderer: true])
+        for blurRadius in [0.9, 1.6, 2.4] {
+            let ciInput = CIImage(cgImage: activeCG).clampedToExtent()
+            if let blur = CIFilter(name: "CIGaussianBlur") {
+                blur.setValue(ciInput, forKey: kCIInputImageKey)
+                blur.setValue(blurRadius, forKey: kCIInputRadiusKey)
+                if let outCI = blur.outputImage?.cropped(to: CGRect(x: 0, y: 0, width: w, height: h)),
+                   let blurredCG = ciCtx.createCGImage(outCI, from: CGRect(x: 0, y: 0, width: w, height: h)) {
+                    let blurRep = NSBitmapImageRep(cgImage: blurredCG)
+                    for qInt in stride(from: 70, through: 6, by: -8) {
+                        let quality = Double(qInt) / 100.0
+                        if let jpegData = blurRep.representation(
+                            using: .jpeg,
+                            properties: [.compressionFactor: NSNumber(value: quality), .progressive: NSNumber(value: false)]
+                        ) {
+                            if bestCandidate == nil || jpegData.count < bestCandidate!.data.count {
+                                bestCandidate = (jpegData, quality)
+                            }
+                            if jpegData.count <= maxBytes {
+                                InstaxLogger.log("[IMG] JPEG encoded (smoothed r=\(blurRadius)): \(jpegData.count) bytes (quality: \(qInt)%, target budget: \(maxBytes / 1024) KB)")
+                                return (jpegData, quality)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if let fallback = bestCandidate {
+            InstaxLogger.log("[IMG] JPEG fallback encoded: \(fallback.data.count) bytes")
+            return fallback
         }
         return nil
     }

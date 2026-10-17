@@ -399,11 +399,41 @@ Task {
                 preparedJobs.append((collageTitle, compressed.data, compressed.quality))
             } else {
                 for inPath in inputImagePaths {
-                    guard let srcImg = NSImage(contentsOfFile: inPath) else {
+                    let fileURL = URL(fileURLWithPath: inPath)
+                    var srcImg = NSImage(contentsOfFile: inPath)
+                    var loadedCG: CGImage? = nil
+                    if let cgSrc = CGImageSourceCreateWithURL(fileURL as CFURL, nil),
+                       let cg = CGImageSourceCreateImageAtIndex(cgSrc, 0, nil) {
+                        loadedCG = cg
+                        if srcImg == nil {
+                            let rep = NSBitmapImageRep(cgImage: cg)
+                            let img = NSImage(size: NSSize(width: cg.width, height: cg.height))
+                            img.addRepresentation(rep)
+                            srcImg = img
+                        }
+                    }
+                    guard let validImg = srcImg else {
                         fputs("Error: Could not open image at '\(inPath)'.\n", stderr)
                         exit(1)
                     }
-                    guard let rendered = InstaxImageRenderer.renderSquareImage(from: srcImg, targetWidth: targetW, targetHeight: targetH, options: imgOptions),
+
+                    // Fast-path: if input is already an exact targetW×targetH JPEG <= maxB (e.g. from Local Wi-Fi Bridge), use it directly
+                    if imgOptions.fitMode == .stretch,
+                       imgOptions.qrCodeContent.isEmpty,
+                       imgOptions.captionText.isEmpty,
+                       imgOptions.rotationDegrees == 0,
+                       let cg = loadedCG,
+                       cg.width == targetW,
+                       cg.height == targetH,
+                       let rawData = try? Data(contentsOf: fileURL),
+                       rawData.count >= 2,
+                       rawData[0] == 0xFF, rawData[1] == 0xD8,
+                       rawData.count <= maxB {
+                        preparedJobs.append((inPath, rawData, 0.92))
+                        continue
+                    }
+
+                    guard let rendered = InstaxImageRenderer.renderSquareImage(from: validImg, targetWidth: targetW, targetHeight: targetH, options: imgOptions),
                           let compressed = InstaxImageRenderer.compressToJPEG(rendered, maxBytes: maxB) else {
                         fputs("Error: Failed to render \(targetW)x\(targetH) JPEG for '\(inPath)'.\n", stderr)
                         exit(1)

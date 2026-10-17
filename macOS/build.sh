@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 
-PROJECT_DIR="/Users/michaelfitzgerald/.gemini/antigravity/scratch/instax-square-printer"
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 MODULE_CACHE="/tmp/swift-module-cache"
 APP_BUNDLE="$PROJECT_DIR/Instax Printer.app"
 CLI_BIN="$PROJECT_DIR/instax-square"
