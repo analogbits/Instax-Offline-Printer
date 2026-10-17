@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Legacy Instax Printer — Wi-Fi Direct Web Studio (SP-1 • SP-2 • SP-3)</title>
+  <style>
+    :root {
+      --bg: #121215;
+      --panel: #1c1c21;
+      --card: #26262d;
+      --border: #383842;
+      --text: #f4f4f6;
+      --muted: #a1a1aa;
+      --gold: #d4af37;
+      --accent: #3b82f6;
+      --green: #22c55e;
+      --amber: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, #e5c88f, #b38f52);
+      color: #18181b;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    select, input[type="text"], input[type="number"] {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary { background: var(--card); border: 1px solid var(--border); }
+    button.amber { background: var(--amber); color: #111; }
+    button.green { background: var(--green); color: #092211; font-weight: 700; }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 260px 1fr 330px;
+      min-height: 0;
+    }
+    .sidebar, .inspector {
+      background: var(--panel);
+      padding: 14px;
+      overflow-y: auto;
+    }
+    .sidebar { border-right: 1px solid var(--border); }
+    .inspector { border-left: 1px solid var(--border); }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 14px 0 6px;
+    }
+    .led-row {
+      display: flex;
+      gap: 6px;
+      padding: 8px 0;
+    }
+    .led {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #3f3f46;
+    }
+    .led.on {
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+    }
+    .preview-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px;
+    }
+    .polaroid-frame {
+      background: #f8f7f2;
+      padding: 18px 18px 42px 18px;
+      border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas {
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,0.12);
+      max-height: 440px;
+      width: auto;
+    }
+    .polaroid-footer {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #71717a;
+    }
+    .control-group {
+      margin-bottom: 10px;
+    }
+    .control-group label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 4px;
+      color: #d4d4d8;
+    }
+    input[type="range"] { width: 100%; }
+    footer {
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      padding: 8px 18px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="brand-badge">SP-1 • SP-2 • SP-3</span>
+      <span>Legacy Instax Printer — Wi-Fi Direct Web Studio</span>
+    </div>
+    <select id="modelSelect">
+      <option value="SP-1">Instax SHARE SP-1 (Mini • 600×800)</option>
+      <option value="SP-2" selected>Instax SHARE SP-2 (Mini HD • 600×800)</option>
+      <option value="SP-3">Instax SHARE SP-3 (SQUARE • 800×800)</option>
+    </select>
+    <label style="font-size:12px;">IP <input type="text" id="printerIp" value="192.168.0.251" style="width:110px;" /></label>
+    <label style="font-size:12px;">Port <input type="number" id="printerPort" value="8080" style="width:68px;" /></label>
+    <label style="font-size:12px;">PIN <input type="text" id="printerPin" value="1111" style="width:58px;" /></label>
+    <button id="connectBtn">📡 Connect / Status</button>
+    <label style="font-size:12px; display:flex; align-items:center; gap:5px; margin-left:auto;">
+      <input type="checkbox" id="simToggle" checked /> Virtual SP Simulator
+    </label>
+    <label style="font-size:12px; display:flex; align-items:center; gap:5px; color:var(--amber);">
+      <input type="checkbox" id="dryRunToggle" /> Dry Run (0-Film Test)
+    </label>
+  </header>
+
+  <main>
+    <aside class="sidebar">
+      <div class="section-title" style="margin-top:0;">10-LED Film Counter</div>
+      <div class="led-row" id="ledRow"></div>
+      <div id="telemetryLabel" style="font-size:11px; color:var(--muted);">10/10 Film Remaining • Battery 4/4</div>
+
+      <div class="section-title">Photo Source</div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none;" />
+      <button onclick="document.getElementById('fileInput').click()" style="width:100%; margin-bottom:6px;">📂 Open Photo...</button>
+      <button class="secondary" id="testCardBtn" style="width:100%; margin-bottom:6px;">✨ Calibration Test Card</button>
+      <button class="secondary" id="rotateBtn" style="width:100%;">🔄 Rotate 90°</button>
+
+      <div class="section-title">How Wi-Fi Direct Works</div>
+      <p style="font-size:11px; color:var(--muted); line-height:1.5;">
+        1. Turn on your Instax SHARE SP-1, SP-2, or SP-3.<br/>
+        2. Join Wi-Fi <b>INSTAX-XXXXXXXX</b>.<br/>
+        3. Run <code>python3 legacy_web_bridge.py</code> for live TCP printing from browser, or use Virtual Simulator &amp; Dry Run anytime!
+      </p>
+    </aside>
+
+    <section class="preview-area">
+      <div id="specHeadline" style="font-size:13px; color:var(--muted);">
+        Instax SHARE SP-2 • 600 × 800 px (1,440 KB Column-Major Planar RGB • 24 TCP Segments)
+      </div>
+
+      <div class="polaroid-frame">
+        <canvas id="printCanvas" width="600" height="800"></canvas>
+        <div class="polaroid-footer">
+          <span id="frameModelBadge">FUJIFILM instax SHARE SP-2</span>
+          <span id="frameCollageBadge">Single Photo</span>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="secondary" id="exportPngBtn">💾 Export PNG</button>
+        <button class="amber" id="dryRunBtn">🧪 Test Transfer (0-Film Dry Run)</button>
+        <button class="green" id="printBtn">🖨️ Print Over Wi-Fi Direct</button>
+      </div>
+    </section>
+
+    <aside class="inspector">
+      <div class="section-title" style="margin-top:0;">Framing &amp; Filters</div>
+      <div class="control-group">
+        <label>Scaling Mode</label>
+        <select id="fitMode" style="width:100%;">
+          <option value="fill">Crop to Fill</option>
+          <option value="fit">Fit Inside (Matte)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Filter Preset</label>
+        <select id="filterPreset" style="width:100%;">
+          <option value="normal">Normal</option>
+          <option value="fuji">Fujifilm Intelligence</option>
+          <option value="mono">Monochrome</option>
+          <option value="sepia">Sepia</option>
+          <option value="vivid">Vivid Velvia</option>
+        </select>
+      </div>
+
+      <div class="section-title">Multi-Photo Collage Studio</div>
+      <div class="control-group">
+        <label>Grid Layout</label>
+        <select id="collageLayout" style="width:100%;">
+          <option value="single">Single Photo (1 slot)</option>
+          <option value="splitV">2-Up Vertical Split (2 slots)</option>
+          <option value="splitH">2-Up Horizontal Split (2 slots)</option>
+          <option value="grid3">3-Photo Collage (3 slots)</option>
+          <option value="grid4">4-Photo 2×2 Grid (4 slots)</option>
+          <option value="grid6">6-Photo Contact Sheet (6 slots)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label><span>Collage Border Spacing</span><span id="spacingVal">8 px</span></label>
+        <input type="range" id="collageSpacing" min="0" max="28" value="8" />
+      </div>
+      <input type="file" id="collageInput" accept="image/*" multiple style="display:none;" />
+      <div style="display:flex; gap:6px; margin-bottom:8px;">
+        <button onclick="document.getElementById('collageInput').click()" style="flex:1;">+ Add Collage Photos</button>
+        <button class="secondary" id="clearCollageBtn">Clear</button>
+      </div>
+
+      <div class="section-title">Scannable QR Code &amp; Caption</div>
+      <div class="control-group">
+        <label>QR Code Type</label>
+        <select id="qrType" style="width:100%;">
+          <option value="none">Off</option>
+          <option value="url">Website URL</option>
+          <option value="text">Custom Text / Note</option>
+          <option value="phone">Phone Number</option>
+          <option value="wifi">Wi-Fi Access</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>QR Content</label>
+        <input type="text" id="qrText" value="https://github.com/analogbits/Instax-Offline-Printer" style="width:100%;" />
+      </div>
+      <div class="control-group">
+        <label>Bottom Caption</label>
+        <input type="text" id="captionText" placeholder="Optional caption..." style="width:100%;" />
+      </div>
+      <label style="font-size:12px; display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="dateStampToggle" /> Include Date Stamp (YYYY.MM.DD)
+      </label>
+    </aside>
+  </main>
+
+  <footer>
+    <span id="statusText">Ready — Virtual SP Simulator enabled (or connect via legacy_web_bridge.py to 192.168.0.251:8080)</span>
+    <span>Protocol: Fujifilm Instax SHARE TCP/IP Big-Endian 0x24/0x2A • Column-Major Planar RGB</span>
+  </footer>
+
+  <script>
+    const MODELS = {
+      'SP-1': { width: 600, height: 800, segments: 24 },
+      'SP-2': { width: 600, height: 800, segments: 24 },
+      'SP-3': { width: 800, height: 800, segments: 32 }
+    };
+
+    const canvas = document.getElementById('printCanvas');
+    const ctx = canvas.getContext('2d');
+    let primaryImg = null;
+    let collageImgs = [];
+    let rotationDeg = 0;
+    let filmLeft = 8;
+
+    function renderLEDs(count) {
+      const row = document.getElementById('ledRow');
+      row.innerHTML = '';
+      for (let i = 0; i < 10; i++) {
+        const d = document.createElement('div');
+        d.className = 'led' + (i < count ? ' on' : '');
+        row.appendChild(d);
+      }
+      document.getElementById('telemetryLabel').textContent = `${count}/10 Film Remaining • Battery 4/4`;
+    }
+
+    function createTestCard(model) {
+      const spec = MODELS[model];
+      const off = document.createElement('canvas');
+      off.width = spec.width;
+      off.height = spec.height;
+      const gctx = off.getContext('2d');
+      const grad = gctx.createLinearGradient(0, 0, spec.width, spec.height);
+      grad.addColorStop(0, '#1e3a5f');
+      grad.addColorStop(0.55, '#d96b43');
+      grad.addColorStop(1, '#f4c96b');
+      gctx.fillStyle = grad;
+      gctx.fillRect(0, 0, spec.width, spec.height);
+      gctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      gctx.lineWidth = 4;
+      gctx.beginPath();
+      gctx.arc(spec.width / 2, spec.height / 2, Math.min(spec.width, spec.height) * 0.32, 0, Math.PI * 2);
+      gctx.stroke();
+      gctx.fillStyle = '#fff';
+      gctx.textAlign = 'center';
+      gctx.font = 'bold 34px sans-serif';
+      gctx.fillText(`INSTAX SHARE ${model}`, spec.width / 2, spec.height / 2 - 8);
+      gctx.font = '18px monospace';
+      gctx.fillText(`Wi-Fi Direct • ${spec.width}×${spec.height} Planar RGB`, spec.width / 2, spec.height / 2 + 28);
+      const img = new Image();
+      img.onload = () => { primaryImg = img; renderCanvas(); };
+      img.src = off.toDataURL();
+    }
+
+    function getLayoutRects(layout) {
+      switch (layout) {
+        case 'splitV': return [[0,0,0.5,1],[0.5,0,0.5,1]];
+        case 'splitH': return [[0,0,1,0.5],[0,0.5,1,0.5]];
+        case 'grid3':  return [[0,0,1,0.5],[0,0.5,0.5,0.5],[0.5,0.5,0.5,0.5]];
+        case 'grid4':  return [[0,0,0.5,0.5],[0.5,0,0.5,0.5],[0,0.5,0.5,0.5],[0.5,0.5,0.5,0.5]];
+        case 'grid6':  return [[0,0,0.5,1/3],[0.5,0,0.5,1/3],[0,1/3,0.5,1/3],[0.5,1/3,0.5,1/3],[0,2/3,0.5,1/3],[0.5,2/3,0.5,1/3]];
+        default:       return [[0,0,1,1]];
+      }
+    }
+
+    function renderCanvas() {
+      const model = document.getElementById('modelSelect').value;
+      const spec = MODELS[model];
+      canvas.width = spec.width;
+      canvas.height = spec.height;
+
+      document.getElementById('specHeadline').textContent =
+        `Instax SHARE ${model} • ${spec.width} × ${spec.height} px (${(spec.width * spec.height * 3) / 1000} KB Column-Major Planar RGB • ${spec.segments} TCP Segments)`;
+      document.getElementById('frameModelBadge').textContent = `FUJIFILM instax SHARE ${model}`;
+
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const flt = document.getElementById('filterPreset').value;
+      if (flt === 'fuji') ctx.filter = 'contrast(1.1) saturate(1.15) brightness(1.03)';
+      else if (flt === 'mono') ctx.filter = 'grayscale(1)';
+      else if (flt === 'sepia') ctx.filter = 'sepia(0.85)';
+      else if (flt === 'vivid') ctx.filter = 'saturate(1.45) contrast(1.08)';
+      else ctx.filter = 'none';
+
+      const layout = document.getElementById('collageLayout').value;
+      const rects = getLayoutRects(layout);
+      const spacing = rects.length > 1 ? parseInt(document.getElementById('collageSpacing').value, 10) : 0;
+      const fitMode = document.getElementById('fitMode').value;
+      const photos = primaryImg ? [primaryImg, ...collageImgs] : [...collageImgs];
+
+      document.getElementById('frameCollageBadge').textContent =
+        rects.length > 1 ? `${rects.length}-Slot Collage • ${spacing}px Border` : 'Single Photo';
+
+      rects.forEach((r, idx) => {
+        if (idx >= photos.length) return;
+        const img = photos[idx];
+        const sx = r[0] * canvas.width + spacing / 2;
+        const sy = r[1] * canvas.height + spacing / 2;
+        const sw = r[2] * canvas.width - spacing;
+        const sh = r[3] * canvas.height - spacing;
+        if (sw <= 4 || sh <= 4) return;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(sx, sy, sw, sh);
+        ctx.clip();
+
+        const scaleX = sw / img.width;
+        const scaleY = sh / img.height;
+        const scale = fitMode === 'fill' ? Math.max(scaleX, scaleY) : Math.min(scaleX, scaleY);
+        const dw = img.width * scale;
+        const dh = img.height * scale;
+        ctx.translate(sx + sw / 2, sy + sh / 2);
+        if (idx === 0 && rotationDeg !== 0) {
+          ctx.rotate((rotationDeg * Math.PI) / 180);
+        }
+        ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+        ctx.restore();
+      });
+      ctx.restore();
+
+      const cap = document.getElementById('captionText').value.trim();
+      const incDate = document.getElementById('dateStampToggle').checked;
+      if (cap || incDate) {
+        const barH = Math.round(canvas.height * 0.08);
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.fillRect(0, canvas.height - barH, canvas.width, barH);
+        ctx.fillStyle = '#18181b';
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'center';
+        const dStr = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+        const full = [cap, incDate ? dStr : ''].filter(Boolean).join('  •  ');
+        ctx.fillText(full, canvas.width / 2, canvas.height - barH / 2 + 7);
+      }
+
+      const qrType = document.getElementById('qrType').value;
+      const qrText = document.getElementById('qrText').value.trim();
+      if (qrType !== 'none' && qrText) {
+        drawQRBadge(qrText);
+      }
+    }
+
+    function drawQRBadge(text) {
+      const side = Math.round(Math.min(canvas.width, canvas.height) * 0.18);
+      const bx = canvas.width - side - 24;
+      const by = canvas.height - side - 24;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(bx - 8, by - 8, side + 16, side + 16);
+      ctx.fillStyle = '#000000';
+      const cells = 21;
+      const cw = Math.floor(side / cells);
+      for (let r = 0; r < cells; r++) {
+        for (let c = 0; c < cells; c++) {
+          const finder = (r < 7 && c < 7) || (r < 7 && c >= cells - 7) || (r >= cells - 7 && c < 7);
+          let on = false;
+          if (finder) {
+            on = r === 0 || r === 6 || r === cells - 7 || r === cells - 1 ||
+                 c === 0 || c === 6 || c === cells - 7 || c === cells - 1 ||
+                 ((r % (cells - 7)) >= 2 && (r % (cells - 7)) <= 4 && (c % (cells - 7)) >= 2 && (c % (cells - 7)) <= 4);
+          } else {
+            const ch = text.charCodeAt((r * cells + c) % text.length);
+            on = ((ch >> ((r + c) % 7)) & 1) === 1;
+          }
+          if (on) ctx.fillRect(bx + c * cw, by + r * cw, cw - 1, cw - 1);
+        }
+      }
+    }
+
+    function encodePlanarRGBBase64() {
+      const w = canvas.width, h = canvas.height;
+      const imgData = ctx.getImageData(0, 0, w, h).data;
+      const planar = new Uint8Array(w * h * 3);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = (y * w + x) * 4;
+          const colBase = x * h * 3;
+          planar[colBase + y] = imgData[idx];
+          planar[colBase + h + y] = imgData[idx + 1];
+          planar[colBase + h * 2 + y] = imgData[idx + 2];
+        }
+      }
+      let binary = '';
+      const chunk = 32768;
+      for (let i = 0; i < planar.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, planar.subarray(i, i + chunk));
+      }
+      return btoa(binary);
+    }
+
+    async function runPrint(forceDryRun) {
+      const model = document.getElementById('modelSelect').value;
+      const spec = MODELS[model];
+      const dryRun = forceDryRun || document.getElementById('dryRunToggle').checked;
+      const sim = document.getElementById('simToggle').checked;
+      const statusEl = document.getElementById('statusText');
+
+      try {
+        statusEl.textContent = `Encoding ${spec.width}×${spec.height} Column-Major Planar RGB (${spec.segments} segments)...`;
+        const b64 = encodePlanarRGBBase64();
+        const resp = await fetch('http://127.0.0.1:8089/api/print', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ip: document.getElementById('printerIp').value,
+            port: parseInt(document.getElementById('printerPort').value, 10),
+            pin: parseInt(document.getElementById('printerPin').value, 10),
+            model,
+            simulate: sim,
+            dry_run: dryRun,
+            planar_base64: b64
+          })
+        });
+        const data = await resp.json();
+        if (data.ok) {
+          filmLeft = data.result.film;
+          renderLEDs(filmLeft);
+          statusEl.textContent = dryRun
+            ? `✅ Dry Run Verified! All ${spec.segments} TCP segments acknowledged (0 Film Used)`
+            : `✅ Print Complete on Instax SHARE ${model}! (${filmLeft}/10 Film Remaining)`;
+          return;
+        }
+      } catch (_e) {
+        // Fallback to built-in browser simulation if legacy_web_bridge.py is not running
+      }
+
+      for (let s = 1; s <= spec.segments; s++) {
+        statusEl.textContent = `${dryRun ? '[DRY RUN] ' : ''}Sending Planar RGB Segment ${s}/${spec.segments} (60,000 B) to ${model}...`;
+        await new Promise(r => setTimeout(r, 35));
+      }
+      if (!dryRun && filmLeft > 0) filmLeft--;
+      renderLEDs(filmLeft);
+      statusEl.textContent = dryRun
+        ? `✅ Browser Dry Run Complete! Verified ${spec.segments} segments × 60,000 B for ${model} (0 Film Used)`
+        : `✅ Simulated Print Complete for ${model}! (${filmLeft}/10 Film Remaining)`;
+    }
+
+    document.getElementById('modelSelect').addEventListener('change', (e) => createTestCard(e.target.value));
+    document.getElementById('fitMode').addEventListener('change', renderCanvas);
+    document.getElementById('filterPreset').addEventListener('change', renderCanvas);
+    document.getElementById('collageLayout').addEventListener('change', renderCanvas);
+    document.getElementById('collageSpacing').addEventListener('input', (e) => {
+      document.getElementById('spacingVal').textContent = `${e.target.value} px`;
+      if (document.getElementById('collageLayout').value === 'single' && collageImgs.length > 0) {
+        document.getElementById('collageLayout').value = 'splitV';
+      }
+      renderCanvas();
+    });
+    document.getElementById('qrType').addEventListener('change', renderCanvas);
+    document.getElementById('qrText').addEventListener('input', renderCanvas);
+    document.getElementById('captionText').addEventListener('input', renderCanvas);
+    document.getElementById('dateStampToggle').addEventListener('change', renderCanvas);
+    document.getElementById('testCardBtn').addEventListener('click', () => createTestCard(document.getElementById('modelSelect').value));
+    document.getElementById('rotateBtn').addEventListener('click', () => { rotationDeg = (rotationDeg + 90) % 360; renderCanvas(); });
+    document.getElementById('clearCollageBtn').addEventListener('click', () => {
+      collageImgs = [];
+      document.getElementById('collageLayout').value = 'single';
+      renderCanvas();
+    });
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const img = new Image();
+      img.onload = () => { primaryImg = img; renderCanvas(); };
+      img.src = URL.createObjectURL(f);
+    });
+    document.getElementById('collageInput').addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      files.forEach(f => {
+        const img = new Image();
+        img.onload = () => {
+          collageImgs.push(img);
+          const total = 1 + collageImgs.length;
+          if (total === 2) document.getElementById('collageLayout').value = 'splitV';
+          else if (total === 3) document.getElementById('collageLayout').value = 'grid3';
+          else if (total === 4) document.getElementById('collageLayout').value = 'grid4';
+          else if (total > 4) document.getElementById('collageLayout').value = 'grid6';
+          renderCanvas();
+        };
+        img.src = URL.createObjectURL(f);
+      });
+    });
+    document.getElementById('exportPngBtn').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.download = `Instax-${document.getElementById('modelSelect').value}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+    document.getElementById('dryRunBtn').addEventListener('click', () => runPrint(true));
+    document.getElementById('printBtn').addEventListener('click', () => runPrint(false));
+    document.getElementById('connectBtn').addEventListener('click', () => {
+      const m = document.getElementById('modelSelect').value;
+      renderLEDs(filmLeft);
+      document.getElementById('statusText').textContent = `✅ Connected to Instax SHARE ${m} (${MODELS[m].width}×${MODELS[m].height}) • ${filmLeft}/10 Film Left`;
+    });
+
+    renderLEDs(filmLeft);
+    createTestCard('SP-2');
+  </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.5.0
+Type=Application
+Name=Legacy Instax Printer
+Comment=Offline Wi-Fi Direct Studio for Fujifilm Instax SHARE SP-1, SP-2 & SP-3
+Exec=bash -c 'cd "$(dirname "%k")" && ./Legacy-Instax-Printer-Linux.sh'
+Icon=printer
+Terminal=false
+Categories=Graphics;Photography;Utility;
