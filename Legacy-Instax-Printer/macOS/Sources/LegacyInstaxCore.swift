@@ -508,26 +508,21 @@ public enum LegacyImageProcessor {
         }
         let fullText = parts.joined(separator: "  •  ")
 
-        let nsGraphics = NSGraphicsContext(cgContext: ctx, flipped: false)
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = nsGraphics
-        let font = NSFont.monospacedSystemFont(ofSize: max(14, barH * 0.36), weight: .semibold)
-        let style = NSMutableParagraphStyle()
-        style.alignment = .center
+        let ctFont = CTFontCreateWithName("Menlo-Bold" as CFString, max(14, barH * 0.36), nil)
+        let darkCG = CGColor(srgbRed: 0.12, green: 0.12, blue: 0.12, alpha: 1.0)
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: NSColor(calibratedRed: 0.12, green: 0.12, blue: 0.12, alpha: 1.0),
-            .paragraphStyle: style
+            NSAttributedString.Key(kCTFontAttributeName as String): ctFont,
+            NSAttributedString.Key(kCTForegroundColorAttributeName as String): darkCG
         ]
-        let strSize = (fullText as NSString).size(withAttributes: attrs)
-        let textRect = CGRect(
-            x: 16,
-            y: (barH - strSize.height) / 2.0,
-            width: canvasW - 32,
-            height: strSize.height + 4
+        let attrStr = NSAttributedString(string: fullText, attributes: attrs)
+        let ctLine = CTLineCreateWithAttributedString(attrStr)
+        let bounds = CTLineGetBoundsWithOptions(ctLine, [])
+        ctx.textMatrix = .identity
+        ctx.textPosition = CGPoint(
+            x: max(16, (canvasW - bounds.width) / 2.0),
+            y: (barH - bounds.height) / 2.0 - bounds.origin.y * 0.5
         )
-        (fullText as NSString).draw(in: textRect, withAttributes: attrs)
-        NSGraphicsContext.restoreGraphicsState()
+        CTLineDraw(ctLine, ctx)
         ctx.restoreGState()
     }
 
@@ -592,20 +587,19 @@ public enum LegacyImageProcessor {
         if options.qrIncludeLabel {
             let label = options.qrLabelText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !label.isEmpty {
-                let nsGraphics = NSGraphicsContext(cgContext: ctx, flipped: false)
-                NSGraphicsContext.saveGraphicsState()
-                NSGraphicsContext.current = nsGraphics
-                let font = NSFont.systemFont(ofSize: 11, weight: .bold)
-                let style = NSMutableParagraphStyle()
-                style.alignment = .center
+                ctx.saveGState()
+                let ctFont = CTFontCreateWithName("Helvetica-Bold" as CFString, 11.0, nil)
+                let blackCG = CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 1.0)
                 let attrs: [NSAttributedString.Key: Any] = [
-                    .font: font,
-                    .foregroundColor: NSColor.black,
-                    .paragraphStyle: style
+                    NSAttributedString.Key(kCTFontAttributeName as String): ctFont,
+                    NSAttributedString.Key(kCTForegroundColorAttributeName as String): blackCG
                 ]
-                let textRect = CGRect(x: boxX + 4, y: boxY + 4, width: boxW - 8, height: 16)
-                (label as NSString).draw(in: textRect, withAttributes: attrs)
-                NSGraphicsContext.restoreGraphicsState()
+                let ctLine = CTLineCreateWithAttributedString(NSAttributedString(string: label, attributes: attrs))
+                let bounds = CTLineGetBoundsWithOptions(ctLine, [])
+                ctx.textMatrix = .identity
+                ctx.textPosition = CGPoint(x: boxX + max(4, (boxW - bounds.width) / 2.0), y: boxY + 6)
+                CTLineDraw(ctLine, ctx)
+                ctx.restoreGState()
             }
         }
     }

@@ -2,15 +2,13 @@ import Foundation
 import AppKit
 import CoreBluetooth
 
-_ = NSApplication.shared
-
 // MARK: - Helper Utilities
 
 func parseHexColor(_ hex: String) -> NSColor {
     var s = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
     if s.hasPrefix("#") { s.removeFirst() }
     guard s.count == 6, let val = UInt32(s, radix: 16) else {
-        return .white
+        return NSColor(srgbRed: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
     }
     let r = CGFloat((val >> 16) & 0xFF) / 255.0
     let g = CGFloat((val >> 8) & 0xFF) / 255.0

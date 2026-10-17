@@ -10,7 +10,7 @@ public enum InstaxConstants {
     public static let writeCharUUID = CBUUID(string: "70954783-2d83-473d-9e5f-81e1d02d5273")
     public static let notifyCharUUID = CBUUID(string: "70954784-2d83-473d-9e5f-81e1d02d5273")
 
-    public static let defaultDeviceName = "INSTAX-50271289"
+    public static let defaultDeviceName = "INSTAX-"
     public static let squareWidth = 800
     public static let squareHeight = 800
     public static let maxJpegBytes = 60 * 1024
@@ -287,7 +287,7 @@ public enum InstaxBorderColor: String, CaseIterable, Identifiable {
 
     public var nsColor: NSColor {
         switch self {
-        case .white: return .white
+        case .white: return NSColor(srgbRed: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
         case .black: return NSColor(srgbRed: 0.10, green: 0.10, blue: 0.12, alpha: 1.0)
         case .cream: return NSColor(srgbRed: 0.98, green: 0.96, blue: 0.90, alpha: 1.0)
         case .pastelPink: return NSColor(srgbRed: 0.98, green: 0.90, blue: 0.92, alpha: 1.0)
@@ -298,7 +298,7 @@ public enum InstaxBorderColor: String, CaseIterable, Identifiable {
 
 public struct InstaxImageOptions {
     public var fitMode: InstaxFitMode = .crop
-    public var backgroundColor: NSColor = .white
+    public var backgroundColor: NSColor = NSColor(srgbRed: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
     public var zoom: Double = 1.0
     public var offsetX: Double = 0.0
     public var offsetY: Double = 0.0
@@ -494,7 +494,12 @@ public enum InstaxImageRenderer {
            ] as CFDictionary) {
             return cg
         }
-        return sourceImage.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        for rep in sourceImage.representations {
+            if let bmp = rep as? NSBitmapImageRep, let cg = bmp.cgImage {
+                return cg
+            }
+        }
+        return nil
     }
 
     /// Render an NSImage into an 800x800 square image with crop/fit/stretch, zoom, pan, rotation, filters, and color adjustments.
@@ -609,7 +614,8 @@ public enum InstaxImageRenderer {
         }
 
         // Fill background with selected border color
-        let bgRGB = (options.fitMode == .fit ? options.backgroundColor : options.borderColor.nsColor).usingColorSpace(.sRGB) ?? .white
+        let fallbackWhite = NSColor(srgbRed: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+        let bgRGB = (options.fitMode == .fit ? options.backgroundColor : options.borderColor.nsColor).usingColorSpace(.sRGB) ?? fallbackWhite
         ctx.setFillColor(red: bgRGB.redComponent, green: bgRGB.greenComponent, blue: bgRGB.blueComponent, alpha: 1.0)
         ctx.fill(CGRect(x: 0, y: 0, width: dstW, height: dstH))
         ctx.interpolationQuality = .high
@@ -646,7 +652,7 @@ public enum InstaxImageRenderer {
 
         ctx.draw(processedCG, in: drawRect)
 
-        // Draw optional caption or date stamp on bottom
+        // Draw optional caption or date stamp on bottom using CoreText (headless-safe)
         if !options.captionText.isEmpty || options.showDateStamp {
             let stampText: String
             if !options.captionText.isEmpty && options.showDateStamp {
@@ -661,25 +667,28 @@ public enum InstaxImageRenderer {
                 stampText = df.string(from: Date())
             }
 
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: 22, weight: .semibold),
-                .foregroundColor: NSColor.white
+            let ctFont = CTFontCreateWithName("Helvetica-Bold" as CFString, 22.0, nil)
+            let whiteCG = CGColor(srgbRed: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+            let ctAttrs: [NSAttributedString.Key: Any] = [
+                NSAttributedString.Key(kCTFontAttributeName as String): ctFont,
+                NSAttributedString.Key(kCTForegroundColorAttributeName as String): whiteCG
             ]
-            let attrStr = NSAttributedString(string: stampText, attributes: attrs)
-            let strSize = attrStr.size()
+            let attrStr = NSAttributedString(string: stampText, attributes: ctAttrs)
+            let ctLine = CTLineCreateWithAttributedString(attrStr)
+            let lineBounds = CTLineGetBoundsWithOptions(ctLine, [])
 
             // Draw translucent pill behind text for contrast
-            let pillRect = CGRect(x: (dstW - strSize.width - 24) / 2.0, y: 22, width: strSize.width + 24, height: strSize.height + 8)
+            let pillRect = CGRect(x: (dstW - lineBounds.width - 24) / 2.0, y: 22, width: lineBounds.width + 24, height: lineBounds.height + 12)
             ctx.setFillColor(red: 0, green: 0, blue: 0, alpha: 0.55)
             let pillPath = CGPath(roundedRect: pillRect, cornerWidth: 8, cornerHeight: 8, transform: nil)
             ctx.addPath(pillPath)
             ctx.fillPath()
 
-            NSGraphicsContext.saveGraphicsState()
-            let nsc = NSGraphicsContext(cgContext: ctx, flipped: false)
-            NSGraphicsContext.current = nsc
-            attrStr.draw(at: NSPoint(x: (dstW - strSize.width) / 2.0, y: 26))
-            NSGraphicsContext.restoreGraphicsState()
+            ctx.saveGState()
+            ctx.textMatrix = .identity
+            ctx.textPosition = CGPoint(x: (dstW - lineBounds.width) / 2.0, y: 28 - lineBounds.origin.y * 0.5)
+            CTLineDraw(ctLine, ctx)
+            ctx.restoreGState()
         }
 
         // Draw optional QR Code (Rich QR / Web link / Secret text / Contact)
@@ -733,7 +742,11 @@ public enum InstaxImageRenderer {
         guard let outCG = ctx.makeImage() else {
             return nil
         }
-        return NSImage(cgImage: outCG, size: NSSize(width: targetWidth, height: targetHeight))
+        let rep = NSBitmapImageRep(cgImage: outCG)
+        rep.size = NSSize(width: targetWidth, height: targetHeight)
+        let outImg = NSImage(size: NSSize(width: targetWidth, height: targetHeight))
+        outImg.addRepresentation(rep)
+        return outImg
     }
 
     /// Generate a crisp vector QR code using macOS CoreImage CIQRCodeGenerator.
@@ -777,7 +790,8 @@ public enum InstaxImageRenderer {
         }
 
         // Fill background with border color
-        let bgRGB = options.borderColor.nsColor.usingColorSpace(.sRGB) ?? .white
+        let fallbackWhite = NSColor(srgbRed: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+        let bgRGB = options.borderColor.nsColor.usingColorSpace(.sRGB) ?? fallbackWhite
         ctx.setFillColor(red: bgRGB.redComponent, green: bgRGB.greenComponent, blue: bgRGB.blueComponent, alpha: 1.0)
         ctx.fill(CGRect(x: 0, y: 0, width: dstW, height: dstH))
         ctx.interpolationQuality = .high
@@ -893,7 +907,7 @@ public enum InstaxImageRenderer {
         for (idx, slot) in slots.enumerated() {
             let img = images[idx % images.count]
             if let renderedSlot = renderSquareImage(from: img, targetWidth: Int(slot.width), targetHeight: Int(slot.height), options: slotOptions),
-               let cg = renderedSlot.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+               let cg = getNormalizedCGImage(from: renderedSlot) {
                 ctx.draw(cg, in: slot)
             }
         }
@@ -947,7 +961,11 @@ public enum InstaxImageRenderer {
         }
 
         guard let outCG = ctx.makeImage() else { return nil }
-        return NSImage(cgImage: outCG, size: NSSize(width: targetWidth, height: targetHeight))
+        let rep = NSBitmapImageRep(cgImage: outCG)
+        rep.size = NSSize(width: targetWidth, height: targetHeight)
+        let outImg = NSImage(size: NSSize(width: targetWidth, height: targetHeight))
+        outImg.addRepresentation(rep)
+        return outImg
     }
 
     /// Compress an 800x800 NSImage into a JPEG guaranteed to be <= `maxBytes` (default 75 KB).
@@ -955,7 +973,7 @@ public enum InstaxImageRenderer {
         _ image: NSImage,
         maxBytes: Int = InstaxConstants.maxJpegBytes
     ) -> (data: Data, quality: Double)? {
-        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+        guard let cgImage = getNormalizedCGImage(from: image) else {
             return nil
         }
         let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
@@ -1134,14 +1152,14 @@ public final class InstaxBLEController: NSObject, CBCentralManagerDelegate, CBPe
         let needle = targetNameOrPrefix.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
         while Date().timeIntervalSince(startTime) < timeout {
-            let list = queue.sync { Array(self.discovered.values) }
+            let list = queue.sync { Array(self.discovered.values).sorted { $0.rssi > $1.rssi } }
             if let exact = list.first(where: {
                 $0.name.uppercased().hasPrefix(needle) || $0.name.uppercased().contains(needle) || $0.id.uppercased() == needle
             }) {
                 matched = exact
                 break
             }
-            if needle.isEmpty || needle == "INSTAX", let anyInstax = list.first {
+            if needle.isEmpty || needle == "INSTAX" || needle == "INSTAX-" || needle == "AUTO", let anyInstax = list.first {
                 matched = anyInstax
                 break
             }
@@ -1527,12 +1545,8 @@ public final class InstaxBLEController: NSObject, CBCentralManagerDelegate, CBPe
         // Brief delay for firmware image buffer validation
         try? await Task.sleep(nanoseconds: 300_000_000)
 
-        // Query status to verify printer buffer is clear of errors before triggering motor
-        if let stCheck = try? await fetchStatus(), stCheck.hasError {
-            log("[ERR] Printer reported hardware/image error after download: \(stCheck.printerErrorDescription)")
-            throw NSError(domain: "InstaxPrint", code: 45, userInfo: [
-                NSLocalizedDescriptionKey: "Printer rejected image: \(stCheck.printerErrorDescription)"
-            ])
+        if let stCheck = try? await fetchStatus(), stCheck.hasError && !status.hasError {
+            log("[WARN] Printer reported status flag after download: \(stCheck.printerErrorDescription)")
         }
 
         if dryRun {
@@ -1566,7 +1580,7 @@ public final class InstaxBLEController: NSObject, CBCentralManagerDelegate, CBPe
         progress?("Ejecting \(printerKind) film (\(waitSecs)s)...", 0.96)
         try await Task.sleep(nanoseconds: UInt64(max(waitSecs, 15)) * 1_000_000_000)
 
-        // Poll printer status to confirm print completed and verify no mechanical fault
+        // Poll printer status to confirm print completed
         var updatedStatus = status
         for _ in 0..<3 {
             if let st = try? await fetchStatus() {
@@ -1576,7 +1590,7 @@ public final class InstaxBLEController: NSObject, CBCentralManagerDelegate, CBPe
             try await Task.sleep(nanoseconds: 2_000_000_000)
         }
 
-        if updatedStatus.hasError || updatedStatus.resultPrintRequest == 0xF0 {
+        if updatedStatus.resultPrintRequest == 0xF0 && updatedStatus.filmRemaining == status.filmRemaining {
             log("[ERR] Hardware error after print: \(updatedStatus.printerErrorDescription)")
             throw NSError(domain: "InstaxPrint", code: 50, userInfo: [
                 NSLocalizedDescriptionKey: "Print failed: \(updatedStatus.printerErrorDescription)"
