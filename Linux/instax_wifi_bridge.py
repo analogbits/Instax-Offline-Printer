@@ -145,31 +145,57 @@ def run_ble_status(device: str = "INSTAX-") -> dict:
 class InstaxWiFiBridgeHandler(BaseHTTPRequestHandler):
     server_version = "InstaxWiFiBridge/1.5.4"
 
+    def handle(self):
+        try:
+            super().handle()
+        except (ConnectionResetError, BrokenPipeError, TimeoutError, socket.timeout, OSError):
+            # iOS Safari frequently opens speculative preconnect sockets and closes them with RST
+            pass
+
     def log_message(self, fmt, *args):
         sys.stdout.write(f"[Wi-Fi Bridge] {self.address_string()} - {fmt % args}\n")
+        sys.stdout.flush()
 
     def _send_json(self, payload: dict, status_code: int = 200):
         raw = json.dumps(payload).encode("utf-8")
-        self.send_response(status_code)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Content-Length", str(len(raw)))
-        self.end_headers()
-        self.wfile.write(raw)
+        try:
+            self.send_response(status_code)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Connection", "close")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+        except (ConnectionResetError, BrokenPipeError, OSError):
+            pass
 
     def do_OPTIONS(self):
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
+        try:
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Connection", "close")
+            self.end_headers()
+        except (ConnectionResetError, BrokenPipeError, OSError):
+            pass
 
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
         qs = parse_qs(parsed.query)
+
+        if path in ("/favicon.ico", "/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"):
+            try:
+                self.send_response(204)
+                self.send_header("Connection", "close")
+                self.end_headers()
+            except (ConnectionResetError, BrokenPipeError, OSError):
+                pass
+            return
 
         if path == "/api/bridge-ping":
             lan_ip = get_lan_ip()
@@ -199,11 +225,16 @@ class InstaxWiFiBridgeHandler(BaseHTTPRequestHandler):
             if os.path.isfile(WEB_HTML_PATH):
                 with open(WEB_HTML_PATH, "rb") as f:
                     content = f.read()
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Content-Length", str(len(content)))
-                self.end_headers()
-                self.wfile.write(content)
+                try:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+                    self.send_header("Connection", "close")
+                    self.send_header("Content-Length", str(len(content)))
+                    self.end_headers()
+                    self.wfile.write(content)
+                except (ConnectionResetError, BrokenPipeError, OSError):
+                    pass
                 return
 
         # Also allow serving LegacyInstaxPrinterWeb.html if navigated via header button
@@ -212,14 +243,22 @@ class InstaxWiFiBridgeHandler(BaseHTTPRequestHandler):
             if os.path.isfile(legacy_html):
                 with open(legacy_html, "rb") as f:
                     content = f.read()
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Content-Length", str(len(content)))
-                self.end_headers()
-                self.wfile.write(content)
+                try:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+                    self.send_header("Connection", "close")
+                    self.send_header("Content-Length", str(len(content)))
+                    self.end_headers()
+                    self.wfile.write(content)
+                except (ConnectionResetError, BrokenPipeError, OSError):
+                    pass
                 return
 
-        self.send_error(404, "Not Found")
+        try:
+            self.send_error(404, "Not Found")
+        except (ConnectionResetError, BrokenPipeError, OSError):
+            pass
 
     def do_POST(self):
         parsed = urlparse(self.path)
@@ -339,6 +378,13 @@ def main():
 
     class ReusableThreadingHTTPServer(ThreadingHTTPServer):
         allow_reuse_address = True
+        daemon_threads = True
+
+        def handle_error(self, request, client_address):
+            exc = sys.exc_info()[1]
+            if isinstance(exc, (ConnectionResetError, BrokenPipeError, TimeoutError, socket.timeout)):
+                return
+            super().handle_error(request, client_address)
 
     try:
         server = ReusableThreadingHTTPServer((args.host, args.port), InstaxWiFiBridgeHandler)
