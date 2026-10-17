@@ -145,7 +145,7 @@ Embed high-resolution, scannable QR codes onto your physical prints—just like 
 
 ## 🧪 Safe Testing: Dry Run & Hardware Diagnostics (Zero Film Used!)
 
-### 🏷️ Test Image Generator *(Contributed by [@orangekittysoftware](https://github.com/orangekittysoftware) / [@clintoncwolfe](https://github.com/clintoncwolfe))*
+### 🏷️ Test Image Generator *(Contributed by [@orangekittysoftware](https://github.com/orangekittysoftware))*
 
 Run `bin/test-image-maker.sh --app mac --format square` to generate a white JPEG
 with six centered, sans-serif lines identifying the repository, code version,
@@ -191,7 +191,7 @@ working directory.
 ## 🙏 Contributors & Acknowledgments
 
 Special thanks to our open-source contributors:
-* **[@orangekittysoftware](https://github.com/orangekittysoftware) / [@clintoncwolfe](https://github.com/clintoncwolfe)** (*Clinton Wolfe* / `u/wolf-in-tuxedo`):
+* **[@orangekittysoftware](https://github.com/orangekittysoftware)** (`u/wolf-in-tuxedo`):
   * **[PR #1](https://github.com/analogbits/Instax-Offline-Printer/pull/1):** Adobe Lightroom Classic plugin testing on Instax Mini Link 3, `LrToolkitIdentifier` & `LrExportSession` fixes, generic `INSTAX-` prefix matching, and the `InstaxCLIHelper.app` macOS TCC Bluetooth helper bundle.
   * **[PR #2](https://github.com/analogbits/Instax-Offline-Printer/pull/2):** Cross-platform Instax test card generator (`bin/test-image-maker.sh`) for stamping prints with the app, code version, and OS details across Wide, Square, and Mini formats.
 
