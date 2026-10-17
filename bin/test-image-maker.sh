@@ -57,6 +57,32 @@ if ! code_version=$(git -C "$repo_root" describe --tags --abbrev=0); then
     fail 'Cannot determine the code version. Git and a tag reachable from HEAD are required.'
 fi
 
+os_name=$(uname -s)
+os_version=$(uname -r)
+case "$os_name" in
+    Darwin)
+        os_name=$(sw_vers -productName)
+        os_version=$(sw_vers -productVersion)
+        ;;
+    Linux)
+        if [ -r /etc/os-release ]; then
+            . /etc/os-release
+            os_name=${NAME:-$os_name}
+            os_version=${VERSION_ID:-$os_version}
+        fi
+        ;;
+    MINGW*|MSYS*|CYGWIN*)
+        if ! windows_info=$(powershell.exe -NoProfile -NonInteractive -Command \
+            '$os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop; $os.Caption; $os.Version'); then
+            fail 'Cannot determine the Windows name and version using PowerShell.'
+        fi
+        windows_info=${windows_info//$'\r'/}
+        os_name=${windows_info%%$'\n'*}
+        os_version=${windows_info#*$'\n'}
+        ;;
+esac
+[ -n "$os_name" ] && [ -n "$os_version" ] || fail 'Cannot determine the OS name and version.'
+
 # Some macOS ImageMagick installations do not register the system fonts.
 if [ -f /System/Library/Fonts/Helvetica.ttc ]; then
     font=/System/Library/Fonts/Helvetica.ttc
@@ -74,7 +100,7 @@ fi
 output_dir="$repo_root/tmp/test-images"
 file_version=${code_version//\//-}
 output_file="$output_dir/test-image-$format-$app-$file_version.jpg"
-text=$(printf 'This image was printed with:\nanalogbits/Instax-Offline-Printer\nCode Version: %s\nApp: %s' "$code_version" "$app")
+text=$(printf 'This image was printed with:\nanalogbits/Instax-Offline-Printer\nCode Version: %s\nApp: %s\nOS: %s\nOS Version: %s' "$code_version" "$app" "$os_name" "$os_version")
 
 mkdir -p "$output_dir"
 magick -size "$((width - 80))x$((height - 80))" \

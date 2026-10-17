@@ -148,9 +148,13 @@ Embed high-resolution, scannable QR codes onto your physical prints—just like 
 ### Test Image Generator
 
 Run `bin/test-image-maker.sh --app mac --format square` to generate a white JPEG
-with four centered, sans-serif lines identifying the repository, code version,
-and printing app. Requires Bash 3 or later, Git, and ImageMagick's `magick` command
-(on macOS, install with `brew install imagemagick`).
+with six centered, sans-serif lines identifying the repository, code version,
+printing app, and host OS name and version. Requires Bash 3 or later, Git, and
+ImageMagick's `magick` command (on macOS, install with `brew install imagemagick`).
+OS details describe the machine running the script, independently of `--app`.
+Linux uses its distribution name and version from `/etc/os-release` when
+available, otherwise its kernel name and release. On Windows, run in Bash
+(such as Git Bash); OS detection also requires `powershell.exe`.
 
 `--app` is required: `win`, `mac`, `linux`, `lrcplugin`, or `dtplugin`.
 `--format` defaults to `square` (800 x 800 pixels); `wide` is 1260 x 840 and
