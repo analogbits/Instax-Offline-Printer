@@ -145,6 +145,21 @@ Embed high-resolution, scannable QR codes onto your physical prints—just like 
 
 ## 🧪 Safe Testing: Dry Run & Hardware Diagnostics (Zero Film Used!)
 
+### Test Image Generator
+
+Run `bin/test-image-maker.sh --app mac --format square` to generate a white JPEG
+with four centered, sans-serif lines identifying the repository, code version,
+and printing app. Requires Bash 3 or later, Git, and ImageMagick's `magick` command
+(on macOS, install with `brew install imagemagick`).
+
+`--app` is required: `win`, `mac`, `linux`, `lrcplugin`, or `dtplugin`.
+`--format` defaults to `square` (800 x 800 pixels); `wide` is 1260 x 840 and
+`mini` is 600 x 800. The code version is the nearest Git tag reachable from HEAD
+(`git describe --tags --abbrev=0`); generation fails if no tag is available.
+Output is written to the repository's
+`tmp/test-images/test-image-FORMAT-APP-CODEVERSION.jpg`, regardless of the current
+working directory.
+
 ### 1. 🧪 "Dry Run" Mode (Full Image & BLE/Wi-Fi Throughput Test)
 * **What it does:** Streams 100% of your real image chunks across Bluetooth or Wi-Fi Direct, negotiates packet framing, and waits for the printer's onboard ASIC chip to validate the image in RAM.
 * **The Magic:** Once the printer validates the image without errors, our software immediately issues `PRINT_IMAGE_DOWNLOAD_CANCEL` (`0x10, 0x03` on BLE) or `CMD_RESET` (`0x50` on Wi-Fi Direct) instead of the physical exposure command.
