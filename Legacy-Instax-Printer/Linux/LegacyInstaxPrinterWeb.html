@@ -764,6 +764,9 @@
             `;
             tbody.appendChild(tr);
           });
+        } else {
+          tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted); text-align:center;">No broadcast Wi-Fi networks found.</td></tr>';
+        }
         return;
       }
     } catch (e) {
