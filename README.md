@@ -5,9 +5,9 @@
 [![Try Legacy Wi-Fi Web App](https://img.shields.io/badge/Legacy_Web_App-SHARE_SP--1_%7C_SP--2_%7C_SP--3-10b981?style=for-the-badge&logo=wifi&logoColor=white)](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)
 [![Download Offline Suite](https://img.shields.io/badge/Download-Offline_Suite_(.zip)-22c55e?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/analogbits/Instax-Offline-Printer/releases/latest)
 
-> 🚀 **Try either Web App right now in your browser (works on macOS, Windows, and Linux):**  
-> - **🔵 [👉 Launch Web Bluetooth Printer (SQUARE Link • Link WIDE • Mini Link)](https://analogbits.github.io/Instax-Offline-Printer/)** *(Works in Google Chrome, Microsoft Edge, Brave, and Opera on Mac, Windows, Linux, Android, and Chromebooks)*  
-> - **🎞️ [👉 Launch Legacy Wi-Fi Direct Web Printer (Instax SHARE SP-1 • SP-2 • SP-3)](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)** *(Short link: [`analogbits.github.io/Instax-Offline-Printer/legacy.html`](https://analogbits.github.io/Instax-Offline-Printer/legacy.html) — Works on Mac, Windows, and Linux)*
+> 🚀 **Try either Web App right now in your browser (macOS, Windows, Linux, Android & iPhone/iPad):**  
+> - **🔵 [👉 Launch Web Bluetooth Printer (SQUARE Link • Link WIDE • Mini Link)](https://analogbits.github.io/Instax-Offline-Printer/)** *(Works natively in Chrome, Edge, Brave & Opera on Mac/Windows/Linux/Android — and on **iPhone / iPad** via the built-in **Local Wi-Fi Bluetooth Bridge** in regular Safari or the free **Bluefy** app!)*  
+> - **🎞️ [👉 Launch Legacy Wi-Fi Direct Web Printer (Instax SHARE SP-1 • SP-2 • SP-3)](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)** *(Short link: [`analogbits.github.io/Instax-Offline-Printer/legacy.html`](https://analogbits.github.io/Instax-Offline-Printer/legacy.html) — Works on Mac, Windows, Linux & iOS)*
 
 A complete, self-contained suite of native standalone applications, Adobe Lightroom Classic & Linux Darktable plugins, command-line tools, and zero-install offline utilities for printing directly to:
 * **Bluetooth Low Energy (BLE) Printers:** **Fujifilm Instax SQUARE Link**, **Instax Link WIDE / WIDE 2**, and **Instax Mini Link (1, 2, 3, & Link+)**
@@ -64,12 +64,21 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
 
 ---
 
-### 🌐 4. Universal Web Apps (`Web-Bluetooth-Offline/` & `Legacy-Instax-Printer/Web-WiFi-Offline/`)
+### 🌐 4. Universal Web Apps & iPhone / iPad Safari Printing (`Web-Bluetooth-Offline/` & `Legacy-Instax-Printer/Web-WiFi-Offline/`)
 * **🔵 BLE Link Web App (SQUARE Link, Link WIDE & Mini Link):**
   * **Live Online:** [https://analogbits.github.io/Instax-Offline-Printer/](https://analogbits.github.io/Instax-Offline-Printer/)
   * **Offline File:** [`Web-Bluetooth-Offline/InstaxPrinterWeb.html`](Web-Bluetooth-Offline/InstaxPrinterWeb.html)
-  * **Desktop & Android Compatibility:** Works natively on **macOS, Windows 10/11, Linux, Android, and ChromeOS** in Google Chrome, Microsoft Edge, Brave, Opera, or Arc.
-  * **📱 iPhone & iPad Compatibility (Direct Bluetooth):** Because Apple disables Web Bluetooth in iOS Safari/Chrome, open the web app on your iPhone or iPad and tap the built-in **📲 Open This Page in Bluefy** button (uses the free [Bluefy – Web BLE Browser](https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055) on the App Store) to connect and print directly from your iPhone over Bluetooth! You can also tap **💾 Save Image** in iOS Safari anytime to save your framed Multi-Photo Collage or QR Code print directly to Apple Photos.
+  * **Desktop & Android Compatibility:** Works natively with zero setup on **macOS, Windows 10/11, Linux, Android, and ChromeOS** in Google Chrome, Microsoft Edge, Brave, Opera, or Arc.
+  * **📱 Why Special iPhone / iPad & Apple Safari Support Was Added:**
+    * Apple intentionally disables the W3C **Web Bluetooth API** (`navigator.bluetooth`) inside WebKit on iOS (which affects iPhone Safari, iOS Chrome, iOS Edge, and iOS Firefox) as well as macOS Safari.
+    * To make sure iPhone, iPad, and Safari users can still print effortlessly without relying on Fujifilm's cloud apps, we built **two ways** to print from iOS:
+    1. **🏠 Option A — Print in Regular iPhone / iPad Safari at Home (`--serve` Local Wi-Fi Bluetooth Bridge — Zero iOS Apps Required):**
+       * **What it is:** A lightweight local bridge (`Web-Bluetooth-Offline/instax_wifi_bridge.py`) that runs on your Mac, Windows PC, or Linux computer and hosts the Instax Web App on your home Wi-Fi network (e.g., `http://192.168.1.x:8765`).
+       * **How to use it:** Double-click **`Start-iPhone-WiFi-Bridge.command`** (macOS), **`Start-iPhone-WiFi-Bridge.bat`** (Windows), or **`Start-iPhone-WiFi-Bridge.sh`** (Linux) — or run `python3 Windows/instax_printer.py --serve`.
+       * **Effortless QR Scan:** Your computer opens a browser window with a **scannable QR code**. Point your iPhone camera at the QR code to open the Web App in **regular iPhone Safari**, pick any photo from your iPhone Camera Roll, frame it, and tap **🖨 Print Physical Photo** — your iPhone sends the framed image over Wi-Fi to your computer, which immediately beams it over Bluetooth to your Instax printer! (Also works in **macOS Safari** and **Firefox**).
+    2. **🎒 Option B — Direct iPhone-to-Printer Bluetooth Anywhere on the Go (via Bluefy):**
+       * When away from home without a computer, open the Web App on your iPhone/iPad and tap the built-in **📲 Open This Page in Bluefy** button (uses the free [Bluefy – Web BLE Browser](https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055) on the App Store) to connect directly from your iPhone to your Instax printer over Bluetooth.
+       * You can also tap **💾 Save Image** in iOS Safari anytime to save your framed print or QR Code card directly to Apple Photos via the native iOS Share Sheet.
 * **🎞️ Legacy Wi-Fi Direct Web App (Instax SHARE SP-1, SP-2 & SP-3):**
   * **Live Online:** [https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html) *(or [`/legacy.html`](https://analogbits.github.io/Instax-Offline-Printer/legacy.html))*
   * **Offline File:** [`Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html`](Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)

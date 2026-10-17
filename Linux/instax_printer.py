@@ -627,8 +627,21 @@ def render_collage(
 
 
 async def main_cli():
+    if "--serve" in sys.argv or (len(sys.argv) > 1 and sys.argv[1] == "serve"):
+        bridge_script = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "Web-Bluetooth-Offline", "instax_wifi_bridge.py")
+        )
+        if os.path.isfile(bridge_script):
+            extra_args = [a for a in sys.argv[1:] if a not in ("--serve", "serve")]
+            os.execv(sys.executable, [sys.executable, bridge_script] + extra_args)
+
     parser = argparse.ArgumentParser(description="Instax Cross-Platform Bluetooth Printer CLI (macOS, Windows, Linux)")
+    parser.add_argument("--serve", action="store_true", help="Start Local Wi-Fi Bluetooth Bridge for iPhone/iPad Safari")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # serve
+    p_serve = subparsers.add_parser("serve", help="Start Local Wi-Fi Bluetooth Bridge for iPhone/iPad/Mac Safari")
+    p_serve.add_argument("--port", type=int, default=8765)
 
     # scan
     p_scan = subparsers.add_parser("scan", help="Scan for nearby Instax printers")

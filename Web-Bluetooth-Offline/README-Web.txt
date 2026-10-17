@@ -2,37 +2,75 @@
           INSTAX UNIVERSAL OFFLINE WEB PRINTER — USER GUIDE
 ================================================================================
 
-This folder contains the zero-install, 100% offline Web Bluetooth application.
-It runs locally in any modern Chromium-based web browser without installing
-any drivers, Python packages, or software dependencies.
+This folder contains the zero-install, 100% offline Web Bluetooth application,
+plus the Local Wi-Fi Bluetooth Bridge (`instax_wifi_bridge.py`) for printing
+directly from regular iPhone Safari, iPad Safari, Mac Safari, and Firefox!
 
 --------------------------------------------------------------------------------
-⚠️ CRITICAL PREREQUISITE: TURN OFF BLUETOOTH ON YOUR PHONE / TABLET
+📱 HOW TO PRINT FROM IPHONE & IPAD (OR APPLE SAFARI / FIREFOX):
+--------------------------------------------------------------------------------
+Why special support is needed for iPhone & Safari:
+  Apple disables the Web Bluetooth API (`navigator.bluetooth`) inside WebKit on
+  iOS (including iPhone Safari, iOS Chrome, and iOS Edge) as well as macOS Safari.
+
+To solve this, we provide TWO effortless ways to print from an iPhone or iPad:
+
+  OPTION A — Print in Regular iPhone / iPad Safari at Home (Zero Apps Needed):
+    1. On your Mac, Windows PC, or Linux computer (with Bluetooth turned ON),
+       start the Local Wi-Fi Bluetooth Bridge by double-clicking:
+         • macOS:   Start-iPhone-WiFi-Bridge.command
+         • Windows: Start-iPhone-WiFi-Bridge.bat
+         • Linux:   Start-iPhone-WiFi-Bridge.sh
+       (Or run: `python3 instax_wifi_bridge.py` or `python3 instax_printer.py --serve`)
+    2. Your computer will open a browser window displaying a scannable QR code
+       and your local home Wi-Fi address (e.g. http://192.168.1.x:8765).
+    3. Point your iPhone camera at the QR code on your computer screen (or type
+       the http://192.168.1.x:8765 address into regular iPhone Safari).
+    4. Select any photo from your iPhone Camera Roll, frame it, add filters or
+       a QR code, and tap "🖨 Print Physical Photo" — your iPhone sends the
+       framed photo over Wi-Fi to your computer, which immediately beams it
+       over Bluetooth to your Instax printer!
+
+  OPTION B — Direct iPhone-to-Printer Bluetooth Anywhere (On the Go):
+    1. Install the free "Bluefy – Web BLE Browser" app from the iOS App Store:
+       https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055
+    2. Open the Web App inside Bluefy (or tap "📲 Open This Page in Bluefy" on
+       the banner in iPhone Safari) to connect directly from your iPhone to
+       your Instax printer over Bluetooth with no computer required.
+
+--------------------------------------------------------------------------------
+⚠️ CRITICAL PREREQUISITE: TURN OFF BLUETOOTH ON YOUR PHONE (WHEN USING DESKTOP)
 --------------------------------------------------------------------------------
 Instax printers only allow ONE Bluetooth connection at a time!
-If the printer was previously paired with your iPhone, iPad, or Android device:
-  1. The printer stops broadcasting beacons and will NOT appear in the browser chooser.
-  2. SOLUTION: Turn OFF Bluetooth in iOS/Android Settings on your phone,
-     then turn the printer off and back on. It will immediately show up in the chooser.
---------------------------------------------------------------------------------
+If the printer was previously paired with the official Fujifilm app on your phone:
+  1. The printer stops broadcasting beacons and will NOT appear on your computer.
+  2. SOLUTION: Close the official Fujifilm app (or turn OFF Bluetooth on your
+     phone when printing via your computer), then turn the printer off and back on.
 
 --------------------------------------------------------------------------------
 SUPPORTED PLATFORMS & BROWSERS:
 --------------------------------------------------------------------------------
-Works on Mac, Windows (10 & 11), Linux, Chromebooks, and Android tablets/phones:
-  * Google Chrome
-  * Microsoft Edge
-  * Brave Browser
-  * Opera
+1. Direct Web Bluetooth (Zero-Install):
+   Works on Mac, Windows (10 & 11), Linux, Chromebooks, and Android:
+     * Google Chrome
+     * Microsoft Edge
+     * Brave Browser
+     * Opera
+   Works on iPhone & iPad:
+     * Bluefy – Web BLE Browser (free on iOS App Store)
 
-NOTE: Apple Safari and Mozilla Firefox do NOT support the Web Bluetooth API.
-      Please open InstaxPrinterWeb.html in Chrome, Edge, or Brave.
+2. Local Wi-Fi Bluetooth Bridge (`Start-iPhone-WiFi-Bridge` / `--serve`):
+   Works in ALL browsers on your home Wi-Fi network:
+     * iPhone Safari & iPad Safari (zero iOS apps needed!)
+     * macOS Safari
+     * Mozilla Firefox
 
 --------------------------------------------------------------------------------
 HOW TO USE:
 --------------------------------------------------------------------------------
 1. Turn on your Instax printer (press and hold power button until the LED glows).
-2. Double-click "InstaxPrinterWeb.html" to open it in Chrome, Edge, or Brave.
+2. Open "InstaxPrinterWeb.html" in Chrome/Edge/Brave (or start the Local Wi-Fi
+   Bridge via `Start-iPhone-WiFi-Bridge` for iPhone/iPad/Mac Safari).
 3. Click "📁 Add Photo..." to select any JPG, PNG, WEBP, or HEIC image.
 4. Use the interactive canvas controls:
    - Drag directly on the photo with your mouse or finger to re-center.
@@ -43,33 +81,12 @@ HOW TO USE:
    - Pick an Artistic Filter: B&W Mono, Warm Sepia, Vintage Film, Cool Fade,
      or Vivid Pop.
    - Select your Film Mode: instax-Rich (vibrant pop) or instax-Natural (soft film).
-5. Click "📡 Connect Instax (BLE)".
-   In the browser popup, select your printer (e.g. "INSTAX-50271289") and click Pair.
-6. The app will immediately read your printer's hardware status:
+5. Click "📡 Connect Instax".
+6. The app will read your printer's hardware status:
    - Remaining film count (e.g. "Film: 10/10")
    - Real-time battery percentage ("Battery: 100%")
 7. Click "🖨 Print Physical Photo".
-   Watch the live chunk upload progress bar. Within ~12 seconds, your printer
+   Watch the live upload progress bar. Within ~12 seconds, your printer
    will physically expose and eject your instant photo!
-
---------------------------------------------------------------------------------
-TROUBLESHOOTING & FAQ:
---------------------------------------------------------------------------------
-* "Unsupported device" or "User cancelled the chooser":
-  Make sure your printer is powered on and within 3 meters. If previously paired
-  to a phone, briefly disconnect Bluetooth on the phone so the printer is free
-  to advertise.
-
-* "Undefined is not an object (evaluating 'navigator.bluetooth')":
-  This happens if opened in Apple Safari. Open the file in Chrome or Edge instead.
-
-* Running inside Virtual Machines (Parallels / VMware / VirtualBox):
-  Virtual machines do not emulate low-level Bluetooth Low Energy (BLE) hardware
-  by default. If running inside a VM, use a dedicated USB Bluetooth dongle passed
-  through to the VM, or simply run the app directly on the host Mac/PC.
-
-* Printer back cover open:
-  If the back film compartment is ajar, the status badge will warn "Cover Open!".
-  Firmly click the back hatch closed before printing.
 
 ================================================================================
