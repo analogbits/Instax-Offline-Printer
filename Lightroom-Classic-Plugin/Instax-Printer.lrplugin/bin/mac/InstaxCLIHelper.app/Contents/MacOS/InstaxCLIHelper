@@ -1,0 +1,9 @@
+#!/bin/sh
+
+output_path="$1"
+cli_path="$2"
+shift 2
+
+"$cli_path" "$@" > "$output_path" 2>&1
+exit_code=$?
+printf '%s\n' "$exit_code" > "$output_path.exit"

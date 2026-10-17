@@ -9,13 +9,35 @@ local LrBinding = import 'LrBinding'
 local LrColor = import 'LrColor'
 local LrExportSession = import 'LrExportSession'
 
-local function executeWithOutput(command)
+local function shellQuote(value)
+	return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
+end
+
+local function executeWithOutput(cliPath, arguments)
 	local outputPath = LrFileUtils.chooseUniqueFileName(
 		LrPathUtils.child(LrPathUtils.getStandardFilePath('temp'), 'instax-cli-output.txt')
 	)
-	local exitCode = LrTasks.execute(command .. string.format(' > "%s" 2>&1', outputPath))
+	local exitPath = outputPath .. ".exit"
+	local helperPath = LrPathUtils.child(_PLUGIN.path, "bin/mac/InstaxCLIHelper.app")
+	local commandParts = {
+		"/usr/bin/open",
+		"-W",
+		"-n",
+		shellQuote(helperPath),
+		"--args",
+		shellQuote(outputPath),
+		shellQuote(cliPath),
+	}
+	for _, argument in ipairs(arguments) do
+		table.insert(commandParts, shellQuote(argument))
+	end
+
+	local launchExitCode = LrTasks.execute(table.concat(commandParts, " "))
 	local output = LrFileUtils.readFile(outputPath) or ""
+	local exitText = LrFileUtils.readFile(exitPath) or ""
+	local exitCode = tonumber(exitText:match("%d+")) or launchExitCode
 	LrFileUtils.delete(outputPath)
+	LrFileUtils.delete(exitPath)
 	return exitCode, output
 end
 
@@ -128,9 +150,14 @@ LrTasks.startAsyncTask(function()
 			local success, pathOrMessage = rendition:waitForRender()
 			if success then
 				count = count + 1
-				local cmd = string.format('"%s" print "%s" --device "INSTAX-" --model %s --mode %s --fit %s',
-					cliPath, pathOrMessage, props.printerModel, props.printMode, props.fitMode)
-				local code, output = executeWithOutput(cmd)
+				local code, output = executeWithOutput(cliPath, {
+					"print",
+					pathOrMessage,
+					"--device", "INSTAX-",
+					"--model", props.printerModel,
+					"--mode", props.printMode,
+					"--fit", props.fitMode,
+				})
 				LrFileUtils.delete(pathOrMessage)
 				if code ~= 0 then
 					LrDialogs.showError(string.format(

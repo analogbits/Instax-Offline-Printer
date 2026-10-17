@@ -7,13 +7,35 @@ local LrColor = import 'LrColor'
 
 local exportServiceProvider = {}
 
-local function executeWithOutput(command)
+local function shellQuote(value)
+	return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
+end
+
+local function executeWithOutput(cliPath, arguments)
 	local outputPath = LrFileUtils.chooseUniqueFileName(
 		LrPathUtils.child(LrPathUtils.getStandardFilePath('temp'), 'instax-cli-output.txt')
 	)
-	local exitCode = LrTasks.execute(command .. string.format(' > "%s" 2>&1', outputPath))
+	local exitPath = outputPath .. ".exit"
+	local helperPath = LrPathUtils.child(_PLUGIN.path, "bin/mac/InstaxCLIHelper.app")
+	local commandParts = {
+		"/usr/bin/open",
+		"-W",
+		"-n",
+		shellQuote(helperPath),
+		"--args",
+		shellQuote(outputPath),
+		shellQuote(cliPath),
+	}
+	for _, argument in ipairs(arguments) do
+		table.insert(commandParts, shellQuote(argument))
+	end
+
+	local launchExitCode = LrTasks.execute(table.concat(commandParts, " "))
 	local output = LrFileUtils.readFile(outputPath) or ""
+	local exitText = LrFileUtils.readFile(exitPath) or ""
+	local exitCode = tonumber(exitText:match("%d+")) or launchExitCode
 	LrFileUtils.delete(outputPath)
+	LrFileUtils.delete(exitPath)
 	return exitCode, output
 end
 
@@ -169,23 +191,21 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 			progressScope:setCaption(string.format("Transmitting photo %d of %d to Instax...", i, nPhotos))
 
 			local cmdArgs = {
-				string.format('"%s"', cliPath),
 				"print",
-				string.format('"%s"', renderedPath),
+				renderedPath,
 				"--model", exportParams.printerModel or "auto",
 				"--mode", exportParams.printMode or "rich",
 				"--fit", exportParams.fitMode or "crop",
-				"--bg", string.format('"%s"', exportParams.bgColor or "#FFFFFF"),
+				"--bg", exportParams.bgColor or "#FFFFFF",
 			}
 
 			table.insert(cmdArgs, "--device")
-			table.insert(cmdArgs, string.format(
-				'"%s"',
+			table.insert(
+				cmdArgs,
 				exportParams.customDevice and exportParams.customDevice ~= "" and exportParams.customDevice or "INSTAX-"
-			))
+			)
 
-			local fullCmd = table.concat(cmdArgs, " ")
-			local exitCode, output = executeWithOutput(fullCmd)
+			local exitCode, output = executeWithOutput(cliPath, cmdArgs)
 
 			-- Clean up temp exported JPEG
 			LrFileUtils.delete(renderedPath)

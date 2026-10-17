@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>InstaxCLIHelper</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.analogbits.instax-cli-helper</string>
+	<key>CFBundleName</key>
+	<string>Instax CLI Helper</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSBackgroundOnly</key>
+	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Connect to a Fujifilm Instax printer to send photos for printing.</string>
+</dict>
+</plist>
