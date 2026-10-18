@@ -459,45 +459,29 @@ class LegacyBridgeHandler(BaseHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Legacy Instax Printer Local Wi-Fi Bridge — Print from iPhone/iPad/Safari to SP-1, SP-2 & SP-3"
+        description="Legacy Instax Printer Local Desktop Web Bridge — SP-1, SP-2 & SP-3 TCP Helper"
     )
-    parser.add_argument("--host", default="0.0.0.0", help="Bind address (default: 0.0.0.0 for LAN access)")
+    parser.add_argument("--host", default="127.0.0.1", help="Bind address (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8089, help="HTTP port (default: 8089)")
     parser.add_argument("--no-browser", action="store_true", help="Do not auto-open browser on startup")
     args = parser.parse_args()
 
-    lan_ip = get_lan_ip()
-    all_ips = get_all_lan_ips()
     local_url = f"http://127.0.0.1:{args.port}"
     connected_wifi = get_connected_wifi_ssid()
 
-    print("=" * 76)
-    print("📸 LEGACY INSTAX WI-FI DIRECT BRIDGE (SP-1 • SP-2 • SP-3 • iPhone / Safari)")
-    print("=" * 76)
-    print(f"  🟢 Host Machine:    {platform.system()} ({socket.gethostname()})")
-    print(f"  📶 Current Wi-Fi:   {connected_wifi}")
-    print(f"  💻 This Computer:   {local_url}")
-    print("-" * 76)
-    print("  📱 iPhone / iPad Safari Printing Addresses:")
-    for ip in all_ips:
-        if ip.startswith("192.168.0."):
-            print(f"     👉 http://{ip}:{args.port}  (iPhone joined to printer's {connected_wifi})")
-        else:
-            print(f"     👉 http://{ip}:{args.port}  (iPhone on Home Wi-Fi / LAN)")
-    print("-" * 76)
-    print("  💡 HOW SINGLE WI-FI RADIO ON COMPUTERS WORKS (3 Easy Setups):")
-    print("     • Setup 1 (All-Wireless Direct — Recommended):")
-    print("       1. Turn on Instax SHARE printer.")
-    print("       2. Connect Mac/PC Wi-Fi to 'INSTAX-XXXXXXXX' (Password: 11111111).")
-    print("       3. Connect iPhone Wi-Fi to 'INSTAX-XXXXXXXX' (Password: 11111111).")
-    print(f"       4. In iPhone Safari, go to: http://{lan_ip}:{args.port} & tap Print!")
-    print("     • Setup 2 (Dual Network — Mac on Ethernet + Wi-Fi to Printer):")
-    print("       Connect Mac Ethernet to home router & Mac Wi-Fi to 'INSTAX-XXXXXXXX'.")
-    print("       iPhone stays on normal Home Wi-Fi and prints seamlessly.")
-    print("     • Setup 3 (1-Second AirDrop — Fastest for iPhone):")
-    print("       AirDrop photo from iPhone to Mac, then click Print in the app!")
+    print("=" * 74)
+    print("📸 LEGACY INSTAX PRINTER — LOCAL WEB STUDIO BACKEND (SP-1 • SP-2 • SP-3)")
+    print("=" * 74)
+    print(f"  🟢 Status:          Running locally on {platform.system()} ({socket.gethostname()})")
+    print(f"  📶 Connected Wi-Fi: {connected_wifi}")
+    print(f"  🌐 Web Studio URL:  {local_url}")
+    print("-" * 74)
+    print("  💡 How to use:")
+    print("     1. Connect your computer's Wi-Fi to 'INSTAX-XXXXXXXX' (Password: 11111111).")
+    print(f"     2. Use {local_url} in your desktop browser to print over Wi-Fi Direct!")
+    print("     • Photos on iPhone? AirDrop to Mac in 1 second, then click Print!")
     print("     (Press Ctrl+C to stop the bridge)")
-    print("=" * 76)
+    print("=" * 74)
 
     class ReusableThreadingHTTPServer(ThreadingHTTPServer):
         allow_reuse_address = True

@@ -26,59 +26,22 @@ A dedicated, 100% offline desktop and web application suite for Fujifilm's class
 
 | Folder | Platform | Application Files |
 | :--- | :--- | :--- |
-| **`macOS/`** | macOS 13+ (Universal) | `Legacy Instax Printer.app`, `legacy-instax` CLI, `Start-iPhone-WiFi-Bridge.command`, `legacy_web_bridge.py`, `LegacyInstaxPrinterWeb.html`, `build.sh` |
-| **`Windows/`** | Windows 10 / 11 | `LegacyInstaxPrinterGUI.pyw`, `legacy_instax_printer.py`, `Start-iPhone-WiFi-Bridge.bat`, `legacy_web_bridge.py`, `LegacyInstaxPrinterWeb.html`, `Legacy-Instax-Printer.bat` |
-| **`Linux/`** | Ubuntu / Fedora / Arch | `LegacyInstaxPrinterGUI.py`, `legacy_instax_printer.py`, `Start-iPhone-WiFi-Bridge.sh`, `legacy_web_bridge.py`, `LegacyInstaxPrinterWeb.html`, `Legacy-Instax-Printer-Linux.sh` |
-| **`Web-WiFi-Offline/`** | iPhone / iPad / Any Browser | `LegacyInstaxPrinterWeb.html` + `legacy_web_bridge.py` + one-click `Start-iPhone-WiFi-Bridge.*` launchers |
+| **`macOS/`** | macOS 13+ (Universal) | `Legacy Instax Printer.app`, `legacy-instax` CLI, `LegacyInstaxPrinterWeb.html`, `legacy_web_bridge.py`, `build.sh` |
+| **`Windows/`** | Windows 10 / 11 | `LegacyInstaxPrinterGUI.pyw`, `legacy_instax_printer.py`, `Legacy-Instax-Printer.vbs`, `LegacyInstaxPrinterWeb.html`, `legacy_web_bridge.py`, `Legacy-Instax-Printer.bat` |
+| **`Linux/`** | Ubuntu / Fedora / Arch | `LegacyInstaxPrinterGUI.py`, `legacy_instax_printer.py`, `Legacy-Instax-Printer-Linux.sh`, `LegacyInstaxPrinterWeb.html`, `legacy_web_bridge.py` |
+| **`Web-WiFi-Offline/`** | Any Desktop Browser | `LegacyInstaxPrinterWeb.html` (Standalone Offline Studio) + `legacy_web_bridge.py` (Local TCP Helper) |
 
 ---
 
-## 📱 iPhone & iPad Safari Printing Guide: Single Wi-Fi Radio Explained
+## 📱 Have Photos on an iPhone or iPad? AirDrop to Mac in 1 Second!
 
-Want to print photos directly from your **iPhone or iPad Camera Roll** to an Instax SHARE SP-1, SP-2, or SP-3 without needing obsolete iOS apps?
+You do **not** need any complicated bridges or network hopping between your phone and computer:
 
-### 💡 Understanding the Single Wi-Fi Radio Constraint
-* Modern BLE printers (like SQUARE Link) use **two separate radios** (Wi-Fi for network/iPhone + Bluetooth for printer).
-* **Legacy Instax SHARE printers only have Wi-Fi** (they act as their own Wi-Fi access point: `INSTAX-XXXXXXXX` at `192.168.0.251:8080`).
-* Because computers and phones typically have **one Wi-Fi antenna**, connecting to `INSTAX-XXXXXXXX` disconnects you from your home router.
-* **We designed 3 easy setups to handle this effortlessly:**
+1. **AirDrop to Mac:** On your iPhone, select your photo in the Photos app $\to$ tap **Share** $\to$ tap **AirDrop** to your Mac. The photo lands instantly in your Mac's Downloads folder.
+2. **Connect Mac to Printer:** In your Mac's Wi-Fi menu, connect to your printer's **`INSTAX-XXXXXXXX`** network (Default Password: **`11111111`**).
+3. **Click Print:** Open **`Legacy Instax Printer.app`** (or [`LegacyInstaxPrinterWeb.html`](Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)), pick your photo, and click **Print Over Wi-Fi Direct**!
 
----
-
-### 📶 Setup 1: All-Wireless Direct (Recommended — Zero Cables)
-Both your computer and iPhone connect directly to the printer's private Wi-Fi network:
-1. **Power On Printer:** Press and hold the power button on your SP-1, SP-2, or SP-3 until the LEDs illuminate.
-2. **Connect Computer to Printer Wi-Fi:**
-   - In your Mac/PC Wi-Fi menu, select **`INSTAX-XXXXXXXX`** (Factory Password: **`11111111`**).
-3. **Connect iPhone to Printer Wi-Fi:**
-   - On your iPhone, open **Settings $\to$ Wi-Fi** and select the same **`INSTAX-XXXXXXXX`** (Password: **`11111111`**).
-   - *(iOS will display "No Internet Connection" — this is completely normal! Tap "Keep Trying Wi-Fi" or stay connected).*
-4. **Launch Local Bridge on Computer:**
-   - **Mac:** Double-click `Start-iPhone-WiFi-Bridge.command` (in `macOS/`, `Web-WiFi-Offline/`, or Desktop).
-   - **Windows:** Double-click `Start-iPhone-WiFi-Bridge.bat` (in `Windows/` or `Web-WiFi-Offline/`).
-   - **Linux:** Run `./Start-iPhone-WiFi-Bridge.sh`.
-   - *(Or run `python3 legacy_instax_printer.py --serve`)*
-5. **Open Safari on iPhone & Print:**
-   - The terminal displays your local address: `http://192.168.0.x:8089` (e.g. `http://192.168.0.2:8089`).
-   - Open that address in **regular iPhone Safari** (or scan the QR code).
-   - Tap **"📁 Choose Photo"**, adjust framing/collages, and tap **"🖨 Print Over Wi-Fi Direct"**!
-   - Your iPhone sends the photo to your computer, which streams the planar RGB segments directly to `192.168.0.251:8080`!
-
----
-
-### 🔌 Setup 2: Dual Network (Mac/PC on Ethernet + Wi-Fi to Printer)
-If your computer is connected to your home router with an Ethernet cable:
-1. Your computer stays online on your Home LAN via Ethernet (`192.168.1.x`), while its Wi-Fi card connects to `INSTAX-XXXXXXXX` (`192.168.0.x`).
-2. Your iPhone stays on regular Home Wi-Fi (`192.168.1.x`).
-3. Open `http://192.168.1.x:8089` in Safari on your iPhone and print with zero network switching on your phone!
-
----
-
-### ⚡ Setup 3: 1-Second AirDrop to Mac (Fastest for iPhone Users)
-If you don't want to switch Wi-Fi networks on your iPhone at all:
-1. On iPhone: In Apple Photos, tap **Share $\to$ AirDrop** and send the photo to your Mac (1 second).
-2. The photo appears in your Mac's Downloads folder.
-3. On Mac (connected to `INSTAX-XXXXXXXX`): Open **`Legacy Instax Printer.app`** or **`LegacyInstaxPrinterWeb.html`**, click **Add Photo**, and click **Print**!
+*(If you are away from your computer, simply connect your iPhone's Wi-Fi directly to `INSTAX-XXXXXXXX` and use Fujifilm's official Instax SHARE app).*
 
 ---
 

@@ -87,8 +87,8 @@ How BLE Link iPhone Printing Works:
   (Both devices stay on your normal Home Wi-Fi with full internet access).
 
 Looking for Legacy Wi-Fi Direct Printers (SP-1, SP-2, SP-3)?
-  See the dedicated "Legacy-Instax-Printer/macOS/" folder and run
-  "Start-Legacy-iPhone-WiFi-Bridge.command".
+  See the dedicated "Legacy-Instax-Printer/macOS/" folder and open
+  "Legacy Instax Printer.app" (AirDrop photos from iPhone and click Print!).
 
 --------------------------------------------------------------------------------
 TROUBLESHOOTING & macOS ADVICE:

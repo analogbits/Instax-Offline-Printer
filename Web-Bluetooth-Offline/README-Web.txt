@@ -74,8 +74,8 @@ How BLE Link iPhone Printing Works:
 Looking for Legacy Wi-Fi Direct Printers (Instax SHARE SP-1, SP-2, SP-3)?
   Older Instax SHARE printers do not have Bluetooth—they communicate via
   Wi-Fi Direct (192.168.0.251:8080).
-  See the dedicated "Legacy-Instax-Printer/Web-WiFi-Offline/" folder and run
-  "Start-Legacy-iPhone-WiFi-Bridge.command" (Safari works 100% natively!).
+  See the dedicated "Legacy-Instax-Printer/" folder (AirDrop photos from iPhone
+  to your computer in 1 second and click Print!).
 
 --------------------------------------------------------------------------------
 HOW TO USE:

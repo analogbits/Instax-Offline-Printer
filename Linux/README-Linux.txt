@@ -66,7 +66,7 @@ How BLE Link iPhone Printing Works:
 
 Looking for Legacy Wi-Fi Direct Printers (SP-1, SP-2, SP-3)?
   See the dedicated "Legacy-Instax-Printer/Linux/" folder and run
-  "./Start-iPhone-WiFi-Bridge.sh" inside that folder.
+  "./Legacy-Instax-Printer-Linux.sh" (Transfer photos to PC and click Print!).
 
 --------------------------------------------------------------------------------
 INSTALLING THE DESKTOP SHORTCUT:

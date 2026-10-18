@@ -18,35 +18,19 @@ Regular Apple Safari on iPhone, iPad, and macOS works 100% natively!
 No third-party browsers like Chrome or Bluefy are needed.
 
 ---------------------------------------------------------------------------
-📱 HOW TO PRINT FROM IPHONE & IPAD SAFARI (3 EASY SETUPS):
+📱 HAVE PHOTOS ON IPHONE OR IPAD? AIRDROP TO MAC IN 1 SECOND!
 ---------------------------------------------------------------------------
-Your computer and phone each have a single Wi-Fi antenna. Because the printer
-is its own Wi-Fi access point ("INSTAX-XXXXXXXX"), connecting to the printer
-disconnects you from your home router. You have 3 easy setups:
+You do NOT need any complicated bridge scripts or network switching:
+  1. On iPhone: Tap Share -> AirDrop photo to your Mac (1 second).
+  2. On Mac: Connect Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111).
+  3. Open LegacyInstaxPrinterWeb.html -> click "Choose Photo" -> click Print!
 
-  SETUP 1 (All-Wireless Direct — Recommended — Zero Cables):
-    1. Turn on your Instax SHARE SP-1, SP-2, or SP-3 printer.
-    2. On your Mac/PC: join Wi-Fi "INSTAX-XXXXXXXX" (Password: 11111111).
-    3. On your iPhone: go to iOS Settings -> Wi-Fi -> join "INSTAX-XXXXXXXX"
-       (Password: 11111111). When iOS shows "No Internet Connection", tap
-       "Keep Trying Wi-Fi" (this is normal as the printer is not a modem).
-    4. Start the Local Wi-Fi Bridge on your computer:
-         • Mac:     Double-click Start-iPhone-WiFi-Bridge.command
-         • Windows: Double-click Start-iPhone-WiFi-Bridge.bat
-         • Linux:   Run ./Start-iPhone-WiFi-Bridge.sh
-       (Or run `python3 legacy_instax_printer.py --serve`)
-    5. In regular iPhone Safari, open: http://192.168.0.x:8089 (shown in terminal).
-    6. Pick photos from your Camera Roll, frame/collage, and tap "Print Over Wi-Fi Direct"!
-
-  SETUP 2 (Dual Network — Computer on Ethernet + Wi-Fi to Printer):
-    Plug your computer into your home router with an Ethernet cable, and connect
-    its Wi-Fi card to "INSTAX-XXXXXXXX". Your iPhone stays on normal Home Wi-Fi
-    (e.g. http://192.168.1.x:8089) and prints with zero network switching!
-
-  SETUP 3 (1-Second AirDrop to Mac — Fastest for iPhone Users):
-    On your iPhone, select your photo and AirDrop it to your Mac. In
-    "Legacy Instax Printer.app" or LegacyInstaxPrinterWeb.html on your Mac,
-    click "Add Photo" and click "Print"!
+---------------------------------------------------------------------------
+💻 LOCAL WEB STUDIO BACKEND (legacy_web_bridge.py):
+---------------------------------------------------------------------------
+Because web browsers block direct raw TCP sockets from webpages for security,
+run `python3 legacy_web_bridge.py` on your computer to provide a lightweight local
+bridge between LegacyInstaxPrinterWeb.html and the printer at 192.168.0.251:8080.
 
 ---------------------------------------------------------------------------
 📶 INTERACTIVE WI-FI TEST & HARDWARE DIAGNOSTICS:

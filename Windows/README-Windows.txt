@@ -70,7 +70,7 @@ How BLE Link iPhone Printing Works:
 
 Looking for Legacy Wi-Fi Direct Printers (SP-1, SP-2, SP-3)?
   See the dedicated "Legacy-Instax-Printer/Windows/" folder and run
-  "Start-iPhone-WiFi-Bridge.bat" inside that folder.
+  "Legacy-Instax-Printer.vbs" (Transfer photos to PC and click Print!).
 
 --------------------------------------------------------------------------------
 WINDOWS TROUBLESHOOTING & HELP:

@@ -88,25 +88,12 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
 #### 🎞️ B. Legacy Wi-Fi Direct Printers (Instax SHARE SP-1, SP-2 & SP-3)
 * **Live Online Web App:** [https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html) *(or [`/legacy.html`](https://analogbits.github.io/Instax-Offline-Printer/legacy.html))*
 * **Offline Studio File:** [`Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html`](Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)
-* **Browser Compatibility:** Works in **regular Apple Safari, Chrome, Firefox, Edge, and Brave** on macOS, Windows, Linux, and iOS! **Zero Chrome requirement for Wi-Fi printers.**
-* **📶 The "Single Wi-Fi Radio" Constraint & 3 Ways to Print from iPhone:**
-  > [!NOTE]
-  > Unlike BLE printers, **Instax SHARE SP-1/2/3 printers do not have Bluetooth**. The printer is its own private Wi-Fi access point (`INSTAX-XXXXXXXX`, IP `192.168.0.251:8080`).
-  > Because computers and phones typically have **one Wi-Fi antenna**, connecting to the printer disconnects you from your home internet. Here is how iPhone printing works:
-
-  1. **📶 Setup 1 (All-Wireless Direct — Most Common & Recommended):**
-     * **Step 1:** Turn on your Instax SHARE printer.
-     * **Step 2 (Mac/PC):** Join the printer's Wi-Fi network (`INSTAX-XXXXXXXX`, Password: `11111111`).
-     * **Step 3 (iPhone):** Go to iOS Settings $\to$ Wi-Fi $\to$ join the same `INSTAX-XXXXXXXX` network (Password: `11111111`). *(iOS will warn "No Internet Connection" — this is completely normal and expected! Tap "Keep Trying Wi-Fi").*
-     * **Step 4 (Print):** On Mac, run `Start-Legacy-iPhone-WiFi-Bridge.command` (or `Start-iPhone-WiFi-Bridge.*` in `Legacy-Instax-Printer/`). The terminal prints `http://192.168.0.x:8089`. Open that URL in regular iPhone Safari, pick any photo from your Camera Roll, and tap **Print Over Wi-Fi Direct**!
-  2. **🔌 Setup 2 (Dual Network — Mac on Ethernet + Wi-Fi to Printer):**
-     * If your Mac is connected to your home router with a wired Ethernet cable (or USB-C Ethernet dongle):
-     * Your Mac has **two network interfaces** active: Ethernet stays on Home LAN (`192.168.1.x`), while the Wi-Fi antenna connects to `INSTAX-XXXXXXXX` (`192.168.0.x`).
-     * Your iPhone stays on regular Home Wi-Fi (`192.168.1.x`), opens `http://192.168.1.x:8089` in Safari, and prints effortlessly!
-  3. **⚡ Setup 3 (1-Second AirDrop to Mac — Fastest & Easiest for iPhone):**
-     * On your iPhone: select photo in Apple Photos $\to$ tap **Share** $\to$ tap **AirDrop** to your Mac.
-     * The photo lands instantly in your Mac's Downloads folder.
-     * On your Mac (connected to `INSTAX-XXXXXXXX`): open `Legacy Instax Printer.app` (or `LegacyInstaxPrinterWeb.html`), pick the photo, and click **Print Over Wi-Fi Direct**! Done in 5 seconds without changing Wi-Fi on your phone.
+* **Browser Compatibility:** Works in **regular Apple Safari, Chrome, Firefox, Edge, and Brave** on macOS, Windows, and Linux! **Zero Chrome requirement for Wi-Fi printers.**
+* **📱 Have Photos on an iPhone or iPad? Just AirDrop to Mac in 1 Second!**
+  * You do **not** need any complicated bridges or network hopping between your phone and computer:
+  1. On your iPhone: select photo in Apple Photos $\to$ tap **Share** $\to$ tap **AirDrop** to your Mac (1 second).
+  2. In your Mac's Wi-Fi menu: connect to **`INSTAX-XXXXXXXX`** (Password: `11111111`).
+  3. Open `Legacy Instax Printer.app` (or [`LegacyInstaxPrinterWeb.html`](Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)), pick the photo from Downloads, and click **Print Over Wi-Fi Direct**!
 
 ---
 
@@ -217,19 +204,11 @@ working directory.
   * **For Bluetooth (BLE) Printers:** Yes, if you are using direct in-browser Web Bluetooth, you must use **Google Chrome**, **Microsoft Edge**, or **Brave** (or the free **Bluefy** app on iPhone). This is because Apple deliberately disabled the Web Bluetooth API (`navigator.bluetooth`) inside WebKit (Safari).
   * **For Wi-Fi Direct Printers (Instax SHARE SP-1/2/3):** **NO, Chrome is NOT required!** Wi-Fi printers communicate via standard HTTP and TCP/IP (`192.168.0.251:8080`). Standard HTTP is supported natively by **Apple Safari, Mobile Safari on iPhone/iPad, Chrome, Firefox, Edge, and Brave**. You can use regular **Safari on your iPhone and Mac** with 100% native compatibility.
 
-### Q: Can my Mac connect to both my Home Wi-Fi and an Instax Wi-Fi printer at the same time? How does iPhone printing work?
-* **Answer:** A Mac (or PC) typically has **only one physical Wi-Fi radio/antenna**.
-  * When your Mac connects to the printer's `INSTAX-XXXXXXXX` network, it temporarily disconnects from your home router.
-  * To print from an iPhone to an Instax Wi-Fi printer, you have 3 practical options:
-    1. **Setup 1 (All-Wireless Direct):** Connect both your Mac and your iPhone to `INSTAX-XXXXXXXX` (Password: `11111111`). Start the bridge on your Mac, open `http://192.168.0.x:8089` in Safari on your iPhone, and print directly!
-    2. **Setup 2 (Dual Network):** Plug an Ethernet cable into your Mac (connected to your home router) while its Wi-Fi antenna connects to `INSTAX-XXXXXXXX`. Your iPhone stays on regular Home Wi-Fi and prints over the local network.
-    3. **Setup 3 (1-Second AirDrop):** AirDrop the photo from your iPhone to your Mac, then click Print in `Legacy Instax Printer.app` on your Mac.
-
-### Q: Why does my iPhone say "No Internet Connection" when I join `INSTAX-XXXXXXXX`?
-* **Answer:** This is completely normal and expected. The Instax printer is an ad-hoc Wi-Fi access point created solely for transmitting photos to the printer; it is not an internet modem. Simply tap "Keep Trying Wi-Fi" or ignore the warning and proceed to print.
+### Q: How do I print photos from my iPhone to a Legacy Instax Wi-Fi printer (SP-1/2/3)?
+* **Answer:** Simply **AirDrop the photo to your Mac in 1 second!** Then connect your Mac to `INSTAX-XXXXXXXX`, open `Legacy Instax Printer.app` (or `LegacyInstaxPrinterWeb.html`), and click Print. You do not need any complicated bridges or network hopping.
 
 ### Q: Why do the web apps need a local bridge script (`legacy_web_bridge.py` or `instax_wifi_bridge.py`)?
-* **Answer:** For security reasons, modern web browsers operate in a strict sandbox that prohibits client-side JavaScript from opening raw binary TCP sockets (needed for `192.168.0.251:8080`) or controlling OS-level Wi-Fi/Bluetooth hardware. The lightweight local bridge script acts as a safe, local translator between the browser and the physical printer hardware.
+* **Answer:** For security reasons, modern web browsers operate in a strict sandbox that prohibits client-side JavaScript from opening raw binary TCP sockets (needed for `192.168.0.251:8080`) or controlling OS-level Bluetooth hardware. The lightweight local bridge script acts as a safe, local translator between your desktop browser and the physical printer hardware.
 
 ### Q: Why do I get "Unsupported device" or "navigator.bluetooth is undefined" in the BLE Web App?
 * **Answer:** Apple Safari and Mozilla Firefox do not support Web Bluetooth. Use **Google Chrome**, **Microsoft Edge**, or **Brave** on macOS, Windows, or Linux (on Linux, ensure `bluetoothd` is running) — or run `Start-iPhone-WiFi-Bridge` to use regular Safari!
