@@ -43,7 +43,14 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.title("Legacy Instax Printer — Wi-Fi Direct Studio (SP-1 • SP-2 • SP-3)")
         self.geometry("1200x760")
         self.minsize(1060, 680)
-        self.configure(bg="#18181B")
+        self.is_mac = platform.system().lower() == "darwin"
+        self.bg_root = "#ECECEC" if self.is_mac else "#18181B"
+        self.bg_card = "#FAFAFA" if self.is_mac else "#222226"
+        self.bg_top  = "#E4E4E7" if self.is_mac else "#27272A"
+        self.fg_text = "#18181B" if self.is_mac else "#F4F4F5"
+        self.fg_dim  = "#52525B" if self.is_mac else "#A1A1AA"
+
+        self.configure(bg=self.bg_root)
 
         # State
         self.model_var = tk.StringVar(value="SP-2")
@@ -94,27 +101,27 @@ class LegacyInstaxPrinterGUI(tk.Tk):
 
     def _build_ui(self):
         # Top Wi-Fi Discovery & Connection Bar
-        top = tk.Frame(self, bg="#27272A", padx=12, pady=8)
+        top = tk.Frame(self, bg=self.bg_top, padx=12, pady=8)
         top.pack(fill=tk.X)
 
-        tk.Label(top, text="📡 Legacy Instax Printer", fg="#F4F4F5", bg="#27272A", font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT, padx=(0, 10))
+        tk.Label(top, text="📡 Legacy Instax Printer", fg=self.fg_text, bg=self.bg_top, font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT, padx=(0, 10))
 
-        tk.Label(top, text="Wi-Fi / Printer:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT)
+        tk.Label(top, text="Wi-Fi / Printer:", fg=self.fg_dim, bg=self.bg_top).pack(side=tk.LEFT)
         self.wifi_cb = ttk.Combobox(top, textvariable=self.wifi_choice_var, width=32, state="readonly")
         self.wifi_cb.pack(side=tk.LEFT, padx=4)
         self.wifi_cb.bind("<<ComboboxSelected>>", lambda _e: self.on_wifi_choice_selected())
 
         tk.Button(top, text="Scan Wi-Fi", bg="#3F3F46", fg="white", relief=tk.FLAT, padx=8, command=self.scan_wifi_and_printers).pack(side=tk.LEFT, padx=4)
 
-        tk.Label(top, text="Model:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT, padx=(8, 2))
+        tk.Label(top, text="Model:", fg=self.fg_dim, bg=self.bg_top).pack(side=tk.LEFT, padx=(8, 2))
         model_cb = ttk.Combobox(top, textvariable=self.model_var, values=["SP-1", "SP-2", "SP-3"], width=6, state="readonly")
         model_cb.pack(side=tk.LEFT, padx=4)
         model_cb.bind("<<ComboboxSelected>>", lambda _e: self.on_model_changed())
 
-        tk.Label(top, text="IP:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT, padx=(6, 2))
+        tk.Label(top, text="IP:", fg=self.fg_dim, bg=self.bg_top).pack(side=tk.LEFT, padx=(6, 2))
         tk.Entry(top, textvariable=self.ip_var, width=13).pack(side=tk.LEFT, padx=2)
 
-        tk.Label(top, text="PIN:", fg="#A1A1AA", bg="#27272A").pack(side=tk.LEFT, padx=(6, 2))
+        tk.Label(top, text="PIN:", fg=self.fg_dim, bg=self.bg_top).pack(side=tk.LEFT, padx=(6, 2))
         tk.Entry(top, textvariable=self.pin_var, width=5).pack(side=tk.LEFT, padx=2)
 
         tk.Button(top, text="Connect", bg="#2563EB", fg="white", relief=tk.FLAT, padx=10, command=self.query_status).pack(side=tk.LEFT, padx=8)
@@ -123,9 +130,9 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             top,
             text="Simulator",
             variable=self.sim_var,
-            bg="#27272A",
-            fg="#E4E4E7",
-            selectcolor="#18181B",
+            bg=self.bg_top,
+            fg=self.fg_text,
+            selectcolor=self.bg_card,
             command=self.toggle_simulator,
         ).pack(side=tk.RIGHT, padx=4)
 
@@ -133,52 +140,57 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             top,
             text="Dry Run (0-Film)",
             variable=self.dry_run_var,
-            bg="#27272A",
-            fg="#FBBF24",
-            selectcolor="#18181B",
+            bg=self.bg_top,
+            fg="#B45309" if self.is_mac else "#FBBF24",
+            selectcolor=self.bg_card,
         ).pack(side=tk.RIGHT, padx=4)
 
         # Main 3-Column Body
-        body = tk.Frame(self, bg="#18181B")
+        body = tk.Frame(self, bg=self.bg_root)
         body.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
 
         # Left Panel (Authentic 10-LED Card + Photo Source)
-        left = tk.Frame(body, bg="#222226", width=245, padx=10, pady=10)
+        left = tk.Frame(body, bg=self.bg_card, width=245, padx=10, pady=10)
         left.pack(side=tk.LEFT, fill=tk.Y)
         left.pack_propagate(False)
 
-        led_card = tk.Frame(left, bg="#18181B", padx=8, pady=8)
+        led_card = tk.Frame(left, bg=self.bg_root, padx=8, pady=8)
         led_card.pack(fill=tk.X, pady=(0, 12))
-        tk.Label(led_card, textvariable=self.led_header_var, fg="#A1A1AA", bg="#18181B", font=("Segoe UI", 8, "bold")).pack(anchor="w")
-        dots_row = tk.Frame(led_card, bg="#18181B", pady=4)
+        tk.Label(led_card, textvariable=self.led_header_var, fg=self.fg_dim, bg=self.bg_root, font=("Segoe UI", 8, "bold")).pack(anchor="w")
+        dots_row = tk.Frame(led_card, bg=self.bg_root, pady=4)
         dots_row.pack(fill=tk.X)
         self.led_dots = []
         for _ in range(10):
-            lbl = tk.Label(dots_row, text="●", fg="#3F3F46", bg="#18181B", font=("Segoe UI", 11))
+            lbl = tk.Label(dots_row, text="●", fg="#A1A1AA" if self.is_mac else "#3F3F46", bg=self.bg_root, font=("Segoe UI", 11))
             lbl.pack(side=tk.LEFT, padx=2)
             self.led_dots.append(lbl)
 
-        tk.Label(left, text="PHOTO SOURCE", fg="#A1A1AA", bg="#222226", font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(0, 6))
-        tk.Button(left, text="📂 Open Image File...", bg="#3B82F6", fg="white", relief=tk.FLAT, pady=6, command=self.open_primary_image).pack(fill=tk.X, pady=3)
-        tk.Button(left, text="✨ Generate Test Card", bg="#3F3F46", fg="white", relief=tk.FLAT, pady=5, command=self.reset_test_card).pack(fill=tk.X, pady=3)
-        tk.Button(left, text="🔄 Rotate 90°", bg="#3F3F46", fg="white", relief=tk.FLAT, pady=5, command=self.rotate_image).pack(fill=tk.X, pady=3)
+        tk.Label(left, text="PHOTO SOURCE", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(0, 6))
+        tk.Button(left, text="📂 Open Image File...", bg="#2563EB", fg="white", relief=tk.FLAT, pady=6, command=self.open_primary_image).pack(fill=tk.X, pady=3)
+        tk.Button(left, text="✨ Generate Test Card", bg="#4B5563" if self.is_mac else "#3F3F46", fg="white", relief=tk.FLAT, pady=5, command=self.reset_test_card).pack(fill=tk.X, pady=3)
+        tk.Button(left, text="🔄 Rotate 90°", bg="#4B5563" if self.is_mac else "#3F3F46", fg="white", relief=tk.FLAT, pady=5, command=self.rotate_image).pack(fill=tk.X, pady=3)
 
-        tk.Label(left, text="\nWI-FI DIRECT GUIDE", fg="#A1A1AA", bg="#222226", font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        tk.Label(left, text="\nWI-FI DIRECT GUIDE", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w")
         guide = (
             "1. Power on your Instax SHARE\n   SP-1, SP-2, or SP-3 printer.\n"
             "2. Click 'Scan Wi-Fi' and pick\n   'INSTAX-XXXXXXXX' from the\n   dropdown list.\n"
             "3. Default IP: 192.168.0.251\n   Port: 8080 • PIN: 1111"
         )
-        tk.Label(left, text=guide, fg="#D4D4D8", bg="#222226", justify=tk.LEFT, font=("Segoe UI", 9)).pack(anchor="w", pady=6)
+        tk.Label(left, text=guide, fg=self.fg_text, bg=self.bg_card, justify=tk.LEFT, font=("Segoe UI", 9)).pack(anchor="w", pady=6)
 
-        # Center Preview Canvas
-        center = tk.Frame(body, bg="#18181B", padx=14)
+        # Right Inspector (Pack right column FIRST so center can expand)
+        right = tk.Frame(body, bg=self.bg_card, width=320, padx=12, pady=10)
+        right.pack(side=tk.RIGHT, fill=tk.Y)
+        right.pack_propagate(False)
+
+        # Center Preview Canvas (Pack center LAST to fill remaining space)
+        center = tk.Frame(body, bg=self.bg_root, padx=14)
         center.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        self.canvas_label = tk.Label(center, bg="#F5F5F0", bd=12, relief=tk.FLAT)
+        self.canvas_label = tk.Label(center, bg="#E4E4E7" if self.is_mac else "#27272A", bd=2, relief=tk.SOLID)
         self.canvas_label.pack(expand=True, pady=10)
 
-        btn_bar = tk.Frame(center, bg="#18181B")
+        btn_bar = tk.Frame(center, bg=self.bg_root)
         btn_bar.pack(pady=8)
         tk.Button(
             btn_bar,
@@ -204,12 +216,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             command=lambda: self.start_print(force_dry_run=False),
         ).pack(side=tk.LEFT, padx=8)
 
-        # Right Inspector
-        right = tk.Frame(body, bg="#222226", width=320, padx=12, pady=10)
-        right.pack(side=tk.RIGHT, fill=tk.Y)
-        right.pack_propagate(False)
-
-        tk.Label(right, text="FRAMING & FILTERS", fg="#A1A1AA", bg="#222226", font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        tk.Label(right, text="FRAMING & FILTERS", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w")
         ttk.Combobox(right, textvariable=self.fit_mode_var, values=["fill", "fit"], state="readonly").pack(fill=tk.X, pady=4)
         self.fit_mode_var.trace_add("write", lambda *_: self.refresh_preview())
 
@@ -221,7 +228,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         ).pack(fill=tk.X, pady=4)
         self.filter_var.trace_add("write", lambda *_: self.refresh_preview())
 
-        tk.Label(right, text="MULTI-PHOTO COLLAGE", fg="#A1A1AA", bg="#222226", font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(10, 2))
+        tk.Label(right, text="MULTI-PHOTO COLLAGE", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(10, 2))
         ttk.Combobox(
             right,
             textvariable=self.collage_layout_var,
@@ -230,25 +237,25 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         ).pack(fill=tk.X, pady=4)
         self.collage_layout_var.trace_add("write", lambda *_: self.refresh_preview())
 
-        tk.Label(right, text="Collage Border Spacing (px):", fg="#D4D4D8", bg="#222226").pack(anchor="w")
+        tk.Label(right, text="Collage Border Spacing (px):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
         tk.Scale(
             right,
             from_=0,
             to=28,
             orient=tk.HORIZONTAL,
             variable=self.collage_spacing_var,
-            bg="#222226",
-            fg="white",
+            bg=self.bg_card,
+            fg=self.fg_text,
             highlightthickness=0,
             command=lambda _v: self.on_spacing_changed(),
         ).pack(fill=tk.X)
 
-        c_btns = tk.Frame(right, bg="#222226")
+        c_btns = tk.Frame(right, bg=self.bg_card)
         c_btns.pack(fill=tk.X, pady=4)
-        tk.Button(c_btns, text="+ Add Collage Photos", bg="#3B82F6", fg="white", relief=tk.FLAT, command=self.add_collage_photos).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
-        tk.Button(c_btns, text="Clear Slots", bg="#52525B", fg="white", relief=tk.FLAT, command=self.clear_collage_photos).pack(side=tk.LEFT)
+        tk.Button(c_btns, text="+ Add Collage Photos", bg="#2563EB", fg="white", relief=tk.FLAT, command=self.add_collage_photos).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
+        tk.Button(c_btns, text="Clear Slots", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.clear_collage_photos).pack(side=tk.LEFT)
 
-        tk.Label(right, text="QR CODE & CAPTION", fg="#A1A1AA", bg="#222226", font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(12, 2))
+        tk.Label(right, text="QR CODE & CAPTION", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(12, 2))
         ttk.Combobox(
             right,
             textvariable=self.qr_type_var,
@@ -260,7 +267,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         tk.Entry(right, textvariable=self.qr_text_var).pack(fill=tk.X, pady=3)
         self.qr_text_var.trace_add("write", lambda *_: self.refresh_preview())
 
-        tk.Label(right, text="Bottom Caption:", fg="#D4D4D8", bg="#222226").pack(anchor="w", pady=(6, 0))
+        tk.Label(right, text="Bottom Caption:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w", pady=(6, 0))
         tk.Entry(right, textvariable=self.caption_var).pack(fill=tk.X, pady=3)
         self.caption_var.trace_add("write", lambda *_: self.refresh_preview())
 
@@ -268,26 +275,27 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             right,
             text="Include Date Stamp",
             variable=self.date_stamp_var,
-            bg="#222226",
-            fg="#D4D4D8",
-            selectcolor="#18181B",
+            bg=self.bg_card,
+            fg=self.fg_text,
+            selectcolor=self.bg_root,
             command=self.refresh_preview,
         ).pack(anchor="w")
 
         # Bottom Status Bar
-        status_bar = tk.Frame(self, bg="#27272A", padx=12, pady=6)
+        status_bar = tk.Frame(self, bg=self.bg_top, padx=12, pady=6)
         status_bar.pack(fill=tk.X, side=tk.BOTTOM)
-        tk.Label(status_bar, textvariable=self.status_var, fg="#E4E4E7", bg="#27272A", font=("Segoe UI", 9)).pack(side=tk.LEFT)
+        tk.Label(status_bar, textvariable=self.status_var, fg=self.fg_text, bg=self.bg_top, font=("Segoe UI", 9)).pack(side=tk.LEFT)
 
     def update_led_display(self):
+        dot_off = "#A1A1AA" if self.is_mac else "#3F3F46"
         if self.is_connected and self.film_remaining is not None and self.battery_level is not None:
             self.led_header_var.set(f"{self.model_var.get()} FILM LEDs • {self.film_remaining}/10 Left • Batt {self.battery_level}/4")
             for idx, lbl in enumerate(self.led_dots):
-                lbl.configure(fg="#22C55E" if idx < self.film_remaining else "#3F3F46")
+                lbl.configure(fg="#16A34A" if idx < self.film_remaining else dot_off)
         else:
             self.led_header_var.set("Not Connected • —/10 • Batt —")
             for lbl in self.led_dots:
-                lbl.configure(fg="#3F3F46")
+                lbl.configure(fg=dot_off)
 
     def scan_wifi_and_printers(self):
         def worker():
@@ -518,6 +526,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         disp = canvas.resize((disp_w, disp_h), Image.Resampling.LANCZOS)
         self.tk_preview = ImageTk.PhotoImage(disp)
         self.canvas_label.configure(image=self.tk_preview)
+        self.canvas_label.image = self.tk_preview
 
     @staticmethod
     def _draw_matrix_qr_badge(canvas: Image.Image, text: str):

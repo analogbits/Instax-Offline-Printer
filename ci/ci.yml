@@ -1,0 +1,109 @@
+name: Cross-Platform Test Suite (Linux, Windows, macOS)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-cross-platform:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.11']
+
+    steps:
+      - name: 📥 Check out repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: 📦 Install Linux System Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk python3-pil xvfb
+
+      - name: 📦 Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pillow bleak qrcode
+
+      - name: 🔍 Compile All Python Files (Syntax Check)
+        shell: bash
+        run: |
+          echo "Compiling all Python files across Linux, Windows, macOS, and Web editions..."
+          python -m py_compile $(find . -name "*.py" -o -name "*.pyw")
+          echo "✅ All Python files compiled with 0 errors!"
+
+      - name: 🧪 Test Legacy Instax Virtual Simulator (SP-1, SP-2, SP-3)
+        shell: bash
+        run: |
+          echo "Testing Virtual SP-2 Status Query..."
+          python Legacy-Instax-Printer/Linux/legacy_instax_printer.py --simulate --status
+
+          TEST_IMG="Legacy-Instax-Printer/macOS/Resources/AppIcon.iconset/icon_512x512.png"
+
+          echo "Testing SP-1 Dry Run Simulation (600x800 Mini Film)..."
+          python Legacy-Instax-Printer/Linux/legacy_instax_printer.py --simulate --model SP-1 --dry-run "$TEST_IMG"
+
+          echo "Testing SP-2 Dry Run Simulation (600x800 Mini Film)..."
+          python Legacy-Instax-Printer/Linux/legacy_instax_printer.py --simulate --model SP-2 --dry-run "$TEST_IMG"
+
+          echo "Testing SP-3 Dry Run Simulation (800x800 SQUARE Film)..."
+          python Legacy-Instax-Printer/Linux/legacy_instax_printer.py --simulate --model SP-3 --dry-run "$TEST_IMG"
+
+          echo "✅ All 3 Instax SHARE models passed virtual Wi-Fi transfer tests!"
+
+      - name: 🤖 Run Full Test Suite & GUI Robot Tests
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run python test_suite.py
+            xvfb-run python test_gui.py
+          else
+            python test_suite.py
+            python test_gui.py
+          fi
+
+      - name: 🧪 Test BLE Link Printer CLI Preview Engine
+        shell: bash
+        run: |
+          TEST_IMG="Legacy-Instax-Printer/macOS/Resources/AppIcon.iconset/icon_512x512.png"
+          python Linux/instax_printer.py preview "$TEST_IMG" --output test_square_preview.jpg
+          test -f test_square_preview.jpg && rm -f test_square_preview.jpg
+          echo "✅ BLE Printer CLI preview rendered successfully!"
+
+      - name: 📜 Validate Shell and Command Script Syntax
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          for script in $(find . -name "*.sh" -o -name "*.command"); do
+            echo "Checking syntax: $script"
+            bash -n "$script"
+          done
+          echo "✅ All shell and macOS command scripts passed syntax validation!"
+
+      - name: 🛡️ Verify Web Studio Multi-Platform Consistency
+        shell: bash
+        run: |
+          echo "Verifying MD5 integrity of LegacyInstaxPrinterWeb.html copies..."
+          m1=$(python -c "import hashlib; print(hashlib.md5(open('Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html','rb').read()).hexdigest())")
+          m2=$(python -c "import hashlib; print(hashlib.md5(open('Legacy-Instax-Printer/macOS/LegacyInstaxPrinterWeb.html','rb').read()).hexdigest())")
+          m3=$(python -c "import hashlib; print(hashlib.md5(open('Legacy-Instax-Printer/Windows/LegacyInstaxPrinterWeb.html','rb').read()).hexdigest())")
+          m4=$(python -c "import hashlib; print(hashlib.md5(open('Legacy-Instax-Printer/Linux/LegacyInstaxPrinterWeb.html','rb').read()).hexdigest())")
+
+          if [ "$m1" != "$m2" ] || [ "$m1" != "$m3" ] || [ "$m1" != "$m4" ]; then
+            echo "❌ MD5 mismatch across LegacyInstaxPrinterWeb.html copies!"
+            exit 1
+          fi
+          echo "✅ LegacyInstaxPrinterWeb.html is identical across all 4 platforms ($m1)"
