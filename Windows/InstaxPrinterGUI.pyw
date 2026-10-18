@@ -18,12 +18,12 @@ from PIL import Image, ImageTk, ImageOps, ImageEnhance
 try:
     from instax_printer import (
         InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx,
-        STICKER_MAP, draw_decorative_frame, draw_sticker_overlay
+        STICKER_MAP, draw_decorative_frame, draw_sticker_overlay, draw_custom_banner
     )
 except ImportError:
     from .instax_printer import (
         InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx,
-        STICKER_MAP, draw_decorative_frame, draw_sticker_overlay
+        STICKER_MAP, draw_decorative_frame, draw_sticker_overlay, draw_custom_banner
     )
 
 FRAME_OPTIONS = [
@@ -37,6 +37,36 @@ FRAME_OPTIONS = [
     ("rose_gold", "Rose Gold Shimmer"),
     ("pastel_pop", "Pastel Candy Geometric"),
     ("postage_stamp", "Scalloped Postage Stamp"),
+    ("baroque_filigree", "Baroque Filigree Lace Oval"),
+    ("wedding_corners", "Wedding Botanical Floral Corners"),
+    ("stained_glass", "Leaded Stained Glass Mosaic"),
+    ("bokeh_sparkles", "Glowing Golden Bokeh & Sparkles"),
+    ("fireworks_celebration", "Night Sky Fireworks Burst"),
+    ("twin_hearts_garland", "Hanging Twin Hearts Garland"),
+    ("holiday_garland", "Festive Pine & Berry Garland"),
+    ("botanical_foliage", "Autumn Botanical Leaves Border"),
+]
+
+BANNER_STYLE_OPTIONS = [
+    ("none", "None (No Banner)"),
+    ("ribbon", "🎀 3D Folded Ribbon"),
+    ("calligraphy", "✒️ Calligraphy Brush"),
+    ("pill", "💊 Frosted Pill Badge"),
+    ("tag", "🏷️ Vintage Luggage Tag"),
+    ("stamp", "📮 Postal Rubber Stamp"),
+    ("garland", "🚩 Triangle Bunting Garland"),
+]
+
+BANNER_ICON_OPTIONS = [
+    ("none", "None"),
+    ("heart", "❤️ Heart"),
+    ("sparkles", "✨ Sparkles"),
+    ("party", "🎉 Party"),
+    ("star", "⭐ Star"),
+    ("camera", "📸 Camera"),
+    ("cake", "🎂 Cake"),
+    ("flower", "🌸 Flower"),
+    ("ring", "💍 Ring"),
 ]
 
 FILM_PRESET_OPTIONS = [
@@ -213,6 +243,19 @@ class InstaxDesktopApp(tk.Tk):
         self.sticker_scale = tk.DoubleVar(value=0.25)
         self.sticker_opacity = tk.DoubleVar(value=1.0)
         self.sticker_rotation = tk.DoubleVar(value=0.0)
+        self.sticker_pos_x = tk.DoubleVar(value=0.65)
+        self.sticker_pos_y = tk.DoubleVar(value=0.65)
+
+        # Custom Banner Maker State
+        self.banner_text = tk.StringVar(value="")
+        self.banner_style = tk.StringVar(value="none")
+        self.banner_icon = tk.StringVar(value="none")
+        self.banner_color = tk.StringVar(value="#e11d48")
+        self.banner_text_color = tk.StringVar(value="#ffffff")
+        self.banner_pos_x = tk.DoubleVar(value=0.0)
+        self.banner_pos_y = tk.DoubleVar(value=0.68)
+        self.banner_scale = tk.DoubleVar(value=1.0)
+        self.banner_rotation = tk.DoubleVar(value=0.0)
 
         # Film Preset Emulation State
         self.film_preset_var = tk.StringVar(value="Default / Base (No Effects)")
@@ -221,6 +264,7 @@ class InstaxDesktopApp(tk.Tk):
         # Drag tracking
         self.drag_start_x = 0
         self.drag_start_y = 0
+        self.drag_target = "pan"
 
         # Queue
         self.queue: List[dict] = []
@@ -434,8 +478,16 @@ class InstaxDesktopApp(tk.Tk):
         ttk.Button(fx_btns, text="Reset FX", command=self.action_reset_analog_fx).pack(side=tk.RIGHT)
 
         # Tab 4: Stickers & Borders
-        tab_decor = ttk.Frame(sidebar, padding=12)
-        sidebar.add(tab_decor, text="Stickers & Borders")
+        tab_decor_outer = ttk.Frame(sidebar)
+        sidebar.add(tab_decor_outer, text="Stickers & Borders")
+        decor_canvas = tk.Canvas(tab_decor_outer, highlightthickness=0)
+        decor_scroll = ttk.Scrollbar(tab_decor_outer, orient="vertical", command=decor_canvas.yview)
+        tab_decor = ttk.Frame(decor_canvas, padding=10)
+        tab_decor.bind("<Configure>", lambda e: decor_canvas.configure(scrollregion=decor_canvas.bbox("all")))
+        decor_canvas.create_window((0, 0), window=tab_decor, anchor="nw")
+        decor_canvas.configure(yscrollcommand=decor_scroll.set)
+        decor_canvas.pack(side="left", fill="both", expand=True)
+        decor_scroll.pack(side="right", fill="y")
 
         ttk.Label(tab_decor, text="Decorative Film Frame:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(0, 2))
         self.cb_frames = ttk.Combobox(
@@ -452,7 +504,7 @@ class InstaxDesktopApp(tk.Tk):
         self.cb_frames.bind("<<ComboboxSelected>>", _on_frame_sel)
         self.cb_frames.pack(fill=tk.X, pady=(0, 8))
 
-        ttk.Label(tab_decor, text="Emoji Sticker:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
+        ttk.Label(tab_decor, text="Emoji & Doodle Sticker:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
         self.sticker_list = [("none", "None (No Sticker)")] + [(k, f"{STICKER_MAP[k]}  {k.replace('_', ' ').title()}") for k in STICKER_MAP.keys()]
         self.cb_stickers = ttk.Combobox(
             tab_decor,
@@ -482,28 +534,89 @@ class InstaxDesktopApp(tk.Tk):
         self.btn_cust_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
         ttk.Button(f_custom, text="✕", width=3, command=self.action_clear_custom_sticker).pack(side=tk.LEFT, padx=(4, 0))
 
-        ttk.Label(tab_decor, text="Position:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
+        ttk.Label(tab_decor, text="Sticker Position Preset:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
         cb_pos = ttk.Combobox(
             tab_decor,
             textvariable=self.sticker_position,
-            values=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter"],
+            values=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter", "custom"],
             state="readonly"
         )
         cb_pos.bind("<<ComboboxSelected>>", lambda e: self.update_preview())
         cb_pos.pack(fill=tk.X, pady=(0, 6))
 
-        ttk.Label(tab_decor, text="Scale Multiplier:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
+        ttk.Label(tab_decor, text="Sticker X Offset (-1.0 to 1.0):", font=("Arial", 8)).pack(anchor=tk.W)
+        ttk.Scale(tab_decor, from_=-1.0, to=1.0, variable=self.sticker_pos_x, command=lambda e: (self.sticker_position.set("custom"), self.update_preview())).pack(fill=tk.X)
+
+        ttk.Label(tab_decor, text="Sticker Y Offset (-1.0 to 1.0):", font=("Arial", 8)).pack(anchor=tk.W)
+        ttk.Scale(tab_decor, from_=-1.0, to=1.0, variable=self.sticker_pos_y, command=lambda e: (self.sticker_position.set("custom"), self.update_preview())).pack(fill=tk.X)
+
+        ttk.Label(tab_decor, text="Sticker Scale:", font=("Arial", 8)).pack(anchor=tk.W)
         ttk.Scale(tab_decor, from_=0.10, to=0.60, variable=self.sticker_scale, command=lambda e: self.update_preview()).pack(fill=tk.X)
 
-        ttk.Label(tab_decor, text="Opacity:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
+        ttk.Label(tab_decor, text="Sticker Opacity:", font=("Arial", 8)).pack(anchor=tk.W)
         ttk.Scale(tab_decor, from_=0.10, to=1.0, variable=self.sticker_opacity, command=lambda e: self.update_preview()).pack(fill=tk.X)
 
-        ttk.Label(tab_decor, text="Rotation Angle (°):", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
+        ttk.Label(tab_decor, text="Sticker Rotation Angle (°):", font=("Arial", 8)).pack(anchor=tk.W)
         ttk.Scale(tab_decor, from_=-180.0, to=180.0, variable=self.sticker_rotation, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        # Custom Banner Maker Group
+        ttk.Separator(tab_decor, orient="horizontal").pack(fill=tk.X, pady=10)
+        ttk.Label(tab_decor, text="─── Custom Banner Maker ───", font=("Arial", 9, "bold")).pack(anchor=tk.CENTER, pady=(0, 6))
+
+        ttk.Label(tab_decor, text="Banner Message:").pack(anchor=tk.W)
+        e_banner = ttk.Entry(tab_decor, textvariable=self.banner_text)
+        e_banner.bind("<KeyRelease>", lambda e: self.update_preview())
+        e_banner.pack(fill=tk.X, pady=(0, 4))
+
+        ttk.Label(tab_decor, text="Banner Style:").pack(anchor=tk.W)
+        self.cb_bstyle = ttk.Combobox(tab_decor, values=[t for _, t in BANNER_STYLE_OPTIONS], state="readonly")
+        self.cb_bstyle.set(BANNER_STYLE_OPTIONS[0][1])
+        def _on_bstyle_sel(e):
+            idx = self.cb_bstyle.current()
+            if 0 <= idx < len(BANNER_STYLE_OPTIONS):
+                self.banner_style.set(BANNER_STYLE_OPTIONS[idx][0])
+                self.update_preview()
+        self.cb_bstyle.bind("<<ComboboxSelected>>", _on_bstyle_sel)
+        self.cb_bstyle.pack(fill=tk.X, pady=(0, 4))
+
+        ttk.Label(tab_decor, text="Banner Icon:").pack(anchor=tk.W)
+        self.cb_bicon = ttk.Combobox(tab_decor, values=[t for _, t in BANNER_ICON_OPTIONS], state="readonly")
+        self.cb_bicon.set(BANNER_ICON_OPTIONS[0][1])
+        def _on_bicon_sel(e):
+            idx = self.cb_bicon.current()
+            if 0 <= idx < len(BANNER_ICON_OPTIONS):
+                self.banner_icon.set(BANNER_ICON_OPTIONS[idx][0])
+                self.update_preview()
+        self.cb_bicon.bind("<<ComboboxSelected>>", _on_bicon_sel)
+        self.cb_bicon.pack(fill=tk.X, pady=(0, 4))
+
+        f_bcolors = ttk.Frame(tab_decor)
+        f_bcolors.pack(fill=tk.X, pady=(2, 6))
+        ttk.Label(f_bcolors, text="Bg:").pack(side=tk.LEFT)
+        e_bg = ttk.Entry(f_bcolors, textvariable=self.banner_color, width=9)
+        e_bg.bind("<KeyRelease>", lambda e: self.update_preview())
+        e_bg.pack(side=tk.LEFT, padx=2)
+        ttk.Button(f_bcolors, text="🎨", width=3, command=self.action_choose_banner_bg_color).pack(side=tk.LEFT, padx=1)
+        ttk.Label(f_bcolors, text="Text:").pack(side=tk.LEFT, padx=(4, 0))
+        e_tx = ttk.Entry(f_bcolors, textvariable=self.banner_text_color, width=9)
+        e_tx.bind("<KeyRelease>", lambda e: self.update_preview())
+        e_tx.pack(side=tk.LEFT, padx=2)
+
+        ttk.Label(tab_decor, text="Banner X Offset (-1.0 to 1.0):", font=("Arial", 8)).pack(anchor=tk.W)
+        ttk.Scale(tab_decor, from_=-1.0, to=1.0, variable=self.banner_pos_x, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        ttk.Label(tab_decor, text="Banner Y Offset (-1.0 to 1.0):", font=("Arial", 8)).pack(anchor=tk.W)
+        ttk.Scale(tab_decor, from_=-1.0, to=1.0, variable=self.banner_pos_y, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        ttk.Label(tab_decor, text="Banner Scale:", font=("Arial", 8)).pack(anchor=tk.W)
+        ttk.Scale(tab_decor, from_=0.5, to=2.0, variable=self.banner_scale, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        ttk.Label(tab_decor, text="Banner Rotation (°):", font=("Arial", 8)).pack(anchor=tk.W)
+        ttk.Scale(tab_decor, from_=-180.0, to=180.0, variable=self.banner_rotation, command=lambda e: self.update_preview()).pack(fill=tk.X)
 
         f_decor_btns = ttk.Frame(tab_decor)
         f_decor_btns.pack(fill=tk.X, pady=(12, 0))
-        ttk.Button(f_decor_btns, text="Reset Borders & Stickers", command=self.action_reset_decor).pack(side=tk.RIGHT)
+        ttk.Button(f_decor_btns, text="Reset Borders, Stickers & Banners", command=self.action_reset_decor).pack(side=tk.RIGHT)
 
         # Tab 5: Protocol Debug
         tab_debug = ttk.Frame(sidebar, padding=8)
@@ -560,15 +673,56 @@ class InstaxDesktopApp(tk.Tk):
     def _on_canvas_press(self, event):
         self.drag_start_x = event.x
         self.drag_start_y = event.y
+        cfg = self.model_configs.get(self.selected_model.get(), self.model_configs["SQUARE"])
+        cv_w = self.canvas.winfo_width()
+        cv_h = self.canvas.winfo_height()
+        if cv_w < 50: cv_w = 400
+        if cv_h < 50: cv_h = 400
+        cx = cv_w // 2
+        cy = cv_h // 2
+        cw = cfg["preview_w"]
+        ch = cfg["preview_h"]
+        norm_x = (event.x - cx) / max(1.0, cw / 2.0)
+        norm_y = (event.y - cy) / max(1.0, ch / 2.0)
+
+        has_sticker = (self.sticker.get() != "none" or self.custom_sticker_img is not None)
+        has_banner = (bool(self.banner_text.get().strip()) and self.banner_style.get() != "none")
+
+        if has_sticker and abs(norm_x - self.sticker_pos_x.get()) < 0.32 and abs(norm_y - self.sticker_pos_y.get()) < 0.32:
+            self.drag_target = "sticker"
+            self.sticker_position.set("custom")
+        elif has_banner and abs(norm_x - self.banner_pos_x.get()) < 0.40 and abs(norm_y - self.banner_pos_y.get()) < 0.28:
+            self.drag_target = "banner"
+        else:
+            self.drag_target = "pan"
 
     def _on_canvas_drag(self, event):
-        dx = (event.x - self.drag_start_x) / 180.0
-        dy = (event.y - self.drag_start_y) / 180.0
-        self.pan_x.set(max(-1.0, min(1.0, self.pan_x.get() + dx)))
-        self.pan_y.set(max(-1.0, min(1.0, self.pan_y.get() + dy)))
+        cfg = self.model_configs.get(self.selected_model.get(), self.model_configs["SQUARE"])
+        cw = cfg["preview_w"]
+        ch = cfg["preview_h"]
+        dx = (event.x - self.drag_start_x) / max(1.0, cw / 2.0)
+        dy = (event.y - self.drag_start_y) / max(1.0, ch / 2.0)
+
+        if self.drag_target == "sticker":
+            self.sticker_pos_x.set(max(-1.0, min(1.0, self.sticker_pos_x.get() + dx)))
+            self.sticker_pos_y.set(max(-1.0, min(1.0, self.sticker_pos_y.get() + dy)))
+            self.sticker_position.set("custom")
+        elif self.drag_target == "banner":
+            self.banner_pos_x.set(max(-1.0, min(1.0, self.banner_pos_x.get() + dx)))
+            self.banner_pos_y.set(max(-1.0, min(1.0, self.banner_pos_y.get() + dy)))
+        else:
+            self.pan_x.set(max(-1.0, min(1.0, self.pan_x.get() + dx * 0.5)))
+            self.pan_y.set(max(-1.0, min(1.0, self.pan_y.get() + dy * 0.5)))
+
         self.drag_start_x = event.x
         self.drag_start_y = event.y
         self.update_preview()
+
+    def action_choose_banner_bg_color(self):
+        c = colorchooser.askcolor(self.banner_color.get())[1]
+        if c:
+            self.banner_color.set(c)
+            self.update_preview()
 
     def action_choose_bg_color(self):
         c = colorchooser.askcolor(self.bg_color)[1]
@@ -803,6 +957,23 @@ class InstaxDesktopApp(tk.Tk):
                 scale=self.sticker_scale.get(),
                 opacity=self.sticker_opacity.get(),
                 rotation=self.sticker_rotation.get(),
+                pos_x=self.sticker_pos_x.get(),
+                pos_y=self.sticker_pos_y.get(),
+            )
+
+        # Apply Custom Banner
+        if self.banner_text.get().strip() and self.banner_style.get() != "none":
+            canvas = draw_custom_banner(
+                canvas,
+                text=self.banner_text.get(),
+                style=self.banner_style.get(),
+                icon=self.banner_icon.get(),
+                bg_color=self.banner_color.get(),
+                text_color=self.banner_text_color.get(),
+                pos_x=self.banner_pos_x.get(),
+                pos_y=self.banner_pos_y.get(),
+                scale=self.banner_scale.get(),
+                rotation=self.banner_rotation.get(),
             )
 
         return canvas
@@ -847,9 +1018,24 @@ class InstaxDesktopApp(tk.Tk):
             self.cb_stickers.current(0)
         self.action_clear_custom_sticker()
         self.sticker_position.set("topRight")
+        self.sticker_pos_x.set(0.65)
+        self.sticker_pos_y.set(0.65)
         self.sticker_scale.set(0.25)
         self.sticker_opacity.set(1.0)
         self.sticker_rotation.set(0.0)
+        self.banner_text.set("")
+        self.banner_style.set("none")
+        if hasattr(self, "cb_bstyle"):
+            self.cb_bstyle.current(0)
+        self.banner_icon.set("none")
+        if hasattr(self, "cb_bicon"):
+            self.cb_bicon.current(0)
+        self.banner_color.set("#e11d48")
+        self.banner_text_color.set("#ffffff")
+        self.banner_pos_x.set(0.0)
+        self.banner_pos_y.set(0.68)
+        self.banner_scale.set(1.0)
+        self.banner_rotation.set(0.0)
         self.update_preview()
 
     def update_preview(self):

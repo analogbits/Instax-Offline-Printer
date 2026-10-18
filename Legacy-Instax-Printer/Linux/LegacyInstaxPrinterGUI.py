@@ -39,6 +39,7 @@ from legacy_instax_printer import (
     STICKER_MAP,
     draw_decorative_frame,
     draw_sticker_overlay,
+    draw_custom_banner,
 )
 
 FRAME_OPTIONS = [
@@ -52,6 +53,36 @@ FRAME_OPTIONS = [
     ("rose_gold", "Rose Gold Shimmer"),
     ("pastel_pop", "Pastel Candy Geometric"),
     ("postage_stamp", "Scalloped Postage Stamp"),
+    ("baroque_filigree", "Baroque Filigree Lace Oval"),
+    ("wedding_corners", "Wedding Botanical Floral Corners"),
+    ("stained_glass", "Leaded Stained Glass Mosaic"),
+    ("bokeh_sparkles", "Glowing Golden Bokeh & Sparkles"),
+    ("fireworks_celebration", "Night Sky Fireworks Burst"),
+    ("twin_hearts_garland", "Hanging Twin Hearts Garland"),
+    ("holiday_garland", "Festive Pine & Berry Garland"),
+    ("botanical_foliage", "Autumn Botanical Leaves Border"),
+]
+
+BANNER_STYLE_OPTIONS = [
+    ("none", "None (No Banner)"),
+    ("ribbon", "🎀 3D Folded Ribbon"),
+    ("calligraphy", "✒️ Calligraphy Brush"),
+    ("pill", "💊 Frosted Pill Badge"),
+    ("tag", "🏷️ Vintage Luggage Tag"),
+    ("stamp", "📮 Postal Rubber Stamp"),
+    ("garland", "🚩 Triangle Bunting Garland"),
+]
+
+BANNER_ICON_OPTIONS = [
+    ("none", "None"),
+    ("heart", "❤️ Heart"),
+    ("sparkles", "✨ Sparkles"),
+    ("party", "🎉 Party"),
+    ("star", "⭐ Star"),
+    ("camera", "📸 Camera"),
+    ("cake", "🎂 Cake"),
+    ("flower", "🌸 Flower"),
+    ("ring", "💍 Ring"),
 ]
 
 FILM_PRESET_OPTIONS = [
@@ -445,6 +476,24 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.sticker_scale_var = tk.DoubleVar(value=0.25)
         self.sticker_opacity_var = tk.DoubleVar(value=1.0)
         self.sticker_rot_var = tk.DoubleVar(value=0.0)
+        self.sticker_pos_x_var = tk.DoubleVar(value=0.65)
+        self.sticker_pos_y_var = tk.DoubleVar(value=0.65)
+
+        # Custom Banner Maker State
+        self.banner_text_var = tk.StringVar(value="")
+        self.banner_style_var = tk.StringVar(value="none")
+        self.banner_icon_var = tk.StringVar(value="none")
+        self.banner_color_var = tk.StringVar(value="#e11d48")
+        self.banner_text_color_var = tk.StringVar(value="#ffffff")
+        self.banner_pos_x_var = tk.DoubleVar(value=0.0)
+        self.banner_pos_y_var = tk.DoubleVar(value=0.68)
+        self.banner_scale_var = tk.DoubleVar(value=1.0)
+        self.banner_rot_var = tk.DoubleVar(value=0.0)
+
+        # Drag target
+        self.drag_start_x = 0
+        self.drag_start_y = 0
+        self.drag_target = "sticker"
 
         # Film Preset Emulation State
         self.film_preset_var = tk.StringVar(value="Default / Base (No Effects)")
@@ -564,12 +613,12 @@ class LegacyInstaxPrinterGUI(tk.Tk):
 
         tab_filters = tk.Frame(nb, bg=self.bg_card, padx=8, pady=8)
         tab_analog = tk.Frame(nb, bg=self.bg_card, padx=8, pady=8)
-        tab_decor = tk.Frame(nb, bg=self.bg_card, padx=8, pady=8)
+        tab_decor_outer = tk.Frame(nb, bg=self.bg_card)
         tab_collage_qr = tk.Frame(nb, bg=self.bg_card, padx=8, pady=8)
 
         nb.add(tab_filters, text="Filters")
         nb.add(tab_analog, text="Analog FX")
-        nb.add(tab_decor, text="Stickers")
+        nb.add(tab_decor_outer, text="Stickers")
         nb.add(tab_collage_qr, text="Collage/QR")
 
         # Tab 1: Filters & Film
@@ -629,6 +678,15 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         tk.Button(fx_row, text="Reset FX", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.reset_analog_fx).pack(side=tk.LEFT)
 
         # Tab 3: Stickers & Decorative Frames
+        decor_canvas = tk.Canvas(tab_decor_outer, bg=self.bg_card, highlightthickness=0)
+        decor_scroll = ttk.Scrollbar(tab_decor_outer, orient="vertical", command=decor_canvas.yview)
+        tab_decor = tk.Frame(decor_canvas, bg=self.bg_card, padx=8, pady=8)
+        tab_decor.bind("<Configure>", lambda e: decor_canvas.configure(scrollregion=decor_canvas.bbox("all")))
+        decor_canvas.create_window((0, 0), window=tab_decor, anchor="nw")
+        decor_canvas.configure(yscrollcommand=decor_scroll.set)
+        decor_canvas.pack(side="left", fill="both", expand=True)
+        decor_scroll.pack(side="right", fill="y")
+
         tk.Label(tab_decor, text="Decorative Film Frame:", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(0, 2))
         self.cb_frames = ttk.Combobox(tab_decor, values=[t for _, t in FRAME_OPTIONS], state="readonly")
         self.cb_frames.set(FRAME_OPTIONS[0][1])
@@ -640,7 +698,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.cb_frames.bind("<<ComboboxSelected>>", _on_frame_sel)
         self.cb_frames.pack(fill=tk.X, pady=(0, 6))
 
-        tk.Label(tab_decor, text="Emoji Sticker Overlay:", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(4, 2))
+        tk.Label(tab_decor, text="Emoji & Doodle Sticker Overlay:", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(4, 2))
         self.sticker_list = [("none", "None (No Sticker)")] + [(k, f"{STICKER_MAP[k]}  {k.replace('_', ' ').title()}") for k in STICKER_MAP.keys()]
         self.cb_stickers = ttk.Combobox(tab_decor, values=[t for _, t in self.sticker_list], state="readonly")
         self.cb_stickers.set("None (No Sticker)")
@@ -666,10 +724,16 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.btn_cust_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
         tk.Button(f_cust, text="✕", width=3, bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.action_clear_custom_sticker).pack(side=tk.LEFT, padx=(4, 0))
 
-        tk.Label(tab_decor, text="Sticker Position:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
-        cb_pos = ttk.Combobox(tab_decor, textvariable=self.sticker_pos_var, values=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter"], state="readonly")
+        tk.Label(tab_decor, text="Sticker Position Preset:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        cb_pos = ttk.Combobox(tab_decor, textvariable=self.sticker_pos_var, values=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter", "custom"], state="readonly")
         cb_pos.bind("<<ComboboxSelected>>", lambda _e: self.refresh_preview())
         cb_pos.pack(fill=tk.X, pady=(0, 4))
+
+        tk.Label(tab_decor, text="Sticker X Offset (-1.0 to 1.0):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(tab_decor, from_=-1.0, to=1.0, resolution=0.02, orient=tk.HORIZONTAL, variable=self.sticker_pos_x_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.sticker_pos_var.set("custom"), self.refresh_preview())).pack(fill=tk.X)
+
+        tk.Label(tab_decor, text="Sticker Y Offset (-1.0 to 1.0):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(tab_decor, from_=-1.0, to=1.0, resolution=0.02, orient=tk.HORIZONTAL, variable=self.sticker_pos_y_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.sticker_pos_var.set("custom"), self.refresh_preview())).pack(fill=tk.X)
 
         tk.Label(tab_decor, text="Sticker Scale:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
         tk.Scale(tab_decor, from_=0.10, to=0.60, resolution=0.02, orient=tk.HORIZONTAL, variable=self.sticker_scale_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
@@ -680,9 +744,64 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         tk.Label(tab_decor, text="Sticker Rotation (°):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
         tk.Scale(tab_decor, from_=-180.0, to=180.0, resolution=5.0, orient=tk.HORIZONTAL, variable=self.sticker_rot_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
 
+        # Custom Banner Maker Group
+        ttk.Separator(tab_decor, orient="horizontal").pack(fill=tk.X, pady=8)
+        tk.Label(tab_decor, text="─── Custom Banner Maker ───", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor=tk.CENTER, pady=(0, 4))
+
+        tk.Label(tab_decor, text="Banner Message:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        e_banner = tk.Entry(tab_decor, textvariable=self.banner_text_var)
+        e_banner.bind("<KeyRelease>", lambda _e: self.refresh_preview())
+        e_banner.pack(fill=tk.X, pady=(0, 4))
+
+        tk.Label(tab_decor, text="Banner Style:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        self.cb_bstyle = ttk.Combobox(tab_decor, values=[t for _, t in BANNER_STYLE_OPTIONS], state="readonly")
+        self.cb_bstyle.set(BANNER_STYLE_OPTIONS[0][1])
+        def _on_bstyle_sel(_e):
+            idx = self.cb_bstyle.current()
+            if 0 <= idx < len(BANNER_STYLE_OPTIONS):
+                self.banner_style_var.set(BANNER_STYLE_OPTIONS[idx][0])
+                self.refresh_preview()
+        self.cb_bstyle.bind("<<ComboboxSelected>>", _on_bstyle_sel)
+        self.cb_bstyle.pack(fill=tk.X, pady=(0, 4))
+
+        tk.Label(tab_decor, text="Banner Icon:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        self.cb_bicon = ttk.Combobox(tab_decor, values=[t for _, t in BANNER_ICON_OPTIONS], state="readonly")
+        self.cb_bicon.set(BANNER_ICON_OPTIONS[0][1])
+        def _on_bicon_sel(_e):
+            idx = self.cb_bicon.current()
+            if 0 <= idx < len(BANNER_ICON_OPTIONS):
+                self.banner_icon_var.set(BANNER_ICON_OPTIONS[idx][0])
+                self.refresh_preview()
+        self.cb_bicon.bind("<<ComboboxSelected>>", _on_bicon_sel)
+        self.cb_bicon.pack(fill=tk.X, pady=(0, 4))
+
+        f_bcolors = tk.Frame(tab_decor, bg=self.bg_card)
+        f_bcolors.pack(fill=tk.X, pady=(2, 4))
+        tk.Label(f_bcolors, text="Bg:", fg=self.fg_text, bg=self.bg_card).pack(side=tk.LEFT)
+        e_bg = tk.Entry(f_bcolors, textvariable=self.banner_color_var, width=8)
+        e_bg.bind("<KeyRelease>", lambda _e: self.refresh_preview())
+        e_bg.pack(side=tk.LEFT, padx=2)
+        tk.Button(f_bcolors, text="🎨", width=2, bg=self.bg_card, fg=self.fg_text, relief=tk.FLAT, command=self.action_choose_banner_bg_color).pack(side=tk.LEFT, padx=1)
+        tk.Label(f_bcolors, text="Text:", fg=self.fg_text, bg=self.bg_card).pack(side=tk.LEFT, padx=(4, 0))
+        e_tx = tk.Entry(f_bcolors, textvariable=self.banner_text_color_var, width=8)
+        e_tx.bind("<KeyRelease>", lambda _e: self.refresh_preview())
+        e_tx.pack(side=tk.LEFT, padx=2)
+
+        tk.Label(tab_decor, text="Banner X Offset (-1.0 to 1.0):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(tab_decor, from_=-1.0, to=1.0, resolution=0.02, orient=tk.HORIZONTAL, variable=self.banner_pos_x_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
+        tk.Label(tab_decor, text="Banner Y Offset (-1.0 to 1.0):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(tab_decor, from_=-1.0, to=1.0, resolution=0.02, orient=tk.HORIZONTAL, variable=self.banner_pos_y_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
+        tk.Label(tab_decor, text="Banner Scale:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(tab_decor, from_=0.5, to=2.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.banner_scale_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
+        tk.Label(tab_decor, text="Banner Rotation (°):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(tab_decor, from_=-180.0, to=180.0, resolution=5.0, orient=tk.HORIZONTAL, variable=self.banner_rot_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
         f_rst = tk.Frame(tab_decor, bg=self.bg_card)
-        f_rst.pack(fill=tk.X, pady=(6, 0))
-        tk.Button(f_rst, text="Reset Borders & Stickers", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.action_reset_decor).pack(side=tk.RIGHT)
+        f_rst.pack(fill=tk.X, pady=(8, 0))
+        tk.Button(f_rst, text="Reset Borders, Stickers & Banners", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.action_reset_decor).pack(side=tk.RIGHT)
 
         # Tab 4: Multi-Photo Collage & QR
         tk.Label(tab_collage_qr, text="MULTI-PHOTO COLLAGE", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w")
@@ -744,6 +863,8 @@ class LegacyInstaxPrinterGUI(tk.Tk):
 
         self.canvas_label = tk.Label(center, bg="#E4E4E7" if self.is_mac else "#27272A", bd=2, relief=tk.SOLID)
         self.canvas_label.pack(expand=True, pady=10)
+        self.canvas_label.bind("<ButtonPress-1>", self._on_canvas_press)
+        self.canvas_label.bind("<B1-Motion>", self._on_canvas_drag)
 
         btn_bar = tk.Frame(center, bg=self.bg_root)
         btn_bar.pack(pady=8)
@@ -1121,6 +1242,23 @@ class LegacyInstaxPrinterGUI(tk.Tk):
                 scale=self.sticker_scale_var.get(),
                 opacity=self.sticker_opacity_var.get(),
                 rotation=self.sticker_rot_var.get(),
+                pos_x=self.sticker_pos_x_var.get(),
+                pos_y=self.sticker_pos_y_var.get(),
+            )
+
+        # Apply Custom Banner
+        if self.banner_text_var.get().strip() and self.banner_style_var.get() != "none":
+            canvas = draw_custom_banner(
+                canvas,
+                text=self.banner_text_var.get(),
+                style=self.banner_style_var.get(),
+                icon=self.banner_icon_var.get(),
+                bg_color=self.banner_color_var.get(),
+                text_color=self.banner_text_color_var.get(),
+                pos_x=self.banner_pos_x_var.get(),
+                pos_y=self.banner_pos_y_var.get(),
+                scale=self.banner_scale_var.get(),
+                rotation=self.banner_rot_var.get(),
             )
 
         draw = ImageDraw.Draw(canvas)
@@ -1175,6 +1313,54 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             self.btn_cust_label.config(text="Choose Image...")
         self.refresh_preview()
 
+    def action_choose_banner_bg_color(self):
+        from tkinter import colorchooser
+        c = colorchooser.askcolor(self.banner_color_var.get())[1]
+        if c:
+            self.banner_color_var.set(c)
+            self.refresh_preview()
+
+    def _on_canvas_press(self, event):
+        self.drag_start_x = event.x
+        self.drag_start_y = event.y
+        lw = self.canvas_label.winfo_width()
+        lh = self.canvas_label.winfo_height()
+        if lw < 20: lw = 300
+        if lh < 20: lh = 410
+        norm_x = (event.x - lw / 2.0) / max(1.0, lw / 2.0)
+        norm_y = (event.y - lh / 2.0) / max(1.0, lh / 2.0)
+
+        has_sticker = (self.sticker_var.get() != "none" or self.custom_sticker_img is not None)
+        has_banner = (bool(self.banner_text_var.get().strip()) and self.banner_style_var.get() != "none")
+
+        if has_sticker and abs(norm_x - self.sticker_pos_x_var.get()) < 0.32 and abs(norm_y - self.sticker_pos_y_var.get()) < 0.32:
+            self.drag_target = "sticker"
+            self.sticker_pos_var.set("custom")
+        elif has_banner and abs(norm_x - self.banner_pos_x_var.get()) < 0.40 and abs(norm_y - self.banner_pos_y_var.get()) < 0.28:
+            self.drag_target = "banner"
+        else:
+            self.drag_target = "sticker" if has_sticker else "banner"
+
+    def _on_canvas_drag(self, event):
+        lw = self.canvas_label.winfo_width()
+        lh = self.canvas_label.winfo_height()
+        if lw < 20: lw = 300
+        if lh < 20: lh = 410
+        dx = (event.x - self.drag_start_x) / max(1.0, lw / 2.0)
+        dy = (event.y - self.drag_start_y) / max(1.0, lh / 2.0)
+
+        if self.drag_target == "sticker":
+            self.sticker_pos_x_var.set(max(-1.0, min(1.0, self.sticker_pos_x_var.get() + dx)))
+            self.sticker_pos_y_var.set(max(-1.0, min(1.0, self.sticker_pos_y_var.get() + dy)))
+            self.sticker_pos_var.set("custom")
+        elif self.drag_target == "banner":
+            self.banner_pos_x_var.set(max(-1.0, min(1.0, self.banner_pos_x_var.get() + dx)))
+            self.banner_pos_y_var.set(max(-1.0, min(1.0, self.banner_pos_y_var.get() + dy)))
+
+        self.drag_start_x = event.x
+        self.drag_start_y = event.y
+        self.refresh_preview()
+
     def action_reset_decor(self):
         self.frame_style_var.set("none")
         if hasattr(self, "cb_frames"):
@@ -1184,9 +1370,24 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             self.cb_stickers.current(0)
         self.action_clear_custom_sticker()
         self.sticker_pos_var.set("topRight")
+        self.sticker_pos_x_var.set(0.65)
+        self.sticker_pos_y_var.set(0.65)
         self.sticker_scale_var.set(0.25)
         self.sticker_opacity_var.set(1.0)
         self.sticker_rot_var.set(0.0)
+        self.banner_text_var.set("")
+        self.banner_style_var.set("none")
+        if hasattr(self, "cb_bstyle"):
+            self.cb_bstyle.current(0)
+        self.banner_icon_var.set("none")
+        if hasattr(self, "cb_bicon"):
+            self.cb_bicon.current(0)
+        self.banner_color_var.set("#e11d48")
+        self.banner_text_color_var.set("#ffffff")
+        self.banner_pos_x_var.set(0.0)
+        self.banner_pos_y_var.set(0.68)
+        self.banner_scale_var.set(1.0)
+        self.banner_rot_var.set(0.0)
         self.refresh_preview()
 
     @staticmethod

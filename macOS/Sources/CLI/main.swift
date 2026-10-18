@@ -197,6 +197,45 @@ while i < args.count {
     case "--sticker-rot", "--sticker-rotation":
         i += 1
         if i < args.count, let rot = Double(args[i]) { imgOptions.stickerRotation = rot }
+    case "--sticker-x":
+        i += 1
+        if i < args.count, let sx = Double(args[i]) {
+            imgOptions.stickerX = sx
+            imgOptions.stickerPosition = "custom"
+        }
+    case "--sticker-y":
+        i += 1
+        if i < args.count, let sy = Double(args[i]) {
+            imgOptions.stickerY = sy
+            imgOptions.stickerPosition = "custom"
+        }
+    case "--banner-text":
+        i += 1
+        if i < args.count { imgOptions.bannerText = args[i] }
+    case "--banner-style":
+        i += 1
+        if i < args.count { imgOptions.bannerStyle = args[i] }
+    case "--banner-icon":
+        i += 1
+        if i < args.count { imgOptions.bannerIcon = args[i] }
+    case "--banner-color", "--banner-bg-color":
+        i += 1
+        if i < args.count { imgOptions.bannerBgColor = args[i] }
+    case "--banner-text-color":
+        i += 1
+        if i < args.count { imgOptions.bannerTextColor = args[i] }
+    case "--banner-x":
+        i += 1
+        if i < args.count, let bx = Double(args[i]) { imgOptions.bannerX = bx }
+    case "--banner-y":
+        i += 1
+        if i < args.count, let by = Double(args[i]) { imgOptions.bannerY = by }
+    case "--banner-scale":
+        i += 1
+        if i < args.count, let bsc = Double(args[i]) { imgOptions.bannerScale = bsc }
+    case "--banner-rot", "--banner-rotation":
+        i += 1
+        if i < args.count, let brot = Double(args[i]) { imgOptions.bannerRotation = brot }
     default:
         if !arg.hasPrefix("-") {
             inputImagePaths.append(arg)

@@ -137,7 +137,34 @@ STICKER_MAP = {
     "peace": "✌️",
     "lightning": "⚡️",
     "music": "🎵",
-    "fire": "🔥"
+    "fire": "🔥",
+    # Hand-Drawn Love & Romance Doodles
+    "love_script": "💖",
+    "i_love_you": "❤️",
+    "forever_heart": "♾️",
+    "sketchy_heart": "✏️",
+    "winged_heart": "🪽",
+    "love_envelope": "💌",
+    "shining_heart": "🌟",
+    "heart_balloons": "🎈",
+    "heart_arrow": "💘",
+    "heart_hands": "🫶",
+    "looping_heart": "➰",
+    # Celebrations & Holidays Doodles
+    "birthday_cake_doodle": "🎂",
+    "birthday_bunting": "🚩",
+    "happy_holidays_gold": "✨",
+    "season_greetings": "🌿",
+    "xmas_tree": "🎄",
+    "holly_berries": "🍒",
+    "christmas_stockings": "🧦",
+    "halloween_ghost": "👻",
+    "jack_o_lantern": "🎃",
+    "flying_bats": "🦇",
+    "summer_flipflops": "🩴",
+    "seashells": "🐚",
+    "cherry_blossoms": "🌸",
+    "mimosa": "🌾",
 }
 
 
@@ -222,7 +249,7 @@ def draw_decorative_frame(canvas: Image.Image, style: str) -> Image.Image:
             x_r = w - bw + (bw - hole_w) // 2
             draw.rectangle([x_r, y, x_r + hole_w, y + hole_h], fill=(229, 231, 235))
             y += step
-    elif style == "gold_metallic":
+    elif style in ("gold_metallic", "metallic_gold"):
         bw = int(min(w, h) * 0.065)
         draw.rectangle([0, 0, w, bw], fill=(217, 119, 6))
         draw.rectangle([0, 0, bw, h], fill=(180, 83, 9))
@@ -236,7 +263,7 @@ def draw_decorative_frame(canvas: Image.Image, style: str) -> Image.Image:
         draw.rectangle([w - bw, 0, w, h], fill=(251, 207, 232))
         draw.rectangle([0, h - bw, w, h], fill=(136, 19, 55))
         draw.rectangle([bw, bw, w - bw, h - bw], outline=(255, 255, 255), width=1)
-    elif style == "pastel_pop":
+    elif style in ("pastel_pop", "candy_pastel"):
         bw = int(min(w, h) * 0.065)
         draw.rectangle([0, 0, w, bw], fill=(186, 230, 253))
         draw.rectangle([0, 0, bw, h], fill=(251, 207, 232))
@@ -261,6 +288,117 @@ def draw_decorative_frame(canvas: Image.Image, style: str) -> Image.Image:
             draw.ellipse([-r, y - r, r, y + r], fill=(30, 30, 30))
             draw.ellipse([w - r, y - r, w + r, y + r], fill=(30, 30, 30))
             y += d
+    elif style == "baroque_filigree":
+        bw = int(min(w, h) * 0.07)
+        draw.rectangle([0, 0, w, bw], fill=(253, 242, 248))
+        draw.rectangle([0, 0, bw, h], fill=(253, 242, 248))
+        draw.rectangle([w - bw, 0, w, h], fill=(253, 242, 248))
+        draw.rectangle([0, h - bw, w, h], fill=(253, 242, 248))
+        draw.ellipse([bw, bw, w - bw, h - bw], outline=(190, 24, 93), width=2)
+        # Corner flourishes
+        for cx, cy in [(bw, bw), (w - bw, bw), (bw, h - bw), (w - bw, h - bw)]:
+            draw.ellipse([cx - 8, cy - 8, cx + 8, cy + 8], outline=(190, 24, 93), width=2)
+    elif style == "wedding_corners":
+        pad = int(min(w, h) * 0.05)
+        fl_len = 50
+        draw.line([(pad, pad), (pad + fl_len, pad)], fill=(74, 122, 95), width=2)
+        draw.line([(pad, pad), (pad, pad + fl_len)], fill=(74, 122, 95), width=2)
+        draw.line([(w - pad, pad), (w - pad - fl_len, pad)], fill=(74, 122, 95), width=2)
+        draw.line([(w - pad, pad), (w - pad, pad + fl_len)], fill=(74, 122, 95), width=2)
+        draw.line([(pad, h - pad), (pad + fl_len, h - pad)], fill=(74, 122, 95), width=2)
+        draw.line([(pad, h - pad), (pad, pad - fl_len)], fill=(74, 122, 95), width=2) if False else None
+        draw.line([(pad, h - pad), (pad, h - pad - fl_len)], fill=(74, 122, 95), width=2)
+        draw.line([(w - pad, h - pad), (w - pad - fl_len, h - pad)], fill=(74, 122, 95), width=2)
+        draw.line([(w - pad, h - pad), (w - pad, h - pad - fl_len)], fill=(74, 122, 95), width=2)
+        for cx, cy in [(pad, pad), (w - pad, pad), (pad, h - pad), (w - pad, h - pad)]:
+            draw.ellipse([cx - 7, cy - 7, cx + 7, cy + 7], fill=(251, 113, 133))
+            draw.ellipse([cx + 6, cy - 4, cx + 12, cy + 2], fill=(134, 239, 172))
+    elif style == "stained_glass":
+        bw = int(min(w, h) * 0.065)
+        seg_w = int(min(w, h) * 0.08)
+        gem_colors = [(239, 68, 68), (59, 130, 246), (234, 179, 8), (34, 197, 94), (168, 85, 247)]
+        c_idx = 0
+        x = 0
+        while x < w:
+            draw.rectangle([x, 0, x + seg_w, bw], fill=gem_colors[c_idx % len(gem_colors)])
+            c_idx += 1
+            draw.rectangle([x, h - bw, x + seg_w, h], fill=gem_colors[c_idx % len(gem_colors)])
+            c_idx += 1
+            x += seg_w
+        y = bw
+        while y < h - bw:
+            draw.rectangle([0, y, bw, y + seg_w], fill=gem_colors[c_idx % len(gem_colors)])
+            c_idx += 1
+            draw.rectangle([w - bw, y, w, y + seg_w], fill=gem_colors[c_idx % len(gem_colors)])
+            c_idx += 1
+            y += seg_w
+        draw.rectangle([0, 0, w, h], outline=(24, 24, 27), width=3)
+        draw.rectangle([bw, bw, w - bw, h - bw], outline=(24, 24, 27), width=3)
+    elif style == "bokeh_sparkles":
+        orbs = [
+            (0.12, 0.08, 24, (254, 240, 138, 110)),
+            (0.28, 0.05, 18, (251, 207, 232, 95)),
+            (0.72, 0.07, 26, (221, 214, 254, 105)),
+            (0.88, 0.12, 20, (254, 240, 138, 120)),
+            (0.05, 0.35, 16, (251, 207, 232, 85)),
+            (0.95, 0.42, 22, (254, 240, 138, 95)),
+            (0.08, 0.82, 28, (221, 214, 254, 110)),
+            (0.22, 0.94, 18, (254, 240, 138, 105)),
+            (0.78, 0.92, 25, (251, 207, 232, 115)),
+            (0.92, 0.85, 20, (254, 240, 138, 110)),
+        ]
+        ov = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        odraw = ImageDraw.Draw(ov)
+        for ox, oy, r, col in orbs:
+            odraw.ellipse([int(ox * w) - r, int(oy * h) - r, int(ox * w) + r, int(oy * h) + r], fill=col)
+        # Sparkles
+        for sx, sy in [(int(w * 0.18), int(h * 0.06)), (int(w * 0.82), int(h * 0.09)), (int(w * 0.07), int(h * 0.65)), (int(w * 0.93), int(h * 0.60)), (int(w * 0.50), int(h * 0.95))]:
+            odraw.line([(sx - 7, sy), (sx + 7, sy)], fill=(255, 255, 255, 240), width=2)
+            odraw.line([(sx, sy - 7), (sx, sy + 7)], fill=(255, 255, 255, 240), width=2)
+        canvas_rgba = canvas.convert("RGBA")
+        canvas_rgba.alpha_composite(ov)
+        return canvas_rgba.convert("RGB")
+    elif style == "fireworks_celebration":
+        for cx, cy in [(60, 60), (w - 70, 70), (80, h - 80), (w - 65, h - 75)]:
+            for i in range(12):
+                import math
+                ang = (i / 12) * math.pi * 2
+                length = 35 + (i % 3) * 15
+                ex = int(cx + math.cos(ang) * length)
+                ey = int(cy + math.sin(ang) * length)
+                col = [(251, 191, 36), (248, 113, 113), (96, 165, 250), (52, 211, 153)][i % 4]
+                draw.line([(cx, cy), (ex, ey)], fill=col, width=2)
+                draw.ellipse([ex - 2, ey - 2, ex + 2, ey + 2], fill=col)
+            draw.ellipse([cx - 3, cy - 3, cx + 3, cy + 3], fill=(255, 255, 255))
+    elif style == "twin_hearts_garland":
+        gy = int(h * 0.04)
+        draw.line([(20, gy), (w - 20, gy)], fill=(255, 255, 255), width=2)
+        cols = [(244, 63, 94), (251, 113, 133), (253, 164, 175), (225, 29, 72)]
+        for i in range(7):
+            t = (i + 0.5) / 7.0
+            hx = int(20 + t * (w - 40))
+            hy = gy + 16 + (i % 2) * 10
+            draw.line([(hx, gy), (hx, hy)], fill=(255, 255, 255), width=1)
+            draw.ellipse([hx - 7, hy - 7, hx + 7, hy + 7], fill=cols[i % len(cols)])
+    elif style == "holiday_garland":
+        gy = int(h * 0.04)
+        draw.line([(10, gy), (w - 10, gy)], fill=(21, 128, 61), width=10)
+        bx = 30
+        while bx < w - 20:
+            draw.ellipse([bx - 4, gy - 4, bx + 4, gy + 4], fill=(220, 38, 38))
+            draw.ellipse([bx + 4, gy - 1, bx + 10, gy + 5], fill=(220, 38, 38))
+            bx += 50
+        draw.ellipse([w // 2 - 7, gy - 7, w // 2 + 7, gy + 7], fill=(185, 28, 28))
+    elif style == "botanical_foliage":
+        cols = [(234, 88, 12), (202, 138, 4), (180, 83, 9), (185, 28, 28)]
+        margin = int(min(w, h) * 0.04)
+        lx = margin + 15
+        i = 0
+        while lx < w - margin:
+            draw.ellipse([lx - 8, margin - 4, lx + 8, margin + 4], fill=cols[i % len(cols)])
+            draw.ellipse([lx - 8, h - margin - 4, lx + 8, h - margin + 4], fill=cols[(i + 1) % len(cols)])
+            lx += 32
+            i += 1
 
     return canvas
 
@@ -273,6 +411,8 @@ def draw_sticker_overlay(
     scale: float = 0.25,
     opacity: float = 1.0,
     rotation: float = 0.0,
+    pos_x: float = 0.65,
+    pos_y: float = 0.65,
 ) -> Image.Image:
     has_custom = sticker_image is not None
     has_emoji = sticker in STICKER_MAP
@@ -283,10 +423,10 @@ def draw_sticker_overlay(
     target_dim = max(16, int(min(w, h) * scale))
     margin = int(min(w, h) * 0.06)
 
-    cx = w - margin - target_dim // 2
-    cy = h - margin - target_dim // 2
-
-    if position == "topLeft":
+    if position == "custom":
+        cx = int(w / 2 + pos_x * (w / 2 - target_dim / 2))
+        cy = int(h / 2 + pos_y * (h / 2 - target_dim / 2))
+    elif position == "topLeft":
         cx = margin + target_dim // 2
         cy = margin + target_dim // 2
     elif position == "topRight":
@@ -306,6 +446,9 @@ def draw_sticker_overlay(
         cy = margin + target_dim // 2
     elif position == "bottomCenter":
         cx = w // 2
+        cy = h - margin - target_dim // 2
+    else:
+        cx = w - margin - target_dim // 2
         cy = h - margin - target_dim // 2
 
     if has_custom:
@@ -354,6 +497,149 @@ def draw_sticker_overlay(
     return canvas_rgba.convert("RGB")
 
 
+def draw_custom_banner(
+    canvas: Image.Image,
+    text: str = "",
+    style: str = "none",
+    icon: str = "none",
+    bg_color: str = "#e11d48",
+    text_color: str = "#ffffff",
+    pos_x: float = 0.0,
+    pos_y: float = 0.68,
+    scale: float = 1.0,
+    rotation: float = 0.0,
+) -> Image.Image:
+    if not text.strip() or not style or style == "none":
+        return canvas
+
+    icon_map = {
+        "heart": "❤️", "sparkles": "✨", "party": "🎉", "star": "⭐",
+        "camera": "📸", "cake": "🎂", "flower": "🌸", "ring": "💍"
+    }
+    icon_str = icon_map.get(icon, "")
+    full_text = f"{icon_str} {text.strip()}" if icon_str else text.strip()
+
+    w, h = canvas.size
+    cx = int(w / 2 + pos_x * (w / 2 - 50))
+    cy = int(h / 2 + pos_y * (h / 2 - 50))
+
+    def hex_to_rgb(hex_str: str, default=(225, 29, 72)):
+        hex_clean = hex_str.lstrip("#")
+        if len(hex_clean) == 6:
+            try:
+                return tuple(int(hex_clean[i:i+2], 16) for i in (0, 2, 4))
+            except Exception:
+                pass
+        return default
+
+    bg_rgb = hex_to_rgb(bg_color, (225, 29, 72))
+    tx_rgb = hex_to_rgb(text_color, (255, 255, 255))
+
+    font = None
+    font_size = max(12, int(20 * scale))
+    for font_candidate in [
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    ]:
+        if os.path.isfile(font_candidate):
+            try:
+                font = ImageFont.truetype(font_candidate, font_size)
+                break
+            except Exception:
+                pass
+    if font is None:
+        font = ImageFont.load_default()
+
+    dummy_draw = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+    bbox = dummy_draw.textbbox((0, 0), full_text, font=font)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+
+    rw = max(130, tw + 46)
+    rh = max(36, th + 20)
+
+    banner_img = Image.new("RGBA", (rw + 80, rh + 40), (0, 0, 0, 0))
+    bdraw = ImageDraw.Draw(banner_img)
+    bx = banner_img.width // 2
+    by = banner_img.height // 2
+
+    if style == "ribbon":
+        tail_w = 34
+        tail_h = 34
+        bdraw.polygon([
+            (bx - rw // 2 + 4, by - rh // 2 + 6),
+            (bx - rw // 2 - tail_w, by - rh // 2 + 6),
+            (bx - rw // 2 - tail_w + 12, by - rh // 2 + 6 + tail_h // 2),
+            (bx - rw // 2 - tail_w, by - rh // 2 + 6 + tail_h),
+            (bx - rw // 2 + 4, by - rh // 2 + 6 + tail_h),
+        ], fill=bg_rgb)
+        bdraw.polygon([
+            (bx + rw // 2 - 4, by - rh // 2 + 6),
+            (bx + rw // 2 + tail_w, by - rh // 2 + 6),
+            (bx + rw // 2 + tail_w - 12, by - rh // 2 + 6 + tail_h // 2),
+            (bx + rw // 2 + tail_w, by - rh // 2 + 6 + tail_h),
+            (bx + rw // 2 - 4, by - rh // 2 + 6 + tail_h),
+        ], fill=bg_rgb)
+        bdraw.rectangle([bx - rw // 2, by - rh // 2, bx + rw // 2, by + rh // 2], fill=bg_rgb)
+        bdraw.rectangle([bx - rw // 2 + 2, by - rh // 2 + 2, bx + rw // 2 - 2, by + rh // 2 - 2], outline=(255, 255, 255, 90), width=1)
+        bdraw.text((bx, by), full_text, font=font, anchor="mm", fill=tx_rgb)
+
+    elif style == "calligraphy":
+        bdraw.rounded_rectangle([bx - rw // 2, by - rh // 2, bx + rw // 2, by + rh // 2], radius=8, fill=bg_rgb)
+        bdraw.text((bx, by), full_text, font=font, anchor="mm", fill=tx_rgb)
+        bdraw.line([(bx - tw // 2, by + th // 2 + 4), (bx + tw // 2, by + th // 2 + 4)], fill=tx_rgb, width=2)
+
+    elif style == "pill":
+        bdraw.rounded_rectangle([bx - rw // 2, by - rh // 2, bx + rw // 2, by + rh // 2], radius=rh // 2, fill=bg_rgb, outline=(255, 255, 255, 140), width=2)
+        bdraw.text((bx, by), full_text, font=font, anchor="mm", fill=tx_rgb)
+
+    elif style == "tag":
+        tag_w = rw + 10
+        tag_h = rh
+        bdraw.polygon([
+            (bx - tag_w // 2 + 14, by - tag_h // 2),
+            (bx + tag_w // 2 - 4, by - tag_h // 2),
+            (bx + tag_w // 2 - 4, by + tag_h // 2),
+            (bx - tag_w // 2 + 14, by + tag_h // 2),
+            (bx - tag_w // 2, by),
+        ], fill=bg_rgb)
+        bdraw.ellipse([bx - tag_w // 2 + 6, by - 4, bx - tag_w // 2 + 14, by + 4], fill=(217, 119, 6))
+        bdraw.ellipse([bx - tag_w // 2 + 8, by - 2, bx - tag_w // 2 + 12, by + 2], fill=(30, 30, 30))
+        bdraw.text((bx + 6, by), full_text, font=font, anchor="mm", fill=tx_rgb)
+
+    elif style == "stamp":
+        bdraw.rectangle([bx - rw // 2, by - rh // 2, bx + rw // 2, by + rh // 2], outline=bg_rgb, width=3)
+        bdraw.rectangle([bx - rw // 2 + 4, by - rh // 2 + 4, bx + rw // 2 - 4, by + rh // 2 - 4], outline=bg_rgb, width=1)
+        bdraw.text((bx, by), full_text.upper(), font=font, anchor="mm", fill=bg_rgb)
+
+    elif style == "garland":
+        words = full_text.split()
+        if not words:
+            words = [full_text]
+        flag_w = max(34, (tw + 20) // max(1, len(words)))
+        total_w = flag_w * len(words)
+        bdraw.line([(bx - total_w // 2, by - 10), (bx + total_w // 2, by - 10)], fill=(255, 255, 255, 180), width=2)
+        for idx, wrd in enumerate(words):
+            fx = bx - total_w // 2 + idx * flag_w + flag_w // 2
+            bdraw.polygon([
+                (fx - flag_w // 2 + 2, by - 10),
+                (fx + flag_w // 2 - 2, by - 10),
+                (fx, by + 18),
+            ], fill=bg_rgb)
+            bdraw.text((fx, by), wrd, font=font, anchor="mm", fill=tx_rgb)
+
+    if rotation != 0.0:
+        banner_img = banner_img.rotate(-rotation, expand=True, resample=Image.BICUBIC)
+
+    paste_x = cx - banner_img.width // 2
+    paste_y = cy - banner_img.height // 2
+    canvas_rgba = canvas.convert("RGBA")
+    canvas_rgba.alpha_composite(banner_img, (paste_x, paste_y))
+    return canvas_rgba.convert("RGB")
+
+
 def encode_planar_rgb(
     pil_image: "Image.Image",
     model_name: str = "SP-2",
@@ -367,6 +653,17 @@ def encode_planar_rgb(
     sticker_scale: float = 1.0,
     sticker_opacity: float = 1.0,
     sticker_rot: float = 0.0,
+    sticker_pos_x: float = 0.65,
+    sticker_pos_y: float = 0.65,
+    banner_text: str = "",
+    banner_style: str = "none",
+    banner_icon: str = "none",
+    banner_bg_color: str = "#e11d48",
+    banner_text_color: str = "#ffffff",
+    banner_pos_x: float = 0.0,
+    banner_pos_y: float = 0.68,
+    banner_scale: float = 1.0,
+    banner_rotation: float = 0.0,
 ) -> bytes:
     spec = MODELS.get(model_name.upper(), MODELS["SP-2"])
     portrait_w = hw_width or spec["width"]
@@ -401,6 +698,22 @@ def encode_planar_rgb(
             scale=sticker_scale,
             opacity=sticker_opacity,
             rotation=sticker_rot,
+            pos_x=sticker_pos_x,
+            pos_y=sticker_pos_y,
+        )
+
+    if banner_text and banner_style and banner_style != "none":
+        img = draw_custom_banner(
+            img,
+            text=banner_text,
+            style=banner_style,
+            icon=banner_icon,
+            bg_color=banner_bg_color,
+            text_color=banner_text_color,
+            pos_x=banner_pos_x,
+            pos_y=banner_pos_y,
+            scale=banner_scale,
+            rotation=banner_rotation,
         )
 
     # Rotate 90 degrees clockwise so printWidth = portrait_h (800 scanlines) and printHeight = portrait_w (600 or 800 dots)
@@ -912,13 +1225,24 @@ def main():
     parser.add_argument("--fit", action="store_true", help="Fit image inside frame with borders (default: crop to fill)")
     parser.add_argument("--caption", default="", help="Optional bottom caption text")
     parser.add_argument("--qr", default="", help="Optional scannable QR code text/URL")
-    parser.add_argument("--frame-style", choices=["none", "classic_white", "obsidian_black", "rainbow_gradient", "sunset_ombre", "sprocket_35mm", "metallic_gold", "rose_gold", "candy_pastel", "postage_stamp"], default="none", help="Decorative film frame style")
+    parser.add_argument("--frame-style", choices=["none", "classic_white", "obsidian_black", "rainbow_gradient", "sunset_ombre", "sprocket_35mm", "gold_metallic", "metallic_gold", "rose_gold", "pastel_pop", "candy_pastel", "postage_stamp", "baroque_filigree", "wedding_corners", "stained_glass", "bokeh_sparkles", "fireworks_celebration", "twin_hearts_garland", "holiday_garland", "botanical_foliage"], default="none", help="Decorative film frame style")
     parser.add_argument("--sticker", choices=["none"] + list(STICKER_MAP.keys()), default="none", help="Sticker emoji overlay")
     parser.add_argument("--sticker-image", default="", help="Path to custom image/logo overlay PNG/JPG")
-    parser.add_argument("--sticker-pos", choices=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter"], default="topRight")
+    parser.add_argument("--sticker-pos", choices=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter", "custom"], default="topRight")
+    parser.add_argument("--sticker-x", type=float, default=0.65, help="Sticker horizontal offset (-1.0 to 1.0)")
+    parser.add_argument("--sticker-y", type=float, default=0.65, help="Sticker vertical offset (-1.0 to 1.0)")
     parser.add_argument("--sticker-scale", type=float, default=1.0, help="Sticker scale multiplier (0.2 to 2.5)")
     parser.add_argument("--sticker-opacity", type=float, default=1.0, help="Sticker opacity (0.1 to 1.0)")
     parser.add_argument("--sticker-rot", type=float, default=0.0, help="Sticker rotation angle in degrees")
+    parser.add_argument("--banner-text", default="", help="Custom banner message")
+    parser.add_argument("--banner-style", choices=["none", "ribbon", "calligraphy", "pill", "tag", "stamp", "garland"], default="none")
+    parser.add_argument("--banner-icon", choices=["none", "heart", "sparkles", "party", "star", "camera", "cake", "flower", "ring"], default="none")
+    parser.add_argument("--banner-color", default="#e11d48", help="Banner background color hex (e.g. #e11d48)")
+    parser.add_argument("--banner-text-color", default="#ffffff", help="Banner text color hex (e.g. #ffffff)")
+    parser.add_argument("--banner-x", type=float, default=0.0, help="Banner X position (-1.0 to 1.0)")
+    parser.add_argument("--banner-y", type=float, default=0.68, help="Banner Y position (-1.0 to 1.0)")
+    parser.add_argument("--banner-scale", type=float, default=1.0, help="Banner scale multiplier")
+    parser.add_argument("--banner-rot", type=float, default=0.0, help="Banner rotation degrees")
     args, _ = parser.parse_known_args()
 
     if getattr(args, "serve", False):
@@ -980,6 +1304,17 @@ def main():
         sticker_scale=getattr(args, "sticker_scale", 1.0),
         sticker_opacity=getattr(args, "sticker_opacity", 1.0),
         sticker_rot=getattr(args, "sticker_rot", 0.0),
+        sticker_pos_x=getattr(args, "sticker_x", 0.65),
+        sticker_pos_y=getattr(args, "sticker_y", 0.65),
+        banner_text=getattr(args, "banner_text", ""),
+        banner_style=getattr(args, "banner_style", "none"),
+        banner_icon=getattr(args, "banner_icon", "none"),
+        banner_bg_color=getattr(args, "banner_color", "#e11d48"),
+        banner_text_color=getattr(args, "banner_text_color", "#ffffff"),
+        banner_pos_x=getattr(args, "banner_x", 0.0),
+        banner_pos_y=getattr(args, "banner_y", 0.68),
+        banner_scale=getattr(args, "banner_scale", 1.0),
+        banner_rotation=getattr(args, "banner_rot", 0.0),
     )
     result = client.print_planar_rgb(
         planar,

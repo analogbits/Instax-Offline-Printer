@@ -229,6 +229,51 @@ Bring the nostalgic warmth, chemical quirks, and physical characteristics of vin
 
 ---
 
+## 🎨 Hand-Drawn Doodle Stickers, Artistic Frames & Custom Banner Maker
+### 100% Royalty-Free Vector Math — Zero Proprietary Assets
+
+Every application across the suite (Web Bluetooth, Web Wi-Fi Direct, native macOS SwiftUI apps, Linux & Windows GUIs/CLIs) includes an extensive creative decoration studio engineered entirely with procedural vector math:
+
+* **💖 Romance & Love Doodle Stickers:**
+  * Hand-lettered cursive *"love"* calligraphy badge
+  * Bold distressed *"I LOVE YOU"* typographic block
+  * Intertwined cursive *"forever"* in ribbon heart
+  * Sketchy hand-drawn scribble heart & winged angel heart
+  * Romantic love letter envelope with wax seal & heart seal
+  * Radiating / bursting doodle heart with speed lines
+  * Floating heart-shaped helium balloon bouquet
+  * Cupid's arrow piercing heart & anatomical finger "heart hands"
+  * Continuous looping infinity ribbon heart
+* **🎉 Seasonal & Celebration Doodle Stickers:**
+  * Multi-tier birthday cake with burning candles & pennant bunting garland
+  * *"Happy Holidays"* gold starburst emblem & *"Season's Greetings"* holly wreath
+  * Decorated Christmas evergreen tree with star topper & holiday hanging stockings
+  * Friendly Halloween ghost with pointed witch hat, glowing jack-o'-lantern & flying bats
+  * Summer beach flip-flops, spiral seashells, cherry blossom petals & mimosa blooms
+* **🖼️ 18 Decorative Film Frames (Classic & Artistic):**
+  * Classic White Border, Obsidian Black Matte, Rainbow Spectrum, Sunset Ombre
+  * 35mm Vintage Film Sprockets, Metallic Gold Foil, Rose Gold Shimmer, Pastel Candy Geometric, Scalloped Postage Stamp
+  * **Baroque Filigree Lace:** Victorian lace border with delicate corner flourishes and oval cameo framing
+  * **Wedding Botanical Floral:** Elegant olive green vine brackets with coral pink florets and soft mint leaves
+  * **Leaded Stained Glass Mosaic:** Multi-color jewel-tone glass border (ruby, sapphire, amber, emerald, amethyst) with dark lead came outlines
+  * **Glowing Golden Bokeh & Sparkles:** Luminous circular light orbs and four-point cross sparkles
+  * **Night Sky Fireworks Burst:** Multi-colored radial starburst pyrotechnic explosions
+  * **Hanging Twin Hearts Garland:** Delicate overhead string garland with dangling twin-heart beads
+  * **Festive Pine & Berry Garland:** Deep forest green pine boughs with holiday red winterberry clusters
+  * **Autumn Botanical Leaves:** Warm russet, maple gold, and burnt orange autumn foliage border
+* **🎯 Free Canvas Positioning & Interactive Dragging:**
+  * Drag stickers, custom overlay images, and custom banners freely anywhere across the photo canvas using intuitive mouse or touch dragging.
+  * Direct numeric **X & Y Offset sliders** (`-1.0` to `+1.0`) with live sub-pixel coordinate mapping for precision placement across all canvas aspect ratios (Square, Wide, Mini).
+  * Scale multipliers (`0.10×` to `2.50×`), opacity transparency (`10%` to `100%`), and continuous `360°` rotation dials (`-180°` to `+180°`).
+* **🎀 Custom Banner Maker:**
+  * Create personalized typographic ribbons, banners, and badges with your own custom text!
+  * **6 Banner Styles:** 3D Folded Swallowtail Ribbon, Calligraphy Brush Underline, Frosted Pill Badge, Vintage Luggage Tag, Postal Rubber Cancellation Stamp, and Triangle Bunting Garland.
+  * **Icon Accents:** Heart (❤️), Sparkles (✨), Party Popper (🎉), Star (⭐), Camera (📸), Cake (🎂), Cherry Blossom (🌸), Ring (💍).
+  * **Color Customization:** Dedicated color pickers for banner background and text colors.
+  * **Independent Transform Controls:** Free X/Y canvas placement, scaling, and rotation.
+
+---
+
 ## 🖨 Supported Printer Models & Formats
 
 | Model | Connection Protocol | Image Canvas Resolution | Payload Format & Buffer | Format Aspect |

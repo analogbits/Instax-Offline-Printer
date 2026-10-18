@@ -1278,6 +1278,7 @@ struct LegacyMainStudioView: View {
                 set: { vm.options.frameStyle = $0; vm.refreshPreview() }
             )) {
                 Text("None (Full Bleed)").tag("none")
+                Divider()
                 Text("⚪ Classic White Film Frame").tag("classic_white")
                 Text("⚫ Obsidian Black Film Frame").tag("obsidian_black")
                 Text("🌈 Rainbow Spectrum Gradient").tag("rainbow_gradient")
@@ -1287,6 +1288,15 @@ struct LegacyMainStudioView: View {
                 Text("✨ Rose Gold Foil").tag("rose_gold")
                 Text("🍬 Pastel Candy Geometric").tag("pastel_pop")
                 Text("✉️ Scalloped Postage Stamp").tag("postage_stamp")
+                Divider()
+                Text("⚜️ Baroque Filigree Oval").tag("baroque_filigree")
+                Text("🌿 Wedding Floral Corner Brackets").tag("wedding_corners")
+                Text("💎 Stained Glass Leaded Mosaic").tag("stained_glass")
+                Text("✨ Glowing Bokeh & Sparkles").tag("bokeh_sparkles")
+                Text("🎆 Fireworks Celebration").tag("fireworks_celebration")
+                Text("💕 Hanging Twin Hearts Garland").tag("twin_hearts_garland")
+                Text("🎄 Holiday Pine & Bow Garland").tag("holiday_garland")
+                Text("🍂 Autumn Botanical Foliage").tag("botanical_foliage")
             }
             .pickerStyle(.menu)
 
@@ -1301,6 +1311,37 @@ struct LegacyMainStudioView: View {
                 set: { vm.options.sticker = $0; vm.refreshPreview() }
             )) {
                 Text("None (No Sticker)").tag("none")
+                Divider()
+                Group {
+                    Text("💖 \"love\" Calligraphy Brush").tag("love_script")
+                    Text("❤️ \"I LOVE YOU\" Hearts").tag("i_love_you")
+                    Text("♾️ \"forever\" Script Heart").tag("forever_heart")
+                    Text("✏️ Sketched Scribble Heart").tag("sketchy_heart")
+                    Text("🪽 Angel Winged Heart").tag("winged_heart")
+                    Text("💌 Love Letter & Red Heart").tag("love_envelope")
+                    Text("🌟 Radiant Bursting Heart").tag("shining_heart")
+                    Text("🎈 Trio Heart Balloons").tag("heart_balloons")
+                    Text("💘 Cupid Pierced Arrow Heart").tag("heart_arrow")
+                    Text("🫶 Heart Hands Gesture").tag("heart_hands")
+                    Text("➰ Continuous Ribbon Heart").tag("looping_heart")
+                }
+                Divider()
+                Group {
+                    Text("🎂 Birthday Cake with Candles").tag("birthday_cake_doodle")
+                    Text("🚩 Party Pennant Bunting").tag("birthday_bunting")
+                    Text("✨ \"Happy Holidays\" Gold").tag("happy_holidays_gold")
+                    Text("🌿 \"Season's Greetings\" Wreath").tag("season_greetings")
+                    Text("🎄 Decorated Holiday Tree").tag("xmas_tree")
+                    Text("🍒 Winter Holly & Berries").tag("holly_berries")
+                    Text("🧦 Hanging Holiday Stockings").tag("christmas_stockings")
+                    Text("👻 Friendly Ghost & Hat").tag("halloween_ghost")
+                    Text("🎃 Jack-o'-Lantern Pumpkin").tag("jack_o_lantern")
+                    Text("🦇 Flying Night Bats").tag("flying_bats")
+                    Text("🩴 Summer Beach Sandals").tag("summer_flipflops")
+                    Text("🐚 Scallop Shell & Starfish").tag("seashells")
+                    Text("🌸 Sakura Blossom Branch").tag("cherry_blossoms")
+                    Text("🌾 Golden Mimosa Blossom").tag("mimosa")
+                }
                 Divider()
                 Group {
                     Text("🎉 Party Popper").tag("party_popper")
@@ -1354,12 +1395,12 @@ struct LegacyMainStudioView: View {
             HStack(spacing: 5) {
                 Button("✨") { vm.options.sticker = "sparkles"; vm.refreshPreview() }
                 Button("❤️") { vm.options.sticker = "heart"; vm.refreshPreview() }
+                Button("💖") { vm.options.sticker = "love_script"; vm.refreshPreview() }
+                Button("🎂") { vm.options.sticker = "birthday_cake_doodle"; vm.refreshPreview() }
                 Button("📸") { vm.options.sticker = "camera"; vm.refreshPreview() }
                 Button("🎉") { vm.options.sticker = "party_popper"; vm.refreshPreview() }
-                Button("🌴") { vm.options.sticker = "palm_tree"; vm.refreshPreview() }
-                Button("🌸") { vm.options.sticker = "cherry_blossom"; vm.refreshPreview() }
-                Button("☕️") { vm.options.sticker = "coffee"; vm.refreshPreview() }
-                Button("🕶️") { vm.options.sticker = "sunglasses"; vm.refreshPreview() }
+                Button("🎄") { vm.options.sticker = "xmas_tree"; vm.refreshPreview() }
+                Button("🌸") { vm.options.sticker = "cherry_blossoms"; vm.refreshPreview() }
                 Spacer()
                 if vm.options.sticker != "none" {
                     Button("Clear") { vm.options.sticker = "none"; vm.refreshPreview() }
@@ -1417,8 +1458,39 @@ struct LegacyMainStudioView: View {
                 Text("Center").tag("center")
                 Text("Bottom-Center").tag("bottomCenter")
                 Text("Top-Center").tag("topCenter")
+                Text("✋ Free Move / Drag Anywhere").tag("custom")
             }
             .pickerStyle(.menu)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Sticker Horizontal (X)")
+                        .font(.caption)
+                    Spacer()
+                    Text("\(Int(vm.options.stickerX * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.stickerX },
+                    set: { vm.options.stickerX = $0; vm.refreshPreview() }
+                ), in: -1.0...1.0, step: 0.02)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Sticker Vertical (Y)")
+                        .font(.caption)
+                    Spacer()
+                    Text("\(Int(vm.options.stickerY * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.stickerY },
+                    set: { vm.options.stickerY = $0; vm.refreshPreview() }
+                ), in: -1.0...1.0, step: 0.02)
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
@@ -1465,7 +1537,109 @@ struct LegacyMainStudioView: View {
                 ), in: -45.0...45.0, step: 5.0)
             }
 
-            Button("Reset Stickers & Borders") {
+            Divider()
+
+            Text("CUSTOM BANNER MAKER")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.secondary)
+
+            TextField("Banner text (e.g. Best Friends, Summer '26)...", text: Binding(
+                get: { vm.options.bannerText },
+                set: { vm.options.bannerText = $0; vm.refreshPreview() }
+            ))
+            .textFieldStyle(.roundedBorder)
+
+            Picker("Banner Style", selection: Binding(
+                get: { vm.options.bannerStyle },
+                set: { vm.options.bannerStyle = $0; vm.refreshPreview() }
+            )) {
+                Text("None (No Banner)").tag("none")
+                Text("🎀 3D Folded Swallowtail Ribbon").tag("ribbon")
+                Text("✒️ Calligraphy Brush Stroke").tag("calligraphy")
+                Text("💊 Modern Frosted Pill Badge").tag("pill")
+                Text("🏷️ Vintage Luggage Tag").tag("tag")
+                Text("📮 Postal Cancellation Stamp").tag("stamp")
+                Text("🚩 Triangle Bunting Garland").tag("garland")
+            }
+            .pickerStyle(.menu)
+
+            Picker("Icon Badge", selection: Binding(
+                get: { vm.options.bannerIcon },
+                set: { vm.options.bannerIcon = $0; vm.refreshPreview() }
+            )) {
+                Text("None").tag("none")
+                Text("❤️ Heart").tag("heart")
+                Text("✨ Sparkles").tag("sparkles")
+                Text("🎉 Party").tag("party")
+                Text("⭐ Star").tag("star")
+                Text("📸 Camera").tag("camera")
+                Text("🎂 Birthday Cake").tag("cake")
+                Text("🌸 Flower").tag("flower")
+                Text("💍 Ring").tag("ring")
+            }
+            .pickerStyle(.menu)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Banner Horizontal (X)")
+                        .font(.caption)
+                    Spacer()
+                    Text("\(Int(vm.options.bannerX * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.bannerX },
+                    set: { vm.options.bannerX = $0; vm.refreshPreview() }
+                ), in: -1.0...1.0, step: 0.02)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Banner Vertical (Y)")
+                        .font(.caption)
+                    Spacer()
+                    Text("\(Int(vm.options.bannerY * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.bannerY },
+                    set: { vm.options.bannerY = $0; vm.refreshPreview() }
+                ), in: -1.0...1.0, step: 0.02)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Banner Scale")
+                        .font(.caption)
+                    Spacer()
+                    Text("\(Int(vm.options.bannerScale * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.bannerScale },
+                    set: { vm.options.bannerScale = $0; vm.refreshPreview() }
+                ), in: 0.3...2.0, step: 0.05)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Banner Rotation")
+                        .font(.caption)
+                    Spacer()
+                    Text("\(Int(vm.options.bannerRotation))°")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.bannerRotation },
+                    set: { vm.options.bannerRotation = $0; vm.refreshPreview() }
+                ), in: -45.0...45.0, step: 5.0)
+            }
+
+            Button("Reset All Decorations") {
                 vm.options.frameStyle = "none"
                 vm.options.sticker = "none"
                 vm.options.stickerImage = nil
@@ -1473,6 +1647,15 @@ struct LegacyMainStudioView: View {
                 vm.options.stickerScale = 0.25
                 vm.options.stickerOpacity = 1.0
                 vm.options.stickerRotation = 0.0
+                vm.options.stickerX = 0.65
+                vm.options.stickerY = 0.65
+                vm.options.bannerText = ""
+                vm.options.bannerStyle = "none"
+                vm.options.bannerIcon = "none"
+                vm.options.bannerX = 0.0
+                vm.options.bannerY = 0.68
+                vm.options.bannerScale = 1.0
+                vm.options.bannerRotation = 0.0
                 vm.refreshPreview()
             }
             .controlSize(.small)

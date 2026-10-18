@@ -90,3 +90,12 @@ The Web Studio includes a built-in **`[📶 Wi-Fi Test / Points]`** diagnostic m
 * Probes TCP port `8080` at `192.168.0.251` to verify physical Instax SHARE hardware responsiveness.
 * Tests the built-in Virtual SP-1/2/3 Simulator at `127.0.0.1:18080` for safe zero-film testing.
 
+---
+
+## 🎨 Creative Decoration Studio: Doodle Stickers, Frames & Custom Banners
+* **💖 Romance & Love Doodles:** "love" calligraphy, distressed "I LOVE YOU", "forever" ribbon heart, scribble heart, winged heart, love letter envelope, radiating doodle heart, heart balloons, Cupid's arrow, and heart hands.
+* **🎉 Seasonal Celebrations:** Birthday cake with burning candles, bunting garland, "Happy Holidays" starburst, "Season's Greetings" wreath, Christmas tree, stockings, friendly ghost, jack-o'-lantern, bats, summer flip-flops, seashells, cherry blossoms, and mimosa.
+* **🖼️ 18 Decorative Frames:** Baroque filigree lace oval, wedding botanical corners, stained glass mosaic, golden bokeh sparkles, night fireworks, hanging twin hearts garland, holiday pine garland, autumn foliage, sprocket 35mm, gold foil, rose gold, postage stamp, and classic borders.
+* **🎯 Free Canvas Positioning:** Drag any sticker or banner freely on the preview canvas, or use fine-grain numeric X & Y offset sliders (`-1.0` to `+1.0`) with scale, opacity, and 360° rotation.
+* **🎀 Custom Banner Maker:** 6 styles (3D folded ribbon, calligraphy brush, frosted pill badge, luggage tag, postal stamp, bunting garland), icon accents (❤️, ✨, 🎉, ⭐, 📸, 🎂, 🌸, 💍), custom text, and custom background & text colors.
+

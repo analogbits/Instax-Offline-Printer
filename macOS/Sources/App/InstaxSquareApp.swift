@@ -432,6 +432,19 @@ final class InstaxAppViewModel: ObservableObject {
     @Published var stickerScale: Double = 0.25 { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var stickerOpacity: Double = 1.0 { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var stickerRotation: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var stickerX: Double = 0.65 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var stickerY: Double = 0.65 { didSet { if !isLoadingSelection { updatePreview() } } }
+
+    // Custom Banner Maker
+    @Published var bannerText: String = "" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var bannerStyle: String = "none" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var bannerIcon: String = "none" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var bannerBgColor: String = "#e11d48" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var bannerTextColor: String = "#ffffff" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var bannerX: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var bannerY: Double = 0.68 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var bannerScale: Double = 1.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var bannerRotation: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
 
     // Bulk Print Queue State
     @Published var printQueue: [QueuedPhotoItem] = []
@@ -724,6 +737,17 @@ final class InstaxAppViewModel: ObservableObject {
         opts.stickerScale = stickerScale
         opts.stickerOpacity = stickerOpacity
         opts.stickerRotation = stickerRotation
+        opts.stickerX = stickerX
+        opts.stickerY = stickerY
+        opts.bannerText = bannerText
+        opts.bannerStyle = bannerStyle
+        opts.bannerIcon = bannerIcon
+        opts.bannerBgColor = bannerBgColor
+        opts.bannerTextColor = bannerTextColor
+        opts.bannerX = bannerX
+        opts.bannerY = bannerY
+        opts.bannerScale = bannerScale
+        opts.bannerRotation = bannerRotation
         return opts
     }
 
@@ -3045,6 +3069,7 @@ struct InstaxMainView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Picker("Frame Style", selection: $vm.frameStyle) {
                         Text("None (Full Bleed)").tag("none")
+                        Divider()
                         Text("⚪ Classic White Film Frame").tag("classic_white")
                         Text("⚫ Obsidian Black Film Frame").tag("obsidian_black")
                         Text("🌈 Rainbow Spectrum Gradient").tag("rainbow_gradient")
@@ -3054,6 +3079,15 @@ struct InstaxMainView: View {
                         Text("✨ Rose Gold Foil").tag("rose_gold")
                         Text("🍬 Pastel Candy Geometric").tag("pastel_pop")
                         Text("✉️ Scalloped Postage Stamp").tag("postage_stamp")
+                        Divider()
+                        Text("⚜️ Baroque Filigree Oval").tag("baroque_filigree")
+                        Text("🌿 Wedding Floral Corner Brackets").tag("wedding_corners")
+                        Text("💎 Stained Glass Leaded Mosaic").tag("stained_glass")
+                        Text("✨ Glowing Bokeh & Sparkles").tag("bokeh_sparkles")
+                        Text("🎆 Fireworks Celebration").tag("fireworks_celebration")
+                        Text("💕 Hanging Twin Hearts Garland").tag("twin_hearts_garland")
+                        Text("🎄 Holiday Pine & Bow Garland").tag("holiday_garland")
+                        Text("🍂 Autumn Botanical Foliage").tag("botanical_foliage")
                     }
                     .pickerStyle(.menu)
 
@@ -3069,6 +3103,37 @@ struct InstaxMainView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Picker("Sticker", selection: $vm.sticker) {
                         Text("None (No Sticker)").tag("none")
+                        Divider()
+                        Group {
+                            Text("💖 \"love\" Calligraphy Brush").tag("love_script")
+                            Text("❤️ \"I LOVE YOU\" Hearts").tag("i_love_you")
+                            Text("♾️ \"forever\" Script Heart").tag("forever_heart")
+                            Text("✏️ Sketched Scribble Heart").tag("sketchy_heart")
+                            Text("🪽 Angel Winged Heart").tag("winged_heart")
+                            Text("💌 Love Letter & Red Heart").tag("love_envelope")
+                            Text("🌟 Radiant Bursting Heart").tag("shining_heart")
+                            Text("🎈 Trio Heart Balloons").tag("heart_balloons")
+                            Text("💘 Cupid Pierced Arrow Heart").tag("heart_arrow")
+                            Text("🫶 Heart Hands Gesture").tag("heart_hands")
+                            Text("➰ Continuous Ribbon Heart").tag("looping_heart")
+                        }
+                        Divider()
+                        Group {
+                            Text("🎂 Birthday Cake with Candles").tag("birthday_cake_doodle")
+                            Text("🚩 Party Pennant Bunting").tag("birthday_bunting")
+                            Text("✨ \"Happy Holidays\" Gold").tag("happy_holidays_gold")
+                            Text("🌿 \"Season's Greetings\" Wreath").tag("season_greetings")
+                            Text("🎄 Decorated Holiday Tree").tag("xmas_tree")
+                            Text("🍒 Winter Holly & Berries").tag("holly_berries")
+                            Text("🧦 Hanging Holiday Stockings").tag("christmas_stockings")
+                            Text("👻 Friendly Ghost & Hat").tag("halloween_ghost")
+                            Text("🎃 Jack-o'-Lantern Pumpkin").tag("jack_o_lantern")
+                            Text("🦇 Flying Night Bats").tag("flying_bats")
+                            Text("🩴 Summer Beach Sandals").tag("summer_flipflops")
+                            Text("🐚 Scallop Shell & Starfish").tag("seashells")
+                            Text("🌸 Sakura Blossom Branch").tag("cherry_blossoms")
+                            Text("🌾 Golden Mimosa Blossom").tag("mimosa")
+                        }
                         Divider()
                         Group {
                             Text("🎉 Party Popper").tag("party_popper")
@@ -3122,12 +3187,12 @@ struct InstaxMainView: View {
                     HStack(spacing: 6) {
                         Button("✨") { vm.sticker = "sparkles" }
                         Button("❤️") { vm.sticker = "heart" }
+                        Button("💖") { vm.sticker = "love_script" }
+                        Button("🎂") { vm.sticker = "birthday_cake_doodle" }
                         Button("📸") { vm.sticker = "camera" }
                         Button("🎉") { vm.sticker = "party_popper" }
-                        Button("🌴") { vm.sticker = "palm_tree" }
-                        Button("🌸") { vm.sticker = "cherry_blossom" }
-                        Button("☕️") { vm.sticker = "coffee" }
-                        Button("🕶️") { vm.sticker = "sunglasses" }
+                        Button("🎄") { vm.sticker = "xmas_tree" }
+                        Button("🌸") { vm.sticker = "cherry_blossoms" }
                         Spacer()
                         if vm.sticker != "none" {
                             Button("Clear") { vm.sticker = "none" }
@@ -3181,7 +3246,7 @@ struct InstaxMainView: View {
                 .padding(6)
             }
 
-            // 4. Transform & Layout (Position, Size, Opacity, Rotation)
+            // 4. Transform & Layout (Position, Free Move, Size, Opacity, Rotation)
             GroupBox(label: Label("Sticker Transform & Placement", systemImage: "arrow.up.and.down.and.arrow.left.and.right")) {
                 VStack(alignment: .leading, spacing: 10) {
                     Picker("Position", selection: $vm.stickerPosition) {
@@ -3192,8 +3257,21 @@ struct InstaxMainView: View {
                         Text("Center").tag("center")
                         Text("Bottom-Center").tag("bottomCenter")
                         Text("Top-Center").tag("topCenter")
+                        Text("✋ Free Move / Drag Anywhere").tag("custom")
                     }
                     .pickerStyle(.menu)
+
+                    HStack {
+                        Text("Sticker X: \(Int(vm.stickerX * 100))%")
+                            .font(.caption)
+                        Slider(value: $vm.stickerX, in: -1.0...1.0, step: 0.02)
+                    }
+
+                    HStack {
+                        Text("Sticker Y: \(Int(vm.stickerY * 100))%")
+                            .font(.caption)
+                        Slider(value: $vm.stickerY, in: -1.0...1.0, step: 0.02)
+                    }
 
                     HStack {
                         Text("Size: \(Int(vm.stickerScale * 100))%")
@@ -3212,8 +3290,65 @@ struct InstaxMainView: View {
                             .font(.caption)
                         Slider(value: $vm.stickerRotation, in: -45.0...45.0, step: 5.0)
                     }
+                }
+                .padding(6)
+            }
 
-                    Button("Reset Stickers & Borders") {
+            // 5. Custom Banner Maker Group
+            GroupBox(label: Label("Custom Banner Maker", systemImage: "sparkles.rectangle.stack")) {
+                VStack(alignment: .leading, spacing: 10) {
+                    TextField("Banner text (e.g. Best Friends, Summer '26)...", text: $vm.bannerText)
+                        .textFieldStyle(.roundedBorder)
+
+                    Picker("Banner Style", selection: $vm.bannerStyle) {
+                        Text("None (No Banner)").tag("none")
+                        Text("🎀 3D Folded Swallowtail Ribbon").tag("ribbon")
+                        Text("✒️ Calligraphy Brush Stroke").tag("calligraphy")
+                        Text("💊 Modern Frosted Pill Badge").tag("pill")
+                        Text("🏷️ Vintage Luggage Tag").tag("tag")
+                        Text("📮 Postal Cancellation Stamp").tag("stamp")
+                        Text("🚩 Triangle Bunting Garland").tag("garland")
+                    }
+                    .pickerStyle(.menu)
+
+                    Picker("Icon Badge", selection: $vm.bannerIcon) {
+                        Text("None").tag("none")
+                        Text("❤️ Heart").tag("heart")
+                        Text("✨ Sparkles").tag("sparkles")
+                        Text("🎉 Party").tag("party")
+                        Text("⭐ Star").tag("star")
+                        Text("📸 Camera").tag("camera")
+                        Text("🎂 Birthday Cake").tag("cake")
+                        Text("🌸 Flower").tag("flower")
+                        Text("💍 Ring").tag("ring")
+                    }
+                    .pickerStyle(.menu)
+
+                    HStack {
+                        Text("Banner X: \(Int(vm.bannerX * 100))%")
+                            .font(.caption)
+                        Slider(value: $vm.bannerX, in: -1.0...1.0, step: 0.02)
+                    }
+
+                    HStack {
+                        Text("Banner Y: \(Int(vm.bannerY * 100))%")
+                            .font(.caption)
+                        Slider(value: $vm.bannerY, in: -1.0...1.0, step: 0.02)
+                    }
+
+                    HStack {
+                        Text("Scale: \(Int(vm.bannerScale * 100))%")
+                            .font(.caption)
+                        Slider(value: $vm.bannerScale, in: 0.3...2.0, step: 0.05)
+                    }
+
+                    HStack {
+                        Text("Rotation: \(Int(vm.bannerRotation))°")
+                            .font(.caption)
+                        Slider(value: $vm.bannerRotation, in: -45.0...45.0, step: 5.0)
+                    }
+
+                    Button("Reset All Decorations") {
                         vm.frameStyle = "none"
                         vm.sticker = "none"
                         vm.customStickerImage = nil
@@ -3222,6 +3357,15 @@ struct InstaxMainView: View {
                         vm.stickerScale = 0.25
                         vm.stickerOpacity = 1.0
                         vm.stickerRotation = 0.0
+                        vm.stickerX = 0.65
+                        vm.stickerY = 0.65
+                        vm.bannerText = ""
+                        vm.bannerStyle = "none"
+                        vm.bannerIcon = "none"
+                        vm.bannerX = 0.0
+                        vm.bannerY = 0.68
+                        vm.bannerScale = 1.0
+                        vm.bannerRotation = 0.0
                     }
                     .controlSize(.small)
                 }

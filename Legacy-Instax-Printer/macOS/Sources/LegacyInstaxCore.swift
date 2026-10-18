@@ -591,6 +591,19 @@ public struct LegacyPrintOptions {
     public var stickerScale: Double = 0.25
     public var stickerOpacity: Double = 1.0
     public var stickerRotation: Double = 0.0
+    public var stickerX: Double = 0.65
+    public var stickerY: Double = 0.65
+
+    // Custom Banner Maker
+    public var bannerText: String = ""
+    public var bannerStyle: String = "none"
+    public var bannerIcon: String = "none"
+    public var bannerBgColor: String = "#e11d48"
+    public var bannerTextColor: String = "#ffffff"
+    public var bannerX: Double = 0.0
+    public var bannerY: Double = 0.68
+    public var bannerScale: Double = 1.0
+    public var bannerRotation: Double = 0.0
 
     public init() {}
 
@@ -710,6 +723,9 @@ public enum LegacyImageProcessor {
 
         // Decorative Film Borders & Frames
         drawDecorativeFrame(ctx: ctx, width: CGFloat(targetW), height: CGFloat(targetH), style: options.frameStyle)
+
+        // Custom Banner Maker
+        drawCustomBanner(ctx: ctx, width: CGFloat(targetW), height: CGFloat(targetH), options: options)
 
         // Sticker / Custom Image Overlay
         drawStickerOverlay(ctx: ctx, width: CGFloat(targetW), height: CGFloat(targetH), options: options)
@@ -1304,7 +1320,34 @@ public enum LegacyImageProcessor {
         "peace": "✌️",
         "lightning": "⚡️",
         "music": "🎵",
-        "fire": "🔥"
+        "fire": "🔥",
+        // Hand-Drawn Love & Romance Doodles
+        "love_script": "💖",
+        "i_love_you": "❤️",
+        "forever_heart": "♾️",
+        "sketchy_heart": "✏️",
+        "winged_heart": "🪽",
+        "love_envelope": "💌",
+        "shining_heart": "🌟",
+        "heart_balloons": "🎈",
+        "heart_arrow": "💘",
+        "heart_hands": "🫶",
+        "looping_heart": "➰",
+        // Celebrations & Holidays Doodles
+        "birthday_cake_doodle": "🎂",
+        "birthday_bunting": "🚩",
+        "happy_holidays_gold": "✨",
+        "season_greetings": "🌿",
+        "xmas_tree": "🎄",
+        "holly_berries": "🍒",
+        "christmas_stockings": "🧦",
+        "halloween_ghost": "👻",
+        "jack_o_lantern": "🎃",
+        "flying_bats": "🦇",
+        "summer_flipflops": "🩴",
+        "seashells": "🐚",
+        "cherry_blossoms": "🌸",
+        "mimosa": "🌾"
     ]
 
     public static func drawDecorativeFrame(ctx: CGContext, width: CGFloat, height: CGFloat, style: String) {
@@ -1501,6 +1544,257 @@ public enum LegacyImageProcessor {
                 ctx.fillEllipse(in: CGRect(x: width - r, y: y - r, width: 2 * r, height: 2 * r))
                 y += d
             }
+        } else if style == "baroque_filigree" {
+            // Baroque Filigree Oval & Ornate Corner Scrolls
+            let bw = round(min(width, height) * 0.07)
+            ctx.setFillColor(red: 253/255.0, green: 242/255.0, blue: 248/255.0, alpha: 0.85)
+            ctx.fill([
+                CGRect(x: 0, y: height - bw, width: width, height: bw),
+                CGRect(x: 0, y: 0, width: bw, height: height),
+                CGRect(x: width - bw, y: 0, width: bw, height: height),
+                CGRect(x: 0, y: 0, width: width, height: bw)
+            ])
+            ctx.setStrokeColor(red: 190/255.0, green: 24/255.0, blue: 93/255.0, alpha: 0.8)
+            ctx.setLineWidth(2.0)
+            ctx.strokeEllipse(in: CGRect(x: bw, y: bw, width: width - 2 * bw, height: height - 2 * bw))
+            // Corner flourishes
+            func drawCornerFiligree(cx: CGFloat, cy: CGFloat, rot: CGFloat) {
+                ctx.saveGState()
+                ctx.translateBy(x: cx, y: cy)
+                ctx.rotate(by: rot)
+                ctx.beginPath()
+                ctx.move(to: CGPoint(x: 0, y: 0))
+                ctx.addQuadCurve(to: CGPoint(x: 35, y: 35), control: CGPoint(x: 20, y: 0))
+                ctx.addQuadCurve(to: CGPoint(x: 0, y: 0), control: CGPoint(x: 0, y: 20))
+                ctx.strokePath()
+                ctx.strokeEllipse(in: CGRect(x: 14, y: 14, width: 8, height: 8))
+                ctx.restoreGState()
+            }
+            drawCornerFiligree(cx: bw, cy: height - bw, rot: 0)
+            drawCornerFiligree(cx: width - bw, cy: height - bw, rot: -.pi / 2.0)
+            drawCornerFiligree(cx: width - bw, cy: bw, rot: .pi)
+            drawCornerFiligree(cx: bw, cy: bw, rot: .pi / 2.0)
+
+        } else if style == "wedding_corners" {
+            // Delicate Wedding Floral Corner Brackets
+            let pad = round(min(width, height) * 0.05)
+            ctx.setStrokeColor(red: 74/255.0, green: 122/255.0, blue: 95/255.0, alpha: 0.75)
+            ctx.setLineWidth(1.8)
+            func drawFloralCorner(cx: CGFloat, cy: CGFloat, sx: CGFloat, sy: CGFloat) {
+                ctx.saveGState()
+                ctx.translateBy(x: cx, y: cy)
+                ctx.scaleBy(x: sx, y: sy)
+                ctx.beginPath()
+                ctx.move(to: CGPoint(x: 0, y: 55))
+                ctx.addLine(to: CGPoint(x: 0, y: 12))
+                ctx.addQuadCurve(to: CGPoint(x: 12, y: 0), control: CGPoint(x: 0, y: 0))
+                ctx.addLine(to: CGPoint(x: 55, y: 0))
+                ctx.strokePath()
+                ctx.setFillColor(red: 251/255.0, green: 113/255.0, blue: 133/255.0, alpha: 0.9)
+                ctx.fillEllipse(in: CGRect(x: 6, y: 6, width: 14, height: 14))
+                ctx.setFillColor(red: 134/255.0, green: 239/255.0, blue: 172/255.0, alpha: 0.85)
+                ctx.fillEllipse(in: CGRect(x: 20, y: 4, width: 8, height: 5))
+                ctx.fillEllipse(in: CGRect(x: 4, y: 20, width: 5, height: 8))
+                ctx.restoreGState()
+            }
+            drawFloralCorner(cx: pad, cy: height - pad, sx: 1, sy: -1)
+            drawFloralCorner(cx: width - pad, cy: height - pad, sx: -1, sy: -1)
+            drawFloralCorner(cx: pad, cy: pad, sx: 1, sy: 1)
+            drawFloralCorner(cx: width - pad, cy: pad, sx: -1, sy: 1)
+
+        } else if style == "stained_glass" {
+            // Leaded Stained Glass Mosaic Border
+            let bw = round(min(width, height) * 0.065)
+            let segW = round(min(width, height) * 0.08)
+            let gemColors: [CGColor] = [
+                CGColor(srgbRed: 239/255.0, green: 68/255.0, blue: 68/255.0, alpha: 0.85),
+                CGColor(srgbRed: 59/255.0, green: 130/255.0, blue: 246/255.0, alpha: 0.85),
+                CGColor(srgbRed: 234/255.0, green: 179/255.0, blue: 8/255.0, alpha: 0.85),
+                CGColor(srgbRed: 34/255.0, green: 197/255.0, blue: 94/255.0, alpha: 0.85),
+                CGColor(srgbRed: 168/255.0, green: 85/255.0, blue: 247/255.0, alpha: 0.85)
+            ]
+            var cIdx = 0
+            var x: CGFloat = 0
+            while x < width {
+                ctx.setFillColor(gemColors[cIdx % gemColors.count])
+                ctx.fill(CGRect(x: x, y: height - bw, width: segW, height: bw))
+                cIdx += 1
+                ctx.setFillColor(gemColors[cIdx % gemColors.count])
+                ctx.fill(CGRect(x: x, y: 0, width: segW, height: bw))
+                cIdx += 1
+                x += segW
+            }
+            var y: CGFloat = bw
+            while y < height - bw {
+                ctx.setFillColor(gemColors[cIdx % gemColors.count])
+                ctx.fill(CGRect(x: 0, y: y, width: bw, height: segW))
+                cIdx += 1
+                ctx.setFillColor(gemColors[cIdx % gemColors.count])
+                ctx.fill(CGRect(x: width - bw, y: y, width: bw, height: segW))
+                cIdx += 1
+                y += segW
+            }
+            ctx.setStrokeColor(red: 24/255.0, green: 24/255.0, blue: 27/255.0, alpha: 1.0)
+            ctx.setLineWidth(2.5)
+            ctx.stroke(CGRect(x: 0, y: 0, width: width, height: height))
+            ctx.stroke(CGRect(x: bw, y: bw, width: width - 2 * bw, height: height - 2 * bw))
+
+        } else if style == "bokeh_sparkles" {
+            // Glowing Bokeh & Twinkling Sparkles
+            struct Orb { let x: CGFloat; let y: CGFloat; let r: CGFloat; let color: CGColor }
+            let orbs: [Orb] = [
+                Orb(x: 0.12, y: 0.92, r: 24, color: CGColor(srgbRed: 254/255.0, green: 240/255.0, blue: 138/255.0, alpha: 0.40)),
+                Orb(x: 0.28, y: 0.95, r: 18, color: CGColor(srgbRed: 251/255.0, green: 207/255.0, blue: 232/255.0, alpha: 0.35)),
+                Orb(x: 0.72, y: 0.93, r: 26, color: CGColor(srgbRed: 221/255.0, green: 214/255.0, blue: 254/255.0, alpha: 0.38)),
+                Orb(x: 0.88, y: 0.88, r: 20, color: CGColor(srgbRed: 254/255.0, green: 240/255.0, blue: 138/255.0, alpha: 0.45)),
+                Orb(x: 0.05, y: 0.65, r: 16, color: CGColor(srgbRed: 251/255.0, green: 207/255.0, blue: 232/255.0, alpha: 0.30)),
+                Orb(x: 0.95, y: 0.58, r: 22, color: CGColor(srgbRed: 254/255.0, green: 240/255.0, blue: 138/255.0, alpha: 0.35)),
+                Orb(x: 0.08, y: 0.18, r: 28, color: CGColor(srgbRed: 221/255.0, green: 214/255.0, blue: 254/255.0, alpha: 0.40)),
+                Orb(x: 0.22, y: 0.06, r: 18, color: CGColor(srgbRed: 254/255.0, green: 240/255.0, blue: 138/255.0, alpha: 0.38)),
+                Orb(x: 0.78, y: 0.08, r: 25, color: CGColor(srgbRed: 251/255.0, green: 207/255.0, blue: 232/255.0, alpha: 0.42)),
+                Orb(x: 0.92, y: 0.15, r: 20, color: CGColor(srgbRed: 254/255.0, green: 240/255.0, blue: 138/255.0, alpha: 0.40))
+            ]
+            for o in orbs {
+                ctx.setFillColor(o.color)
+                ctx.fillEllipse(in: CGRect(x: o.x * width - o.r, y: o.y * height - o.r, width: o.r * 2, height: o.r * 2))
+            }
+            func drawStar(sx: CGFloat, sy: CGFloat, rad: CGFloat) {
+                ctx.setFillColor(red: 1, green: 1, blue: 1, alpha: 0.9)
+                let starPath = CGMutablePath()
+                starPath.move(to: CGPoint(x: sx, y: sy - rad))
+                starPath.addQuadCurve(to: CGPoint(x: sx + rad, y: sy), control: CGPoint(x: sx, y: sy))
+                starPath.addQuadCurve(to: CGPoint(x: sx, y: sy + rad), control: CGPoint(x: sx, y: sy))
+                starPath.addQuadCurve(to: CGPoint(x: sx - rad, y: sy), control: CGPoint(x: sx, y: sy))
+                starPath.addQuadCurve(to: CGPoint(x: sx, y: sy - rad), control: CGPoint(x: sx, y: sy))
+                ctx.addPath(starPath)
+                ctx.fillPath()
+            }
+            drawStar(sx: width * 0.18, sy: height * 0.94, rad: 8)
+            drawStar(sx: width * 0.82, sy: height * 0.91, rad: 10)
+            drawStar(sx: width * 0.07, sy: height * 0.35, rad: 7)
+            drawStar(sx: width * 0.93, sy: height * 0.40, rad: 9)
+            drawStar(sx: width * 0.50, sy: height * 0.05, rad: 8)
+
+        } else if style == "fireworks_celebration" {
+            // Fireworks Celebration Corner Starbursts
+            func drawFirework(cx: CGFloat, cy: CGFloat, colors: [CGColor]) {
+                let rays = 12
+                for i in 0..<rays {
+                    let ang = CGFloat(i) / CGFloat(rays) * .pi * 2.0
+                    let len: CGFloat = 35.0 + CGFloat(i % 3) * 15.0
+                    let col = colors[i % colors.count]
+                    ctx.setStrokeColor(col)
+                    ctx.setLineWidth(1.5)
+                    ctx.beginPath()
+                    ctx.move(to: CGPoint(x: cx, y: cy))
+                    ctx.addLine(to: CGPoint(x: cx + cos(ang) * len, y: cy + sin(ang) * len))
+                    ctx.strokePath()
+                    ctx.setFillColor(col)
+                    ctx.fillEllipse(in: CGRect(x: cx + cos(ang) * (len + 4) - 2, y: cy + sin(ang) * (len + 4) - 2, width: 4, height: 4))
+                }
+                ctx.setFillColor(red: 1, green: 1, blue: 1, alpha: 1)
+                ctx.fillEllipse(in: CGRect(x: cx - 3, y: cy - 3, width: 6, height: 6))
+            }
+            let c1 = [CGColor(srgbRed: 251/255.0, green: 191/255.0, blue: 36/255.0, alpha: 1), CGColor(srgbRed: 248/255.0, green: 113/255.0, blue: 113/255.0, alpha: 1), CGColor(srgbRed: 96/255.0, green: 165/255.0, blue: 250/255.0, alpha: 1)]
+            let c2 = [CGColor(srgbRed: 52/255.0, green: 211/255.0, blue: 153/255.0, alpha: 1), CGColor(srgbRed: 251/255.0, green: 191/255.0, blue: 36/255.0, alpha: 1), CGColor(srgbRed: 167/255.0, green: 139/255.0, blue: 250/255.0, alpha: 1)]
+            drawFirework(cx: 60, cy: height - 60, colors: c1)
+            drawFirework(cx: width - 70, cy: height - 70, colors: c2)
+            drawFirework(cx: 80, cy: 80, colors: c2)
+            drawFirework(cx: width - 65, cy: 75, colors: c1)
+
+        } else if style == "twin_hearts_garland" {
+            // Hanging Twin Hearts Garland Wire
+            let garlandY = height - round(height * 0.05)
+            ctx.setStrokeColor(red: 1, green: 1, blue: 1, alpha: 0.65)
+            ctx.setLineWidth(1.5)
+            ctx.beginPath()
+            ctx.move(to: CGPoint(x: 20, y: garlandY))
+            ctx.addCurve(to: CGPoint(x: width - 20, y: garlandY), control1: CGPoint(x: width * 0.33, y: garlandY - 25), control2: CGPoint(x: width * 0.66, y: garlandY - 25))
+            ctx.strokePath()
+
+            let heartCols: [CGColor] = [
+                CGColor(srgbRed: 244/255.0, green: 63/255.0, blue: 94/255.0, alpha: 1),
+                CGColor(srgbRed: 251/255.0, green: 113/255.0, blue: 133/255.0, alpha: 1),
+                CGColor(srgbRed: 253/255.0, green: 164/255.0, blue: 175/255.0, alpha: 1),
+                CGColor(srgbRed: 225/255.0, green: 29/255.0, blue: 72/255.0, alpha: 1)
+            ]
+            let numHearts = 7
+            for i in 0..<numHearts {
+                let t = CGFloat(i) / CGFloat(numHearts - 1)
+                let hx = 20.0 + t * (width - 40.0)
+                let strY = garlandY - 4.0 * 25.0 * t * (1.0 - t)
+                let dropLen: CGFloat = 14.0 + CGFloat(i % 2) * 10.0
+                let hy = strY - dropLen
+
+                ctx.setStrokeColor(red: 1, green: 1, blue: 1, alpha: 0.45)
+                ctx.setLineWidth(1.0)
+                ctx.beginPath()
+                ctx.move(to: CGPoint(x: hx, y: strY))
+                ctx.addLine(to: CGPoint(x: hx, y: hy))
+                ctx.strokePath()
+
+                ctx.setFillColor(heartCols[i % heartCols.count])
+                let hr: CGFloat = 8.0 + CGFloat(i % 2) * 3.0
+                let hp = CGMutablePath()
+                hp.move(to: CGPoint(x: hx, y: hy - hr * 0.7))
+                hp.addCurve(to: CGPoint(x: hx, y: hy + hr * 0.4), control1: CGPoint(x: hx - hr * 1.2, y: hy + hr * 0.4), control2: CGPoint(x: hx - hr * 1.2, y: hy + hr * 1.2))
+                hp.addCurve(to: CGPoint(x: hx, y: hy - hr * 0.7), control1: CGPoint(x: hx + hr * 1.2, y: hy + hr * 1.2), control2: CGPoint(x: hx + hr * 1.2, y: hy + hr * 0.4))
+                ctx.addPath(hp)
+                ctx.fillPath()
+            }
+
+        } else if style == "holiday_garland" {
+            // Holiday Pine & Bow Garland
+            let topY = height - round(height * 0.04)
+            ctx.setStrokeColor(red: 21/255.0, green: 128/255.0, blue: 61/255.0, alpha: 0.9)
+            ctx.setLineWidth(10.0)
+            ctx.beginPath()
+            ctx.move(to: CGPoint(x: 10, y: topY))
+            ctx.addCurve(to: CGPoint(x: width - 10, y: topY), control1: CGPoint(x: width * 0.3, y: topY - 20), control2: CGPoint(x: width * 0.7, y: topY - 20))
+            ctx.strokePath()
+
+            ctx.setFillColor(red: 220/255.0, green: 38/255.0, blue: 38/255.0, alpha: 1.0)
+            var bx: CGFloat = 30
+            while bx < width - 20 {
+                let bt = (bx - 10) / (width - 20)
+                let by = topY - 4.0 * 20.0 * bt * (1.0 - bt)
+                ctx.fillEllipse(in: CGRect(x: bx - 4, y: by - 4, width: 8, height: 8))
+                ctx.fillEllipse(in: CGRect(x: bx + 3, y: by - 1, width: 6, height: 6))
+                bx += 50
+            }
+
+            ctx.setFillColor(red: 185/255.0, green: 28/255.0, blue: 28/255.0, alpha: 1.0)
+            ctx.fillEllipse(in: CGRect(x: width / 2.0 - 7, y: topY - 20 - 7, width: 14, height: 14))
+
+        } else if style == "botanical_foliage" {
+            // Autumn Botanical Leaves & Foliage Frame
+            let leafCols: [CGColor] = [
+                CGColor(srgbRed: 234/255.0, green: 88/255.0, blue: 12/255.0, alpha: 0.85),
+                CGColor(srgbRed: 202/255.0, green: 138/255.0, blue: 4/255.0, alpha: 0.85),
+                CGColor(srgbRed: 180/255.0, green: 83/255.0, blue: 9/255.0, alpha: 0.85),
+                CGColor(srgbRed: 185/255.0, green: 28/255.0, blue: 28/255.0, alpha: 0.85)
+            ]
+            let margin = round(min(width, height) * 0.04)
+            func drawFoliageLeaf(lx: CGFloat, ly: CGFloat, angle: CGFloat, col: CGColor) {
+                ctx.saveGState()
+                ctx.translateBy(x: lx, y: ly)
+                ctx.rotate(by: angle)
+                ctx.setFillColor(col)
+                ctx.beginPath()
+                ctx.move(to: .zero)
+                ctx.addQuadCurve(to: CGPoint(x: 22, y: 0), control: CGPoint(x: 11, y: 9))
+                ctx.addQuadCurve(to: .zero, control: CGPoint(x: 11, y: -9))
+                ctx.fillPath()
+                ctx.restoreGState()
+            }
+            var lx: CGFloat = margin + 15
+            var i = 0
+            while lx < width - margin {
+                drawFoliageLeaf(lx: lx, ly: height - margin, angle: (i % 2 == 0 ? 0.3 : -0.3), col: leafCols[i % leafCols.count])
+                drawFoliageLeaf(lx: lx, ly: margin, angle: .pi + (i % 2 == 0 ? 0.3 : -0.3), col: leafCols[(i + 1) % leafCols.count])
+                lx += 32
+                i += 1
+            }
         }
 
         ctx.restoreGState()
@@ -1517,30 +1811,35 @@ public enum LegacyImageProcessor {
         var cx: CGFloat = width - margin - targetDim / 2.0
         var cy: CGFloat = margin + targetDim / 2.0
 
-        switch options.stickerPosition {
-        case "topLeft":
-            cx = margin + targetDim / 2.0
-            cy = height - margin - targetDim / 2.0
-        case "topRight":
-            cx = width - margin - targetDim / 2.0
-            cy = height - margin - targetDim / 2.0
-        case "bottomLeft":
-            cx = margin + targetDim / 2.0
-            cy = margin + targetDim / 2.0
-        case "bottomRight":
-            cx = width - margin - targetDim / 2.0
-            cy = margin + targetDim / 2.0
-        case "center":
-            cx = width / 2.0
-            cy = height / 2.0
-        case "topCenter":
-            cx = width / 2.0
-            cy = height - margin - targetDim / 2.0
-        case "bottomCenter":
-            cx = width / 2.0
-            cy = margin + targetDim / 2.0
-        default:
-            break
+        if options.stickerPosition == "custom" {
+            cx = width / 2.0 + CGFloat(options.stickerX) * (width / 2.0 - targetDim / 2.0)
+            cy = height / 2.0 - CGFloat(options.stickerY) * (height / 2.0 - targetDim / 2.0)
+        } else {
+            switch options.stickerPosition {
+            case "topLeft":
+                cx = margin + targetDim / 2.0
+                cy = height - margin - targetDim / 2.0
+            case "topRight":
+                cx = width - margin - targetDim / 2.0
+                cy = height - margin - targetDim / 2.0
+            case "bottomLeft":
+                cx = margin + targetDim / 2.0
+                cy = margin + targetDim / 2.0
+            case "bottomRight":
+                cx = width - margin - targetDim / 2.0
+                cy = margin + targetDim / 2.0
+            case "center":
+                cx = width / 2.0
+                cy = height / 2.0
+            case "topCenter":
+                cx = width / 2.0
+                cy = height - margin - targetDim / 2.0
+            case "bottomCenter":
+                cx = width / 2.0
+                cy = margin + targetDim / 2.0
+            default:
+                break
+            }
         }
 
         ctx.saveGState()
@@ -1572,6 +1871,233 @@ public enum LegacyImageProcessor {
             ctx.textMatrix = .identity
             ctx.textPosition = CGPoint(x: -bounds.width / 2.0, y: -bounds.height / 2.0 - bounds.origin.y)
             CTLineDraw(line, ctx)
+        }
+
+        ctx.restoreGState()
+    }
+
+    public static func drawCustomBanner(ctx: CGContext, width: CGFloat, height: CGFloat, options: LegacyPrintOptions) {
+        let text = options.bannerText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty && options.bannerStyle != "none" else { return }
+
+        let iconMap: [String: String] = [
+            "heart": "❤️", "sparkles": "✨", "party": "🎉", "star": "⭐",
+            "camera": "📸", "cake": "🎂", "flower": "🌸", "ring": "💍"
+        ]
+        let icon = iconMap[options.bannerIcon] ?? ""
+        let fullText = icon.isEmpty ? text : "\(icon) \(text)"
+
+        let cx = width / 2.0 + CGFloat(options.bannerX) * (width / 2.0 - 50.0)
+        let cy = height / 2.0 - CGFloat(options.bannerY) * (height / 2.0 - 50.0)
+        let scale = CGFloat(max(0.2, min(3.0, options.bannerScale)))
+
+        func colorFromHex(_ hex: String, alpha: CGFloat = 1.0) -> CGColor {
+            var cString = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            if cString.hasPrefix("#") { cString.removeFirst() }
+            if cString.count == 6 {
+                var rgbValue: UInt64 = 0
+                Scanner(string: cString).scanHexInt64(&rgbValue)
+                return CGColor(srgbRed: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
+                               green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0,
+                               blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
+                               alpha: alpha)
+            }
+            return CGColor(srgbRed: 0.88, green: 0.11, blue: 0.28, alpha: alpha)
+        }
+
+        let bgColor = colorFromHex(options.bannerBgColor)
+        let textColor = colorFromHex(options.bannerTextColor)
+
+        ctx.saveGState()
+        ctx.translateBy(x: cx, y: cy)
+        if options.bannerRotation != 0 {
+            ctx.rotate(by: CGFloat(options.bannerRotation * .pi / 180.0))
+        }
+        ctx.scaleBy(x: scale, y: scale)
+
+        let fontSize: CGFloat = 20.0
+        let font = CTFontCreateWithName("HelveticaNeue-Bold" as CFString, fontSize, nil)
+        let attrs: [NSAttributedString.Key: Any] = [
+            NSAttributedString.Key(kCTFontAttributeName as String): font,
+            NSAttributedString.Key(kCTForegroundColorAttributeName as String): textColor
+        ]
+        let attrStr = NSAttributedString(string: fullText, attributes: attrs)
+        let line = CTLineCreateWithAttributedString(attrStr)
+        let bounds = CTLineGetBoundsWithOptions(line, [])
+        let tw = bounds.width
+        let th = bounds.height
+
+        if options.bannerStyle == "ribbon" {
+            let rw = max(130.0, tw + 46.0)
+            let rh: CGFloat = 40.0
+            let tailW: CGFloat = 34.0
+            let tailH: CGFloat = 34.0
+
+            ctx.setFillColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+            let f1 = CGMutablePath()
+            f1.move(to: CGPoint(x: -rw / 2.0, y: -rh / 2.0))
+            f1.addLine(to: CGPoint(x: -rw / 2.0, y: -rh / 2.0 - 8.0))
+            f1.addLine(to: CGPoint(x: -rw / 2.0 + 10.0, y: -rh / 2.0))
+            f1.closeSubpath()
+            ctx.addPath(f1)
+            ctx.fillPath()
+
+            let f2 = CGMutablePath()
+            f2.move(to: CGPoint(x: rw / 2.0, y: -rh / 2.0))
+            f2.addLine(to: CGPoint(x: rw / 2.0, y: -rh / 2.0 - 8.0))
+            f2.addLine(to: CGPoint(x: rw / 2.0 - 10.0, y: -rh / 2.0))
+            f2.closeSubpath()
+            ctx.addPath(f2)
+            ctx.fillPath()
+
+            ctx.setFillColor(bgColor)
+            let leftTail = CGMutablePath()
+            leftTail.move(to: CGPoint(x: -rw / 2.0 + 4.0, y: -rh / 2.0 - 6.0))
+            leftTail.addLine(to: CGPoint(x: -rw / 2.0 - tailW, y: -rh / 2.0 - 6.0))
+            leftTail.addLine(to: CGPoint(x: -rw / 2.0 - tailW + 12.0, y: -rh / 2.0 - 6.0 + tailH / 2.0))
+            leftTail.addLine(to: CGPoint(x: -rw / 2.0 - tailW, y: -rh / 2.0 - 6.0 + tailH))
+            leftTail.addLine(to: CGPoint(x: -rw / 2.0 + 4.0, y: -rh / 2.0 - 6.0 + tailH))
+            leftTail.closeSubpath()
+            ctx.addPath(leftTail)
+            ctx.fillPath()
+
+            let rightTail = CGMutablePath()
+            rightTail.move(to: CGPoint(x: rw / 2.0 - 4.0, y: -rh / 2.0 - 6.0))
+            rightTail.addLine(to: CGPoint(x: rw / 2.0 + tailW, y: -rh / 2.0 - 6.0))
+            rightTail.addLine(to: CGPoint(x: rw / 2.0 + tailW - 12.0, y: -rh / 2.0 - 6.0 + tailH / 2.0))
+            rightTail.addLine(to: CGPoint(x: rw / 2.0 + tailW, y: -rh / 2.0 - 6.0 + tailH))
+            rightTail.addLine(to: CGPoint(x: rw / 2.0 - 4.0, y: -rh / 2.0 - 6.0 + tailH))
+            rightTail.closeSubpath()
+            ctx.addPath(rightTail)
+            ctx.fillPath()
+
+            ctx.saveGState()
+            ctx.setShadow(offset: CGSize(width: 0, height: -2), blur: 6.0, color: CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.4))
+            ctx.setFillColor(bgColor)
+            ctx.fill(CGRect(x: -rw / 2.0, y: -rh / 2.0, width: rw, height: rh))
+            ctx.restoreGState()
+
+            ctx.setStrokeColor(red: 1, green: 1, blue: 1, alpha: 0.35)
+            ctx.setLineWidth(1.2)
+            ctx.stroke(CGRect(x: -rw / 2.0 + 2.0, y: -rh / 2.0 + 2.0, width: rw - 4.0, height: rh - 4.0))
+
+            ctx.textMatrix = .identity
+            ctx.textPosition = CGPoint(x: -tw / 2.0, y: -th / 2.0 + 2.0)
+            CTLineDraw(line, ctx)
+
+        } else if options.bannerStyle == "calligraphy" {
+            let bw = tw + 48.0
+            let bh: CGFloat = 42.0
+            ctx.setFillColor(bgColor)
+            let path = CGMutablePath()
+            path.addRoundedRect(in: CGRect(x: -bw / 2.0, y: -bh / 2.0, width: bw, height: bh), cornerWidth: 8, cornerHeight: 8)
+            ctx.addPath(path)
+            ctx.fillPath()
+
+            ctx.textMatrix = .identity
+            ctx.textPosition = CGPoint(x: -tw / 2.0, y: -th / 2.0 + 2.0)
+            CTLineDraw(line, ctx)
+
+            ctx.setStrokeColor(textColor)
+            ctx.setLineWidth(1.8)
+            ctx.beginPath()
+            ctx.move(to: CGPoint(x: -tw / 2.0, y: -th / 2.0 - 4.0))
+            ctx.addQuadCurve(to: CGPoint(x: tw / 2.0, y: -th / 2.0 - 4.0), control: CGPoint(x: 0, y: -th / 2.0 - 10.0))
+            ctx.strokePath()
+
+        } else if options.bannerStyle == "pill" {
+            let pw = tw + 40.0
+            let ph: CGFloat = 40.0
+            let path = CGPath(roundedRect: CGRect(x: -pw / 2.0, y: -ph / 2.0, width: pw, height: ph), cornerWidth: ph / 2.0, cornerHeight: ph / 2.0, transform: nil)
+            ctx.setFillColor(bgColor)
+            ctx.addPath(path)
+            ctx.fillPath()
+
+            ctx.setStrokeColor(red: 1, green: 1, blue: 1, alpha: 0.55)
+            ctx.setLineWidth(1.5)
+            ctx.addPath(path)
+            ctx.strokePath()
+
+            ctx.textMatrix = .identity
+            ctx.textPosition = CGPoint(x: -tw / 2.0, y: -th / 2.0 + 2.0)
+            CTLineDraw(line, ctx)
+
+        } else if options.bannerStyle == "tag" {
+            let tagW = tw + 56.0
+            let tagH: CGFloat = 42.0
+            let path = CGMutablePath()
+            path.move(to: CGPoint(x: -tagW / 2.0 + 14.0, y: tagH / 2.0))
+            path.addLine(to: CGPoint(x: tagW / 2.0 - 4.0, y: tagH / 2.0))
+            path.addLine(to: CGPoint(x: tagW / 2.0 - 4.0, y: -tagH / 2.0))
+            path.addLine(to: CGPoint(x: -tagW / 2.0 + 14.0, y: -tagH / 2.0))
+            path.addLine(to: CGPoint(x: -tagW / 2.0, y: 0))
+            path.closeSubpath()
+            ctx.setFillColor(bgColor)
+            ctx.addPath(path)
+            ctx.fillPath()
+
+            ctx.setFillColor(red: 217/255.0, green: 119/255.0, blue: 6/255.0, alpha: 1.0)
+            ctx.fillEllipse(in: CGRect(x: -tagW / 2.0 + 6.0, y: -4.0, width: 8.0, height: 8.0))
+            ctx.setFillColor(red: 30/255.0, green: 30/255.0, blue: 30/255.0, alpha: 1.0)
+            ctx.fillEllipse(in: CGRect(x: -tagW / 2.0 + 8.0, y: -2.0, width: 4.0, height: 4.0))
+
+            ctx.textMatrix = .identity
+            ctx.textPosition = CGPoint(x: -tw / 2.0 + 6.0, y: -th / 2.0 + 2.0)
+            CTLineDraw(line, ctx)
+
+        } else if options.bannerStyle == "stamp" {
+            let sw = tw + 44.0
+            let sh: CGFloat = 42.0
+            ctx.setStrokeColor(bgColor)
+            ctx.setLineWidth(2.5)
+            ctx.stroke(CGRect(x: -sw / 2.0, y: -sh / 2.0, width: sw, height: sh))
+            ctx.setLineWidth(1.0)
+            ctx.stroke(CGRect(x: -sw / 2.0 + 3.0, y: -sh / 2.0 + 3.0, width: sw - 6.0, height: sh - 6.0))
+
+            ctx.textMatrix = .identity
+            ctx.textPosition = CGPoint(x: -tw / 2.0, y: -th / 2.0 + 2.0)
+            CTLineDraw(line, ctx)
+
+        } else if options.bannerStyle == "garland" {
+            let words = fullText.split(separator: " ").map { String($0) }
+            let flagW = max(34.0, (tw + 20.0) / CGFloat(max(1, words.count)))
+            let totalW = flagW * CGFloat(words.count)
+
+            ctx.setStrokeColor(red: 1, green: 1, blue: 1, alpha: 0.65)
+            ctx.setLineWidth(1.8)
+            ctx.beginPath()
+            ctx.move(to: CGPoint(x: -totalW / 2.0, y: 14.0))
+            ctx.addQuadCurve(to: CGPoint(x: totalW / 2.0, y: 14.0), control: CGPoint(x: 0, y: 6.0))
+            ctx.strokePath()
+
+            for (idx, wrd) in words.enumerated() {
+                let fx = -totalW / 2.0 + CGFloat(idx) * flagW + flagW / 2.0
+                let t = CGFloat(idx + 1) / CGFloat(words.count + 1)
+                let fy = 14.0 - 8.0 * 4.0 * t * (1.0 - t)
+                let flagH: CGFloat = 34.0
+
+                ctx.saveGState()
+                ctx.translateBy(x: fx, y: fy)
+                let tri = CGMutablePath()
+                tri.move(to: CGPoint(x: -flagW / 2.0 + 2.0, y: 0))
+                tri.addLine(to: CGPoint(x: flagW / 2.0 - 2.0, y: 0))
+                tri.addLine(to: CGPoint(x: 0, y: -flagH))
+                tri.closeSubpath()
+                ctx.setFillColor(bgColor)
+                ctx.addPath(tri)
+                ctx.fillPath()
+
+                let wAttr = NSAttributedString(string: wrd, attributes: [
+                    NSAttributedString.Key(kCTFontAttributeName as String): CTFontCreateWithName("HelveticaNeue-Bold" as CFString, 11.0, nil),
+                    NSAttributedString.Key(kCTForegroundColorAttributeName as String): textColor
+                ])
+                let wLine = CTLineCreateWithAttributedString(wAttr)
+                let wBounds = CTLineGetBoundsWithOptions(wLine, [])
+                ctx.textMatrix = .identity
+                ctx.textPosition = CGPoint(x: -wBounds.width / 2.0, y: -flagH / 2.0)
+                CTLineDraw(wLine, ctx)
+                ctx.restoreGState()
+            }
         }
 
         ctx.restoreGState()

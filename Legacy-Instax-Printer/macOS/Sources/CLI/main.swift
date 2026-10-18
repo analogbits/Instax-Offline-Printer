@@ -70,6 +70,55 @@ while i < args.count {
         options.fitMode = .fit
     case "--caption":
         if i + 1 < args.count { options.captionText = args[i + 1]; i += 1 }
+    case "--frame-style":
+        if i + 1 < args.count { options.frameStyle = args[i + 1]; i += 1 }
+    case "--sticker":
+        if i + 1 < args.count { options.sticker = args[i + 1]; i += 1 }
+    case "--sticker-image":
+        if i + 1 < args.count {
+            if let customImg = NSImage(contentsOfFile: args[i + 1]) {
+                options.stickerImage = customImg
+            }
+            i += 1
+        }
+    case "--sticker-pos":
+        if i + 1 < args.count { options.stickerPosition = args[i + 1]; i += 1 }
+    case "--sticker-scale":
+        if i + 1 < args.count, let sc = Double(args[i + 1]) { options.stickerScale = sc; i += 1 }
+    case "--sticker-opacity":
+        if i + 1 < args.count, let op = Double(args[i + 1]) { options.stickerOpacity = op; i += 1 }
+    case "--sticker-rot", "--sticker-rotation":
+        if i + 1 < args.count, let rot = Double(args[i + 1]) { options.stickerRotation = rot; i += 1 }
+    case "--sticker-x":
+        if i + 1 < args.count, let sx = Double(args[i + 1]) {
+            options.stickerX = sx
+            options.stickerPosition = "custom"
+            i += 1
+        }
+    case "--sticker-y":
+        if i + 1 < args.count, let sy = Double(args[i + 1]) {
+            options.stickerY = sy
+            options.stickerPosition = "custom"
+            i += 1
+        }
+    case "--banner-text":
+        if i + 1 < args.count { options.bannerText = args[i + 1]; i += 1 }
+    case "--banner-style":
+        if i + 1 < args.count { options.bannerStyle = args[i + 1]; i += 1 }
+    case "--banner-icon":
+        if i + 1 < args.count { options.bannerIcon = args[i + 1]; i += 1 }
+    case "--banner-color", "--banner-bg-color":
+        if i + 1 < args.count { options.bannerBgColor = args[i + 1]; i += 1 }
+    case "--banner-text-color":
+        if i + 1 < args.count { options.bannerTextColor = args[i + 1]; i += 1 }
+    case "--banner-x":
+        if i + 1 < args.count, let bx = Double(args[i + 1]) { options.bannerX = bx; i += 1 }
+    case "--banner-y":
+        if i + 1 < args.count, let by = Double(args[i + 1]) { options.bannerY = by; i += 1 }
+    case "--banner-scale":
+        if i + 1 < args.count, let bsc = Double(args[i + 1]) { options.bannerScale = bsc; i += 1 }
+    case "--banner-rot", "--banner-rotation":
+        if i + 1 < args.count, let brot = Double(args[i + 1]) { options.bannerRotation = brot; i += 1 }
     case "--qr":
         if i + 1 < args.count {
             options.qrContentType = .url

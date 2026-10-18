@@ -648,15 +648,27 @@
           <label><span style="font-weight: 600; color: #a78bfa;">🖼️ Decorative Film Frame</span></label>
           <select id="frameStyleSelect" onchange="renderCanvas()">
             <option value="none" selected>None (Full Bleed Exposure)</option>
-            <option value="classic_white">⚪ Classic White Film Frame</option>
-            <option value="obsidian_black">⚫ Obsidian Black Film Frame</option>
-            <option value="rainbow_gradient">🌈 Rainbow Spectrum Gradient</option>
-            <option value="sunset_ombre">🌅 Sunset Ombre Fade</option>
-            <option value="sprocket_35mm">🎞️ 35mm Vintage Film Sprockets</option>
-            <option value="gold_metallic">🪙 Metallic Gold Foil</option>
-            <option value="rose_gold">✨ Rose Gold Foil</option>
-            <option value="pastel_pop">🍬 Pastel Candy Geometric</option>
-            <option value="postage_stamp">✉️ Scalloped Postage Stamp</option>
+            <optgroup label="── 🎨 Classic &amp; Modern Frames ──">
+              <option value="classic_white">⚪ Classic White Film Frame</option>
+              <option value="obsidian_black">⚫ Obsidian Black Film Frame</option>
+              <option value="rainbow_gradient">🌈 Rainbow Spectrum Gradient</option>
+              <option value="sunset_ombre">🌅 Sunset Ombre Fade</option>
+              <option value="sprocket_35mm">🎞️ 35mm Vintage Film Sprockets</option>
+              <option value="gold_metallic">🪙 Metallic Gold Foil</option>
+              <option value="rose_gold">✨ Rose Gold Foil</option>
+              <option value="pastel_pop">🍬 Pastel Candy Geometric</option>
+              <option value="postage_stamp">✉️ Scalloped Postage Stamp</option>
+            </optgroup>
+            <optgroup label="── ⚜️ Artistic &amp; Seasonal Frames ──">
+              <option value="baroque_filigree">⚜️ Baroque Filigree Oval</option>
+              <option value="wedding_corners">🌿 Wedding Floral Corner Brackets</option>
+              <option value="stained_glass">💎 Stained Glass Leaded Mosaic</option>
+              <option value="bokeh_sparkles">✨ Glowing Bokeh &amp; Sparkles</option>
+              <option value="fireworks_celebration">🎆 Fireworks Celebration</option>
+              <option value="twin_hearts_garland">💕 Hanging Twin Hearts Garland</option>
+              <option value="holiday_garland">🎄 Holiday Pine &amp; Bow Garland</option>
+              <option value="botanical_foliage">🍂 Autumn Botanical Foliage</option>
+            </optgroup>
           </select>
         </div>
 
@@ -665,6 +677,35 @@
           <label><span style="font-weight: 600; color: #a78bfa;">🎨 Sticker Embellishment</span></label>
           <select id="stickerSelect" onchange="onStickerSelectChange()">
             <option value="none" selected>None (No Sticker)</option>
+            <optgroup label="── 💌 Hand-Drawn Love &amp; Romance ──">
+              <option value="love_script">💖 "love" Calligraphy Brush</option>
+              <option value="i_love_you">❤️ "I LOVE YOU" Hearts</option>
+              <option value="forever_heart">♾️ "forever" Script Heart</option>
+              <option value="sketchy_heart">✏️ Sketched Scribble Heart</option>
+              <option value="winged_heart">🪽 Angel Winged Heart</option>
+              <option value="love_envelope">💌 Love Letter &amp; Red Heart</option>
+              <option value="shining_heart">🌟 Radiant Bursting Heart</option>
+              <option value="heart_balloons">🎈 Trio Heart Balloons</option>
+              <option value="heart_arrow">💘 Cupid Pierced Arrow Heart</option>
+              <option value="heart_hands">🫶 Heart Hands Gesture</option>
+              <option value="looping_heart">➰ Continuous Ribbon Heart</option>
+            </optgroup>
+            <optgroup label="── 🎂 Celebrations &amp; Holidays ──">
+              <option value="birthday_cake_doodle">🎂 Birthday Cake with Candles</option>
+              <option value="birthday_bunting">🚩 Party Pennant Bunting</option>
+              <option value="happy_holidays_gold">✨ "Happy Holidays" Gold</option>
+              <option value="season_greetings">🌿 "Season's Greetings" Wreath</option>
+              <option value="xmas_tree">🎄 Decorated Holiday Tree</option>
+              <option value="holly_berries">🍒 Winter Holly &amp; Berries</option>
+              <option value="christmas_stockings">🧦 Hanging Holiday Stockings</option>
+              <option value="halloween_ghost">👻 Friendly Ghost &amp; Hat</option>
+              <option value="jack_o_lantern">🎃 Jack-o'-Lantern Pumpkin</option>
+              <option value="flying_bats">🦇 Flying Night Bats</option>
+              <option value="summer_flipflops">🩴 Summer Beach Sandals</option>
+              <option value="seashells">🐚 Scallop Shell &amp; Starfish</option>
+              <option value="cherry_blossoms">🌸 Sakura Blossom Branch</option>
+              <option value="mimosa">🌾 Golden Mimosa Blossom</option>
+            </optgroup>
             <optgroup label="── 🎉 Party &amp; Celebration ──">
               <option value="party_popper">🎉 Party Popper</option>
               <option value="birthday_cake">🎂 Birthday Cake</option>
@@ -711,14 +752,14 @@
 
         <!-- Quick Sticker Palette -->
         <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 12px;">
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('love_script')">💖</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('birthday_cake_doodle')">🎂</button>
           <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('sparkles')">✨</button>
           <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('heart')">❤️</button>
           <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('camera')">📸</button>
           <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('party_popper')">🎉</button>
-          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('palm_tree')">🌴</button>
-          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('cherry_blossom')">🌸</button>
-          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('coffee')">☕️</button>
-          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('sunglasses')">🕶️</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('xmas_tree')">🎄</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('cherry_blossoms')">🌸</button>
           <button type="button" class="secondary" style="padding: 4px 7px; font-size: 11px;" onclick="setQuickSticker('none')">✕ Clear</button>
         </div>
 
@@ -733,10 +774,10 @@
           <div id="customStickerNameLabel" style="font-size: 11px; color: #9ca3af; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
         </div>
 
-        <!-- Sticker Position -->
+        <!-- Sticker Position Preset & Free Dragging -->
         <div class="control-group">
-          <label><span>Sticker Position</span></label>
-          <select id="stickerPosSelect" onchange="renderCanvas()">
+          <label><span>Sticker Placement</span></label>
+          <select id="stickerPosSelect" onchange="onStickerPosSelectChange()">
             <option value="bottomRight" selected>Bottom-Right Corner</option>
             <option value="bottomLeft">Bottom-Left Corner</option>
             <option value="topRight">Top-Right Corner</option>
@@ -744,7 +785,21 @@
             <option value="center">Center</option>
             <option value="bottomCenter">Bottom-Center</option>
             <option value="topCenter">Top-Center</option>
+            <option value="custom">✋ Free Move / Drag Anywhere</option>
           </select>
+        </div>
+
+        <!-- Free Position Sliders (X & Y) -->
+        <div class="control-group">
+          <label><span>Sticker Horizontal (X)</span><span id="valStickerX">+65%</span></label>
+          <input type="range" id="sliderStickerX" min="-1.0" max="1.0" step="0.02" value="0.65" oninput="onStickerSliderInput()">
+        </div>
+        <div class="control-group">
+          <label><span>Sticker Vertical (Y)</span><span id="valStickerY">+65%</span></label>
+          <input type="range" id="sliderStickerY" min="-1.0" max="1.0" step="0.02" value="0.65" oninput="onStickerSliderInput()">
+        </div>
+        <div style="font-size: 11px; color: #a78bfa; margin-top: -4px; margin-bottom: 8px;">
+          💡 Tip: Click and drag the sticker directly on the photo preview above!
         </div>
 
         <!-- Sticker Size -->
@@ -763,6 +818,76 @@
         <div class="control-group">
           <label><span>Sticker Rotation</span><span id="valStickerRotation">0°</span></label>
           <input type="range" id="sliderStickerRotation" min="-45" max="45" step="5" value="0" oninput="renderCanvas()">
+        </div>
+
+        <!-- 3. Custom Banner Maker (Own Text, Ribbons & Stamps) -->
+        <div style="background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 8px; padding: 10px; margin-top: 14px; margin-bottom: 12px;">
+          <div style="font-size: 12px; font-weight: 600; color: #f472b6; margin-bottom: 8px;">🎀 Custom Banner Maker</div>
+          
+          <div class="control-group">
+            <label><span>Banner Text</span></label>
+            <input type="text" id="bannerTextInput" placeholder="e.g. Best Friends, Summer '26, Happy Birthday!" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: #121318; color: #fff; font-size: 12px; box-sizing: border-box;" oninput="renderCanvas()">
+          </div>
+
+          <div class="control-group" style="margin-top: 6px;">
+            <label><span>Banner Style</span></label>
+            <select id="bannerStyleSelect" onchange="renderCanvas()">
+              <option value="none">None (No Banner)</option>
+              <option value="ribbon" selected>🎀 3D Folded Swallowtail Ribbon</option>
+              <option value="calligraphy">✒️ Calligraphy Brush Stroke</option>
+              <option value="pill">💊 Modern Frosted Pill Badge</option>
+              <option value="tag">🏷️ Vintage Luggage Tag</option>
+              <option value="stamp">📮 Postal Cancellation Stamp</option>
+              <option value="garland">🚩 Triangle Bunting Garland</option>
+            </select>
+          </div>
+
+          <div class="control-group" style="margin-top: 6px;">
+            <label><span>Banner Icon Badge</span></label>
+            <select id="bannerIconSelect" onchange="renderCanvas()">
+              <option value="none" selected>None</option>
+              <option value="heart">❤️ Heart</option>
+              <option value="sparkles">✨ Sparkles</option>
+              <option value="party">🎉 Party</option>
+              <option value="star">⭐ Star</option>
+              <option value="camera">📸 Camera</option>
+              <option value="cake">🎂 Birthday Cake</option>
+              <option value="flower">🌸 Sakura Flower</option>
+              <option value="ring">💍 Wedding Ring</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <div style="flex: 1;">
+              <label style="font-size: 11px;"><span>Banner Color</span></label>
+              <input type="color" id="bannerBgColor" value="#e11d48" style="width: 100%; height: 30px; border: none; border-radius: 4px; cursor: pointer; background: transparent;" onchange="renderCanvas()">
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 11px;"><span>Text Color</span></label>
+              <input type="color" id="bannerTextColor" value="#ffffff" style="width: 100%; height: 30px; border: none; border-radius: 4px; cursor: pointer; background: transparent;" onchange="renderCanvas()">
+            </div>
+          </div>
+
+          <!-- Banner Free Position (Move freely) -->
+          <div class="control-group" style="margin-top: 8px;">
+            <label><span>Banner Horizontal (X)</span><span id="valBannerX">0%</span></label>
+            <input type="range" id="sliderBannerX" min="-1.0" max="1.0" step="0.02" value="0.0" oninput="renderCanvas()">
+          </div>
+          <div class="control-group">
+            <label><span>Banner Vertical (Y)</span><span id="valBannerY">+68%</span></label>
+            <input type="range" id="sliderBannerY" min="-1.0" max="1.0" step="0.02" value="0.68" oninput="renderCanvas()">
+          </div>
+          <div class="control-group">
+            <label><span>Banner Size</span><span id="valBannerScale">100%</span></label>
+            <input type="range" id="sliderBannerScale" min="0.3" max="2.0" step="0.05" value="1.0" oninput="renderCanvas()">
+          </div>
+          <div class="control-group">
+            <label><span>Banner Rotation</span><span id="valBannerRotation">0°</span></label>
+            <input type="range" id="sliderBannerRotation" min="-45" max="45" step="1" value="0" oninput="renderCanvas()">
+          </div>
+          <div style="font-size: 11px; color: #f472b6; margin-top: -2px;">
+            💡 Tip: Click and drag the banner directly on the photo preview to position it anywhere!
+          </div>
         </div>
 
         <div style="margin-top: 8px;">
@@ -2080,6 +2205,67 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     renderCanvas();
   }
 
+  function getStickerCenterCoords(w, h) {
+    const pos = document.getElementById('stickerPosSelect')?.value || 'bottomRight';
+    const scale = parseFloat(document.getElementById('sliderStickerScale')?.value || 0.25);
+    const targetDim = Math.min(w, h) * scale;
+    const margin = Math.round(Math.min(w, h) * 0.06);
+
+    if (pos === 'custom') {
+      const sx = parseFloat(document.getElementById('sliderStickerX')?.value || 0.65);
+      const sy = parseFloat(document.getElementById('sliderStickerY')?.value || 0.65);
+      return {
+        cx: w / 2 + sx * (w / 2 - targetDim / 2 - 5),
+        cy: h / 2 + sy * (h / 2 - targetDim / 2 - 5)
+      };
+    }
+
+    let cx = w - margin - targetDim / 2;
+    let cy = h - margin - targetDim / 2;
+    switch (pos) {
+      case 'topLeft': cx = margin + targetDim / 2; cy = margin + targetDim / 2; break;
+      case 'topRight': cx = w - margin - targetDim / 2; cy = margin + targetDim / 2; break;
+      case 'bottomLeft': cx = margin + targetDim / 2; cy = h - margin - targetDim / 2; break;
+      case 'bottomRight': cx = w - margin - targetDim / 2; cy = h - margin - targetDim / 2; break;
+      case 'center': cx = w / 2; cy = h / 2; break;
+      case 'topCenter': cx = w / 2; cy = margin + targetDim / 2; break;
+      case 'bottomCenter': cx = w / 2; cy = h - margin - targetDim / 2; break;
+    }
+    return { cx, cy };
+  }
+
+  function onStickerPosSelectChange() {
+    const pos = document.getElementById('stickerPosSelect')?.value || 'bottomRight';
+    const sx = document.getElementById('sliderStickerX');
+    const sy = document.getElementById('sliderStickerY');
+    if (!sx || !sy) return;
+    switch (pos) {
+      case 'topLeft': sx.value = '-0.70'; sy.value = '-0.70'; break;
+      case 'topRight': sx.value = '0.70'; sy.value = '-0.70'; break;
+      case 'bottomLeft': sx.value = '-0.70'; sy.value = '0.70'; break;
+      case 'bottomRight': sx.value = '0.70'; sy.value = '0.70'; break;
+      case 'center': sx.value = '0.00'; sy.value = '0.00'; break;
+      case 'topCenter': sx.value = '0.00'; sy.value = '-0.70'; break;
+      case 'bottomCenter': sx.value = '0.00'; sy.value = '0.70'; break;
+    }
+    renderCanvas();
+  }
+
+  function onStickerSliderInput() {
+    const posSel = document.getElementById('stickerPosSelect');
+    if (posSel) posSel.value = 'custom';
+    renderCanvas();
+  }
+
+  function getBannerCenterCoords(w, h) {
+    const bx = parseFloat(document.getElementById('sliderBannerX')?.value || 0.0);
+    const by = parseFloat(document.getElementById('sliderBannerY')?.value || 0.68);
+    return {
+      cx: w / 2 + bx * (w / 2 * 0.9),
+      cy: h / 2 + by * (h / 2 * 0.9)
+    };
+  }
+
   function resetDecorations() {
     const frameSel = document.getElementById('frameStyleSelect');
     if (frameSel) frameSel.value = 'none';
@@ -2093,6 +2279,31 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     if (opSlider) opSlider.value = '1.0';
     const rotSlider = document.getElementById('sliderStickerRotation');
     if (rotSlider) rotSlider.value = '0';
+    const sx = document.getElementById('sliderStickerX');
+    if (sx) sx.value = '0.65';
+    const sy = document.getElementById('sliderStickerY');
+    if (sy) sy.value = '0.65';
+
+    // Reset Custom Banner
+    const bannerInput = document.getElementById('bannerTextInput');
+    if (bannerInput) bannerInput.value = '';
+    const bannerStyle = document.getElementById('bannerStyleSelect');
+    if (bannerStyle) bannerStyle.value = 'ribbon';
+    const bannerIcon = document.getElementById('bannerIconSelect');
+    if (bannerIcon) bannerIcon.value = 'none';
+    const bannerBg = document.getElementById('bannerBgColor');
+    if (bannerBg) bannerBg.value = '#e11d48';
+    const bannerTxtCol = document.getElementById('bannerTextColor');
+    if (bannerTxtCol) bannerTxtCol.value = '#ffffff';
+    const bx = document.getElementById('sliderBannerX');
+    if (bx) bx.value = '0.0';
+    const by = document.getElementById('sliderBannerY');
+    if (by) by.value = '0.68';
+    const bs = document.getElementById('sliderBannerScale');
+    if (bs) bs.value = '1.0';
+    const br = document.getElementById('sliderBannerRotation');
+    if (br) br.value = '0';
+
     clearCustomSticker();
     renderCanvas();
   }
@@ -2239,8 +2450,717 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         targetCtx.beginPath(); targetCtx.arc(0, y, r, -Math.PI / 2, Math.PI / 2); targetCtx.fill();
         targetCtx.beginPath(); targetCtx.arc(w, y, r, Math.PI / 2, 3 * Math.PI / 2); targetCtx.fill();
       }
+    } else if (style === 'baroque_filigree') {
+      const bw = Math.round(Math.min(w, h) * 0.08);
+      targetCtx.fillStyle = '#fdfbf7';
+      targetCtx.fillRect(0, 0, w, bw);
+      targetCtx.fillRect(0, 0, bw, h);
+      targetCtx.fillRect(w - bw, 0, bw, h);
+      targetCtx.fillRect(0, h - bw, w, bw);
+
+      targetCtx.strokeStyle = '#c5a059';
+      targetCtx.lineWidth = 2;
+      targetCtx.strokeRect(bw - 4, bw - 4, w - 2 * bw + 8, h - 2 * bw + 8);
+      targetCtx.strokeStyle = 'rgba(197, 160, 89, 0.4)';
+      targetCtx.lineWidth = 1;
+      targetCtx.strokeRect(bw + 4, bw + 4, w - 2 * bw - 8, h - 2 * bw - 8);
+
+      function drawBaroqueCorner(cx, cy, angle) {
+        targetCtx.save();
+        targetCtx.translate(cx, cy);
+        targetCtx.rotate(angle);
+        targetCtx.strokeStyle = '#c5a059';
+        targetCtx.fillStyle = '#c5a059';
+        targetCtx.lineWidth = 1.8;
+        targetCtx.beginPath();
+        targetCtx.moveTo(0, 0);
+        targetCtx.bezierCurveTo(bw * 0.4, -bw * 0.1, bw * 0.7, bw * 0.2, bw * 0.8, bw * 0.7);
+        targetCtx.stroke();
+        targetCtx.beginPath();
+        targetCtx.arc(bw * 0.8, bw * 0.7, 3, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.beginPath();
+        targetCtx.moveTo(0, 0);
+        targetCtx.bezierCurveTo(-bw * 0.1, bw * 0.4, bw * 0.2, bw * 0.7, bw * 0.7, bw * 0.8);
+        targetCtx.stroke();
+        targetCtx.beginPath();
+        targetCtx.arc(bw * 0.7, bw * 0.8, 3, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.beginPath();
+        targetCtx.arc(bw * 0.45, bw * 0.45, 2.5, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.restore();
+      }
+      drawBaroqueCorner(bw, bw, 0);
+      drawBaroqueCorner(w - bw, bw, Math.PI / 2);
+      drawBaroqueCorner(w - bw, h - bw, Math.PI);
+      drawBaroqueCorner(bw, h - bw, -Math.PI / 2);
+    } else if (style === 'wedding_corners') {
+      const bw = Math.round(Math.min(w, h) * 0.05);
+      targetCtx.strokeStyle = '#d4af37';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.strokeRect(bw, bw, w - 2 * bw, h - 2 * bw);
+      targetCtx.strokeStyle = 'rgba(212, 175, 55, 0.45)';
+      targetCtx.lineWidth = 0.8;
+      targetCtx.strokeRect(bw + 6, bw + 6, w - 2 * bw - 12, h - 2 * bw - 12);
+
+      function drawWeddingCorner(cx, cy, flipX, flipY) {
+        targetCtx.save();
+        targetCtx.translate(cx, cy);
+        targetCtx.scale(flipX, flipY);
+        targetCtx.fillStyle = '#6b8e6f';
+        for (let i = 0; i < 4; i++) {
+          const lx = 14 + i * 16;
+          const ly = 4 + (i % 2) * 8;
+          targetCtx.beginPath();
+          targetCtx.ellipse(lx, ly, 10, 5, Math.PI / 4, 0, Math.PI * 2);
+          targetCtx.fill();
+        }
+        for (let i = 0; i < 4; i++) {
+          const ly = 14 + i * 16;
+          const lx = 4 + (i % 2) * 8;
+          targetCtx.beginPath();
+          targetCtx.ellipse(lx, ly, 5, 10, Math.PI / 4, 0, Math.PI * 2);
+          targetCtx.fill();
+        }
+        targetCtx.fillStyle = '#fffdfa';
+        targetCtx.strokeStyle = '#e2d9cc';
+        targetCtx.lineWidth = 1.2;
+        targetCtx.beginPath(); targetCtx.arc(14, 14, 11, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke();
+        targetCtx.beginPath(); targetCtx.arc(14, 14, 6, 0, Math.PI * 2); targetCtx.stroke();
+        targetCtx.beginPath(); targetCtx.arc(28, 20, 8, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke();
+        targetCtx.fillStyle = '#d4af37';
+        targetCtx.beginPath(); targetCtx.arc(42, 12, 2, 0, Math.PI * 2); targetCtx.fill();
+        targetCtx.beginPath(); targetCtx.arc(12, 42, 2, 0, Math.PI * 2); targetCtx.fill();
+        targetCtx.restore();
+      }
+      drawWeddingCorner(bw, bw, 1, 1);
+      drawWeddingCorner(w - bw, h - bw, -1, -1);
+    } else if (style === 'stained_glass') {
+      const bw = Math.round(Math.min(w, h) * 0.07);
+      const gemColors = ['#1d4ed8', '#b91c1c', '#d97706', '#047857', '#7c3aed', '#0891b2', '#ec4899'];
+      const segW = bw * 1.4;
+      let cIdx = 0;
+      for (let x = 0; x < w; x += segW) {
+        targetCtx.fillStyle = gemColors[cIdx % gemColors.length];
+        targetCtx.fillRect(x, 0, segW, bw);
+        cIdx++;
+        targetCtx.fillStyle = gemColors[cIdx % gemColors.length];
+        targetCtx.fillRect(x, h - bw, segW, bw);
+        cIdx++;
+      }
+      for (let y = bw; y < h - bw; y += segW) {
+        targetCtx.fillStyle = gemColors[cIdx % gemColors.length];
+        targetCtx.fillRect(0, y, bw, segW);
+        cIdx++;
+        targetCtx.fillStyle = gemColors[cIdx % gemColors.length];
+        targetCtx.fillRect(w - bw, y, bw, segW);
+        cIdx++;
+      }
+      targetCtx.strokeStyle = '#18181b';
+      targetCtx.lineWidth = 2.5;
+      targetCtx.strokeRect(0, 0, w, h);
+      targetCtx.strokeRect(bw, bw, w - 2 * bw, h - 2 * bw);
+      for (let x = segW; x < w; x += segW) {
+        targetCtx.beginPath(); targetCtx.moveTo(x, 0); targetCtx.lineTo(x, bw); targetCtx.stroke();
+        targetCtx.beginPath(); targetCtx.moveTo(x, h - bw); targetCtx.lineTo(x, h); targetCtx.stroke();
+      }
+      for (let y = bw + segW; y < h - bw; y += segW) {
+        targetCtx.beginPath(); targetCtx.moveTo(0, y); targetCtx.lineTo(bw, y); targetCtx.stroke();
+        targetCtx.beginPath(); targetCtx.moveTo(w - bw, y); targetCtx.lineTo(w, y); targetCtx.stroke();
+      }
+    } else if (style === 'bokeh_sparkles') {
+      const orbs = [
+        { x: 0.12, y: 0.08, r: 24, c: 'rgba(254, 240, 138, 0.40)' },
+        { x: 0.28, y: 0.05, r: 18, c: 'rgba(251, 207, 232, 0.35)' },
+        { x: 0.72, y: 0.07, r: 26, c: 'rgba(221, 214, 254, 0.38)' },
+        { x: 0.88, y: 0.12, r: 20, c: 'rgba(254, 240, 138, 0.45)' },
+        { x: 0.05, y: 0.35, r: 16, c: 'rgba(251, 207, 232, 0.30)' },
+        { x: 0.95, y: 0.42, r: 22, c: 'rgba(254, 240, 138, 0.35)' },
+        { x: 0.08, y: 0.82, r: 28, c: 'rgba(221, 214, 254, 0.40)' },
+        { x: 0.22, y: 0.94, r: 18, c: 'rgba(254, 240, 138, 0.38)' },
+        { x: 0.78, y: 0.92, r: 25, c: 'rgba(251, 207, 232, 0.42)' },
+        { x: 0.92, y: 0.85, r: 20, c: 'rgba(254, 240, 138, 0.40)' }
+      ];
+      orbs.forEach(o => {
+        targetCtx.fillStyle = o.c;
+        targetCtx.beginPath();
+        targetCtx.arc(o.x * w, o.y * h, o.r, 0, Math.PI * 2);
+        targetCtx.fill();
+      });
+      function drawStar(sx, sy, rad) {
+        targetCtx.fillStyle = '#ffffff';
+        targetCtx.beginPath();
+        targetCtx.moveTo(sx, sy - rad);
+        targetCtx.quadraticCurveTo(sx, sy, sx + rad, sy);
+        targetCtx.quadraticCurveTo(sx, sy, sx, sy + rad);
+        targetCtx.quadraticCurveTo(sx, sy, sx - rad, sy);
+        targetCtx.quadraticCurveTo(sx, sy, sx, sy - rad);
+        targetCtx.fill();
+      }
+      drawStar(w * 0.18, h * 0.06, 8);
+      drawStar(w * 0.82, h * 0.09, 10);
+      drawStar(w * 0.07, h * 0.65, 7);
+      drawStar(w * 0.93, h * 0.60, 9);
+      drawStar(w * 0.50, h * 0.95, 8);
+    } else if (style === 'fireworks_celebration') {
+      function drawFirework(cx, cy, colors) {
+        const rays = 12;
+        for (let i = 0; i < rays; i++) {
+          const ang = (i / rays) * Math.PI * 2;
+          const len = 35 + (i % 3) * 15;
+          const col = colors[i % colors.length];
+          targetCtx.strokeStyle = col;
+          targetCtx.lineWidth = 1.5;
+          targetCtx.beginPath();
+          targetCtx.moveTo(cx, cy);
+          targetCtx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
+          targetCtx.stroke();
+          targetCtx.fillStyle = col;
+          targetCtx.beginPath();
+          targetCtx.arc(cx + Math.cos(ang) * (len + 4), cy + Math.sin(ang) * (len + 4), 2, 0, Math.PI * 2);
+          targetCtx.fill();
+        }
+        targetCtx.fillStyle = '#ffffff';
+        targetCtx.beginPath(); targetCtx.arc(cx, cy, 3, 0, Math.PI * 2); targetCtx.fill();
+      }
+      drawFirework(60, 60, ['#fbbf24', '#f87171', '#60a5fa', '#f472b6']);
+      drawFirework(w - 70, 70, ['#34d399', '#fbbf24', '#a78bfa', '#f43f5e']);
+      drawFirework(80, h - 80, ['#60a5fa', '#f472b6', '#fbbf24', '#34d399']);
+      drawFirework(w - 65, h - 75, ['#f87171', '#fbbf24', '#38bdf8', '#c084fc']);
+    } else if (style === 'twin_hearts_garland') {
+      const garlandY = Math.round(h * 0.04);
+      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.beginPath();
+      targetCtx.moveTo(20, garlandY);
+      targetCtx.bezierCurveTo(w * 0.33, garlandY + 25, w * 0.66, garlandY + 25, w - 20, garlandY);
+      targetCtx.stroke();
+
+      const heartCols = ['#f43f5e', '#fb7185', '#fda4af', '#e11d48', '#f43f5e', '#fb7185', '#e11d48'];
+      const numHearts = 7;
+      for (let i = 0; i < numHearts; i++) {
+        const t = (i + 0.5) / numHearts;
+        const hx = 20 + t * (w - 40);
+        const strY = garlandY + 4 * 25 * t * (1 - t);
+        const dropLen = 14 + (i % 2) * 10;
+        const hy = strY + dropLen;
+        targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        targetCtx.lineWidth = 1;
+        targetCtx.beginPath(); targetCtx.moveTo(hx, strY); targetCtx.lineTo(hx, hy); targetCtx.stroke();
+        targetCtx.fillStyle = heartCols[i % heartCols.length];
+        const hr = 7;
+        targetCtx.beginPath();
+        targetCtx.moveTo(hx, hy + hr * 0.7);
+        targetCtx.bezierCurveTo(hx - hr * 1.2, hy - hr * 0.4, hx - hr * 1.2, hy - hr * 1.2, hx, hy - hr * 0.4);
+        targetCtx.bezierCurveTo(hx + hr * 1.2, hy - hr * 1.2, hx + hr * 1.2, hy - hr * 0.4, hx, hy + hr * 0.7);
+        targetCtx.fill();
+      }
+    } else if (style === 'holiday_garland') {
+      const garlandY = 28;
+      targetCtx.strokeStyle = '#15803d';
+      targetCtx.lineWidth = 14;
+      targetCtx.lineCap = 'round';
+      targetCtx.beginPath();
+      targetCtx.moveTo(10, garlandY);
+      targetCtx.bezierCurveTo(w * 0.25, garlandY + 22, w * 0.75, garlandY + 22, w - 10, garlandY);
+      targetCtx.stroke();
+      targetCtx.strokeStyle = '#14532d';
+      targetCtx.lineWidth = 2;
+      for (let x = 20; x < w - 20; x += 12) {
+        const t = x / w;
+        const py = garlandY + 4 * 22 * t * (1 - t);
+        targetCtx.beginPath(); targetCtx.moveTo(x, py - 4); targetCtx.lineTo(x - 5, py + 12); targetCtx.stroke();
+        targetCtx.beginPath(); targetCtx.moveTo(x, py - 4); targetCtx.lineTo(x + 5, py + 12); targetCtx.stroke();
+      }
+      const baubleCols = ['#fbbf24', '#ef4444', '#f59e0b', '#dc2626'];
+      for (let i = 0; i < 5; i++) {
+        const t = (i + 0.5) / 5;
+        const bx = w * t;
+        const by = garlandY + 4 * 22 * t * (1 - t) + 16;
+        targetCtx.fillStyle = baubleCols[i % baubleCols.length];
+        targetCtx.beginPath(); targetCtx.arc(bx, by, 7, 0, Math.PI * 2); targetCtx.fill();
+        targetCtx.fillStyle = '#ffffff';
+        targetCtx.beginPath(); targetCtx.arc(bx - 2, by - 2, 2, 0, Math.PI * 2); targetCtx.fill();
+        targetCtx.fillStyle = '#b91c1c';
+        targetCtx.beginPath(); targetCtx.arc(bx, by - 10, 3, 0, Math.PI * 2); targetCtx.fill();
+      }
+    } else if (style === 'botanical_foliage') {
+      const leafCols = ['#ea580c', '#d97706', '#991b1b', '#b45309', '#ca8a04'];
+      function drawAutumnLeaf(lx, ly, rot, scale, col) {
+        targetCtx.save();
+        targetCtx.translate(lx, ly);
+        targetCtx.rotate(rot);
+        targetCtx.scale(scale, scale);
+        targetCtx.fillStyle = col;
+        targetCtx.beginPath();
+        targetCtx.moveTo(0, -12);
+        targetCtx.bezierCurveTo(8, -8, 10, 6, 0, 14);
+        targetCtx.bezierCurveTo(-10, 6, -8, -8, 0, -12);
+        targetCtx.fill();
+        targetCtx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        targetCtx.lineWidth = 0.8;
+        targetCtx.beginPath(); targetCtx.moveTo(0, -10); targetCtx.lineTo(0, 12); targetCtx.stroke();
+        targetCtx.restore();
+      }
+      for (let i = 0; i < 9; i++) {
+        const lx = 30 + i * (w - 60) / 8;
+        const ly = 16 + (i % 3) * 6;
+        drawAutumnLeaf(lx, ly, (i % 2 === 0 ? 0.3 : -0.3) + i * 0.1, 0.9, leafCols[i % leafCols.length]);
+      }
+      for (let i = 0; i < 9; i++) {
+        const lx = 30 + i * (w - 60) / 8;
+        const ly = h - 16 - (i % 3) * 6;
+        drawAutumnLeaf(lx, ly, (i % 2 === 0 ? -0.4 : 0.4) + i * 0.1, 0.9, leafCols[(i + 2) % leafCols.length]);
+      }
+      function drawAcorn(ax, ay) {
+        targetCtx.fillStyle = '#78350f';
+        targetCtx.beginPath(); targetCtx.arc(ax, ay, 5, Math.PI, Math.PI * 2); targetCtx.fill();
+        targetCtx.fillStyle = '#b45309';
+        targetCtx.beginPath(); targetCtx.arc(ax, ay + 3, 4.5, 0, Math.PI); targetCtx.fill();
+      }
+      drawAcorn(22, 22);
+      drawAcorn(w - 22, 22);
+      drawAcorn(22, h - 22);
+      drawAcorn(w - 22, h - 22);
     }
     targetCtx.restore();
+  }
+
+  function isDoodleSticker(key) {
+    const doodleKeys = [
+      'love_script', 'i_love_you', 'forever_heart', 'sketchy_heart', 'winged_heart',
+      'love_envelope', 'shining_heart', 'heart_balloons', 'heart_arrow', 'heart_hands',
+      'looping_heart', 'birthday_cake_doodle', 'birthday_bunting', 'happy_holidays_gold',
+      'season_greetings', 'xmas_tree', 'holly_berries', 'christmas_stockings',
+      'halloween_ghost', 'jack_o_lantern', 'flying_bats', 'summer_flipflops',
+      'seashells', 'cherry_blossoms', 'mimosa'
+    ];
+    return doodleKeys.includes(key);
+  }
+
+  function drawDoodleSticker(ctx, type, size) {
+    ctx.save();
+    const s = size / 100;
+    ctx.scale(s, s);
+
+    function drawHeartPath(r) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * 0.7);
+      ctx.bezierCurveTo(-r * 1.2, -r * 0.4, -r * 1.2, -r * 1.2, 0, -r * 0.4);
+      ctx.bezierCurveTo(r * 1.2, -r * 1.2, r * 1.2, -r * 0.4, 0, r * 0.7);
+    }
+
+    if (type === 'love_script') {
+      ctx.fillStyle = 'rgba(251, 113, 133, 0.42)';
+      drawHeartPath(44);
+      ctx.fill();
+      ctx.font = 'bold italic 34px "Brush Script MT", "Snell Roundhand", "Caveat", "Segoe Script", cursive, sans-serif';
+      ctx.fillStyle = '#be123c';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('love', 0, -2);
+      ctx.strokeStyle = '#be123c';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-28, 16);
+      ctx.quadraticCurveTo(0, 24, 26, 15);
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(28, 14, 2, 0, Math.PI * 2); ctx.fill();
+    } else if (type === 'i_love_you') {
+      ctx.fillStyle = '#e11d48';
+      ctx.font = '900 21px -apple-system, BlinkMacSystemFont, "Arial Black", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('I LOVE YOU', 0, 0);
+      ctx.save(); ctx.translate(-30, -20); ctx.scale(0.3, 0.3); drawHeartPath(24); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.translate(32, -18); ctx.scale(0.35, 0.35); drawHeartPath(24); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.translate(0, 22); ctx.scale(0.32, 0.32); drawHeartPath(24); ctx.fill(); ctx.restore();
+    } else if (type === 'forever_heart') {
+      ctx.strokeStyle = '#f43f5e';
+      ctx.lineWidth = 4;
+      drawHeartPath(40);
+      ctx.stroke();
+      ctx.font = 'italic 20px "Brush Script MT", "Snell Roundhand", "Caveat", cursive, sans-serif';
+      ctx.fillStyle = '#881337';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('forever', 0, 0);
+    } else if (type === 'sketchy_heart') {
+      ctx.strokeStyle = '#e11d48';
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      for (let j = 0; j < 3; j++) {
+        ctx.save();
+        ctx.rotate((j - 1) * 0.05);
+        drawHeartPath(38 + j * 1.5);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.lineWidth = 1.2;
+      for (let k = -20; k <= 20; k += 7) {
+        ctx.beginPath();
+        ctx.moveTo(k - 6, -10 + k * 0.4);
+        ctx.lineTo(k + 6, 12 + k * 0.4);
+        ctx.stroke();
+      }
+    } else if (type === 'winged_heart') {
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-16, 0);
+      ctx.bezierCurveTo(-38, -26, -55, -8, -48, 12);
+      ctx.bezierCurveTo(-38, 18, -24, 10, -16, 12);
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(16, 0);
+      ctx.bezierCurveTo(38, -26, 55, -8, 48, 12);
+      ctx.bezierCurveTo(38, 18, 24, 10, 16, 12);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e11d48';
+      drawHeartPath(28);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.beginPath(); ctx.ellipse(-8, -10, 5, 2.5, -Math.PI / 4, 0, Math.PI * 2); ctx.fill();
+    } else if (type === 'love_envelope') {
+      ctx.fillStyle = '#fef3c7';
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 2;
+      ctx.fillRect(-32, -10, 64, 44);
+      ctx.strokeRect(-32, -10, 64, 44);
+      ctx.beginPath();
+      ctx.moveTo(-32, -10); ctx.lineTo(0, 14); ctx.lineTo(32, -10);
+      ctx.stroke();
+      ctx.fillStyle = '#e11d48';
+      ctx.save();
+      ctx.translate(0, -22); ctx.scale(0.5, 0.5); drawHeartPath(30); ctx.fill();
+      ctx.restore();
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(0, -8); ctx.stroke();
+    } else if (type === 'shining_heart') {
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 2.5;
+      for (let i = 0; i < 8; i++) {
+        const ang = (i / 8) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(ang) * 36, Math.sin(ang) * 36);
+        ctx.lineTo(Math.cos(ang) * 48, Math.sin(ang) * 48);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#ef4444';
+      drawHeartPath(30);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(-7, -10, 3, 0, Math.PI * 2); ctx.fill();
+    } else if (type === 'heart_balloons') {
+      ctx.strokeStyle = '#9ca3af';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(-16, -4); ctx.quadraticCurveTo(-8, 20, 0, 42); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 42); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(16, -6); ctx.quadraticCurveTo(8, 20, 0, 42); ctx.stroke();
+      ctx.fillStyle = '#f43f5e';
+      ctx.beginPath(); ctx.arc(0, 42, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.translate(-16, -18); ctx.scale(0.42, 0.42); ctx.fillStyle = '#fb7185'; drawHeartPath(28); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.translate(16, -18); ctx.scale(0.42, 0.42); ctx.fillStyle = '#c084fc'; drawHeartPath(28); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.translate(0, -28); ctx.scale(0.48, 0.48); ctx.fillStyle = '#e11d48'; drawHeartPath(28); ctx.fill(); ctx.restore();
+    } else if (type === 'heart_arrow') {
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-45, 35); ctx.lineTo(45, -35); ctx.stroke();
+      ctx.fillStyle = '#d97706';
+      ctx.beginPath(); ctx.moveTo(48, -38); ctx.lineTo(34, -38); ctx.lineTo(38, -24); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-42, 32); ctx.lineTo(-48, 44); ctx.lineTo(-34, 38); ctx.fill();
+      ctx.fillStyle = '#e11d48';
+      drawHeartPath(36);
+      ctx.fill();
+    } else if (type === 'heart_hands') {
+      ctx.strokeStyle = '#fb7185';
+      ctx.fillStyle = 'rgba(251, 113, 133, 0.25)';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, 24);
+      ctx.bezierCurveTo(-26, 26, -42, 2, -34, -14);
+      ctx.bezierCurveTo(-26, -26, -10, -18, 0, -4);
+      ctx.bezierCurveTo(10, -18, 26, -26, 34, -14);
+      ctx.bezierCurveTo(42, 2, 26, 26, 0, 24);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e11d48';
+      ctx.save(); ctx.scale(0.28, 0.28); drawHeartPath(24); ctx.fill(); ctx.restore();
+    } else if (type === 'looping_heart') {
+      ctx.strokeStyle = '#f43f5e';
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-20, 26);
+      ctx.bezierCurveTo(10, 20, 38, -10, 22, -26);
+      ctx.bezierCurveTo(8, -36, -8, -14, 0, 0);
+      ctx.bezierCurveTo(8, -14, -8, -36, -22, -26);
+      ctx.bezierCurveTo(-38, -10, -10, 20, 20, 26);
+      ctx.stroke();
+    } else if (type === 'birthday_cake_doodle') {
+      ctx.fillStyle = '#fbcfe8';
+      ctx.fillRect(-34, 4, 68, 28);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(-34, 4);
+      for (let x = -34; x < 34; x += 11.3) {
+        ctx.quadraticCurveTo(x + 5.6, 12, x + 11.3, 4);
+      }
+      ctx.fill();
+      ctx.fillStyle = '#f472b6';
+      ctx.fillRect(-22, -18, 44, 22);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(-22, -18);
+      for (let x = -22; x < 22; x += 11) {
+        ctx.quadraticCurveTo(x + 5.5, -12, x + 11, -18);
+      }
+      ctx.fill();
+      for (let cx = -14; cx <= 14; cx += 14) {
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(cx - 2, -32, 4, 14);
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath(); ctx.ellipse(cx, -36, 3, 5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath(); ctx.ellipse(cx, -35, 1.5, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.font = 'bold 8.5px sans-serif';
+      ctx.fillStyle = '#be185d';
+      ctx.textAlign = 'center';
+      ctx.fillText('Happy Birthday', 0, 22);
+    } else if (type === 'birthday_bunting') {
+      ctx.strokeStyle = '#9ca3af';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-45, -15);
+      ctx.quadraticCurveTo(0, 10, 45, -15);
+      ctx.stroke();
+      const flagCols = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
+      for (let i = 0; i < 5; i++) {
+        const t = (i + 0.5) / 5;
+        const fx = -45 + t * 90;
+        const fy = -15 + 25 * 4 * t * (1 - t);
+        ctx.fillStyle = flagCols[i];
+        ctx.beginPath();
+        ctx.moveTo(fx - 7, fy);
+        ctx.lineTo(fx + 7, fy);
+        ctx.lineTo(fx, fy + 16);
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else if (type === 'happy_holidays_gold') {
+      ctx.font = 'bold italic 22px "Brush Script MT", "Snell Roundhand", cursive, sans-serif';
+      ctx.fillStyle = '#d97706';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Happy Holidays', 0, 0);
+      function drawGoldStar(gx, gy, gr) {
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.moveTo(gx, gy - gr); ctx.lineTo(gx + gr * 0.3, gy - gr * 0.3);
+        ctx.lineTo(gx + gr, gy); ctx.lineTo(gx + gr * 0.3, gy + gr * 0.3);
+        ctx.lineTo(gx, gy + gr); ctx.lineTo(gx - gr * 0.3, gy + gr * 0.3);
+        ctx.lineTo(gx - gr, gy); ctx.lineTo(gx - gr * 0.3, gy - gr * 0.3);
+        ctx.fill();
+      }
+      drawGoldStar(-40, -18, 8);
+      drawGoldStar(40, 18, 8);
+      drawGoldStar(36, -18, 5);
+    } else if (type === 'season_greetings') {
+      ctx.strokeStyle = '#15803d';
+      ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(0, 0, 36, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#dc2626';
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+        ctx.beginPath(); ctx.arc(Math.cos(a) * 36, Math.sin(a) * 36, 3.5, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#b91c1c';
+      ctx.beginPath(); ctx.arc(0, 36, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.font = 'bold 9px sans-serif';
+      ctx.fillStyle = '#14532d';
+      ctx.textAlign = 'center';
+      ctx.fillText("Season's", 0, -4);
+      ctx.fillText("Greetings", 0, 8);
+    } else if (type === 'xmas_tree') {
+      ctx.fillStyle = '#15803d';
+      ctx.beginPath(); ctx.moveTo(0, -32); ctx.lineTo(16, -14); ctx.lineTo(-16, -14); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(24, 6); ctx.lineTo(-24, 6); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(32, 28); ctx.lineTo(-32, 28); ctx.fill();
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(-6, 28, 12, 12);
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath(); ctx.arc(0, -34, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(-10, -6, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(14, 18, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath(); ctx.arc(8, -4, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-16, 20, 3, 0, Math.PI * 2); ctx.fill();
+    } else if (type === 'holly_berries') {
+      ctx.fillStyle = '#166534';
+      ctx.beginPath();
+      ctx.moveTo(0, 0); ctx.quadraticCurveTo(-20, -15, -34, -28);
+      ctx.quadraticCurveTo(-15, -20, 0, 0); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(0, 0); ctx.quadraticCurveTo(20, -15, 34, -28);
+      ctx.quadraticCurveTo(15, -20, 0, 0); ctx.fill();
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath(); ctx.arc(-7, 2, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(7, 2, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 12, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(-9, 0, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(5, 0, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-2, 10, 2, 0, Math.PI * 2); ctx.fill();
+    } else if (type === 'christmas_stockings') {
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(-28, -12, 14, 26);
+      ctx.beginPath(); ctx.arc(-21, 14, 10, 0, Math.PI); ctx.fill();
+      ctx.fillRect(-21, 6, 16, 14);
+      ctx.beginPath(); ctx.arc(-5, 13, 7, -Math.PI / 2, Math.PI / 2); ctx.fill();
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(-30, -18, 18, 8);
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(4, -10, 14, 26);
+      ctx.beginPath(); ctx.arc(11, 16, 10, 0, Math.PI); ctx.fill();
+      ctx.fillRect(11, 8, 16, 14);
+      ctx.beginPath(); ctx.arc(27, 15, 7, -Math.PI / 2, Math.PI / 2); ctx.fill();
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(2, -16, 18, 8);
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-16, -18); ctx.lineTo(-16, -30); ctx.arc(-20, -30, 4, 0, Math.PI, true); ctx.stroke();
+    } else if (type === 'halloween_ghost') {
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, -6, 22, Math.PI, 0);
+      ctx.lineTo(22, 20);
+      ctx.quadraticCurveTo(11, 12, 0, 20);
+      ctx.quadraticCurveTo(-11, 12, -22, 20);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath(); ctx.ellipse(-8, -8, 2.5, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(8, -8, 2.5, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, 0, 3, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#312e81';
+      ctx.beginPath(); ctx.moveTo(-20, -22); ctx.lineTo(0, -44); ctx.lineTo(16, -22); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, -22, 26, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#c084fc';
+      ctx.fillRect(-12, -26, 24, 4);
+    } else if (type === 'jack_o_lantern') {
+      ctx.fillStyle = '#ea580c';
+      ctx.beginPath(); ctx.ellipse(0, 4, 34, 28, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#15803d';
+      ctx.fillRect(-4, -28, 8, 10);
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath(); ctx.moveTo(-14, -4); ctx.lineTo(-8, -12); ctx.lineTo(-2, -4); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(2, -4); ctx.lineTo(8, -12); ctx.lineTo(14, -4); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(-3, 3); ctx.lineTo(3, 3); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-18, 8); ctx.quadraticCurveTo(0, 26, 18, 8);
+      ctx.quadraticCurveTo(0, 18, -18, 8); ctx.fill();
+    } else if (type === 'flying_bats') {
+      function drawBat(bx, by, bScale) {
+        ctx.save();
+        ctx.translate(bx, by);
+        ctx.scale(bScale, bScale);
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(-14, -18, -32, -10);
+        ctx.quadraticCurveTo(-22, 4, -12, 6);
+        ctx.quadraticCurveTo(-6, 12, 0, 8);
+        ctx.quadraticCurveTo(6, 12, 12, 6);
+        ctx.quadraticCurveTo(22, 4, 32, -10);
+        ctx.quadraticCurveTo(14, -18, 0, 0);
+        ctx.fill();
+        ctx.restore();
+      }
+      drawBat(-14, -10, 0.9);
+      drawBat(18, 12, 0.65);
+    } else if (type === 'summer_flipflops') {
+      function drawSandal(sx, sy, col, rot) {
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.rotate(rot);
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 10, 24, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(-7, 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(7, 2); ctx.stroke();
+        ctx.restore();
+      }
+      drawSandal(-14, 0, '#06b6d4', -0.15);
+      drawSandal(14, 0, '#f43f5e', 0.15);
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath(); ctx.arc(12, -12, 5, 0, Math.PI * 2); ctx.fill();
+    } else if (type === 'seashells') {
+      ctx.fillStyle = '#fbcfe8';
+      ctx.strokeStyle = '#f472b6';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(-12, 6, 20, Math.PI * 0.8, Math.PI * 0.2);
+      ctx.lineTo(-4, 22); ctx.lineTo(-20, 22); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a1 = (i / 5) * Math.PI * 2 - Math.PI / 2;
+        const a2 = a1 + Math.PI / 5;
+        const ox = 18 + Math.cos(a1) * 16;
+        const oy = 6 + Math.sin(a1) * 16;
+        const ix = 18 + Math.cos(a2) * 7;
+        const iy = 6 + Math.sin(a2) * 7;
+        if (i === 0) ctx.moveTo(ox, oy); else ctx.lineTo(ox, oy);
+        ctx.lineTo(ix, iy);
+      }
+      ctx.closePath(); ctx.fill();
+    } else if (type === 'cherry_blossoms') {
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(-35, 15); ctx.quadraticCurveTo(-10, -5, 30, -20); ctx.stroke();
+      function drawSakura(bx, by, rad) {
+        ctx.fillStyle = '#fbcfe8';
+        ctx.strokeStyle = '#f472b6';
+        ctx.lineWidth = 1;
+        for (let p = 0; p < 5; p++) {
+          const a = (p / 5) * Math.PI * 2;
+          const px = bx + Math.cos(a) * rad;
+          const py = by + Math.sin(a) * rad;
+          ctx.beginPath(); ctx.arc(px, py, rad * 0.7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        }
+        ctx.fillStyle = '#f43f5e';
+        ctx.beginPath(); ctx.arc(bx, by, rad * 0.35, 0, Math.PI * 2); ctx.fill();
+      }
+      drawSakura(-14, 2, 9);
+      drawSakura(14, -12, 10);
+      ctx.fillStyle = '#fce7f3';
+      ctx.beginPath(); ctx.ellipse(-24, -14, 5, 3, Math.PI / 3, 0, Math.PI * 2); ctx.fill();
+    } else if (type === 'mimosa') {
+      ctx.strokeStyle = '#4d7c0f';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-30, 24); ctx.quadraticCurveTo(0, 0, 30, -24); ctx.stroke();
+      ctx.fillStyle = '#facc15';
+      const puffs = [
+        { x: -16, y: 12 }, { x: -8, y: 2 }, { x: 0, y: -4 },
+        { x: 12, y: -10 }, { x: 22, y: -18 }, { x: -4, y: 14 }, { x: 8, y: -2 }
+      ];
+      puffs.forEach(p => {
+        ctx.beginPath(); ctx.arc(p.x, p.y, 6.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath(); ctx.arc(p.x - 1.5, p.y - 1.5, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#facc15';
+      });
+    }
+
+    ctx.restore();
   }
 
   function drawStickerOverlay(targetCtx, w, h) {
@@ -2248,51 +3168,16 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     const hasCustomImg = !!customStickerImage;
     if (stickerType === 'none' && !hasCustomImg) return;
 
-    const pos = document.getElementById('stickerPosSelect')?.value || 'bottomRight';
     const scale = parseFloat(document.getElementById('sliderStickerScale')?.value || 0.25);
     const opacity = parseFloat(document.getElementById('sliderStickerOpacity')?.value || 1.0);
     const rotationDeg = parseFloat(document.getElementById('sliderStickerRotation')?.value || 0.0);
-
     const targetDim = Math.min(w, h) * scale;
-    const margin = Math.round(Math.min(w, h) * 0.06);
 
-    let cx = w - margin - targetDim / 2;
-    let cy = h - margin - targetDim / 2;
-
-    switch (pos) {
-      case 'topLeft':
-        cx = margin + targetDim / 2;
-        cy = margin + targetDim / 2;
-        break;
-      case 'topRight':
-        cx = w - margin - targetDim / 2;
-        cy = margin + targetDim / 2;
-        break;
-      case 'bottomLeft':
-        cx = margin + targetDim / 2;
-        cy = h - margin - targetDim / 2;
-        break;
-      case 'bottomRight':
-        cx = w - margin - targetDim / 2;
-        cy = h - margin - targetDim / 2;
-        break;
-      case 'center':
-        cx = w / 2;
-        cy = h / 2;
-        break;
-      case 'topCenter':
-        cx = w / 2;
-        cy = margin + targetDim / 2;
-        break;
-      case 'bottomCenter':
-        cx = w / 2;
-        cy = h - margin - targetDim / 2;
-        break;
-    }
+    const pos = getStickerCenterCoords(w, h);
 
     targetCtx.save();
     targetCtx.globalAlpha = Math.max(0.05, Math.min(1.0, opacity));
-    targetCtx.translate(cx, cy);
+    targetCtx.translate(pos.cx, pos.cy);
     if (rotationDeg !== 0) {
       targetCtx.rotate((rotationDeg * Math.PI) / 180);
     }
@@ -2307,12 +3192,224 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         sw = targetDim * aspect;
       }
       targetCtx.drawImage(customStickerImage, -sw / 2, -sh / 2, sw, sh);
+    } else if (isDoodleSticker(stickerType)) {
+      drawDoodleSticker(targetCtx, stickerType, targetDim);
     } else if (STICKER_MAP[stickerType]) {
       const emoji = STICKER_MAP[stickerType];
       const fontSize = Math.round(targetDim * 0.85);
       targetCtx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
       targetCtx.textAlign = 'center';
       targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(emoji, 0, 0);
+    }
+
+    targetCtx.restore();
+  }
+
+  function drawCustomBanner(targetCtx, w, h) {
+    const bannerText = (document.getElementById('bannerTextInput')?.value || "").trim();
+    const bannerStyle = document.getElementById('bannerStyleSelect')?.value || "none";
+    if (!bannerText || bannerStyle === "none") return;
+
+    const bannerIcon = document.getElementById('bannerIconSelect')?.value || "none";
+    const bannerBgColor = document.getElementById('bannerBgColor')?.value || "#e11d48";
+    const bannerTextColor = document.getElementById('bannerTextColor')?.value || "#ffffff";
+    const bannerScale = parseFloat(document.getElementById('sliderBannerScale')?.value || 1.0);
+    const bannerRotation = parseFloat(document.getElementById('sliderBannerRotation')?.value || 0.0);
+
+    const iconMap = {
+      heart: '❤️', sparkles: '✨', party: '🎉', star: '⭐',
+      camera: '📸', cake: '🎂', flower: '🌸', ring: '💍'
+    };
+    const iconStr = iconMap[bannerIcon] || '';
+    const fullText = iconStr ? `${iconStr} ${bannerText}` : bannerText;
+
+    const pos = getBannerCenterCoords(w, h);
+
+    targetCtx.save();
+    targetCtx.translate(pos.cx, pos.cy);
+    if (bannerRotation !== 0) {
+      targetCtx.rotate((bannerRotation * Math.PI) / 180);
+    }
+    targetCtx.scale(bannerScale, bannerScale);
+
+    targetCtx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const tm = targetCtx.measureText(fullText);
+    const tw = tm.width;
+
+    if (bannerStyle === 'ribbon') {
+      const rw = Math.max(130, tw + 46);
+      const rh = 40;
+      const tailW = 34;
+      const tailH = 34;
+
+      targetCtx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+      targetCtx.beginPath();
+      targetCtx.moveTo(-rw / 2, rh / 2);
+      targetCtx.lineTo(-rw / 2, rh / 2 + 8);
+      targetCtx.lineTo(-rw / 2 + 10, rh / 2);
+      targetCtx.fill();
+
+      targetCtx.beginPath();
+      targetCtx.moveTo(rw / 2, rh / 2);
+      targetCtx.lineTo(rw / 2, rh / 2 + 8);
+      targetCtx.lineTo(rw / 2 - 10, rh / 2);
+      targetCtx.fill();
+
+      targetCtx.fillStyle = bannerBgColor;
+      targetCtx.beginPath();
+      targetCtx.moveTo(-rw / 2 + 4, -rh / 2 + 6);
+      targetCtx.lineTo(-rw / 2 - tailW, -rh / 2 + 6);
+      targetCtx.lineTo(-rw / 2 - tailW + 12, -rh / 2 + 6 + tailH / 2);
+      targetCtx.lineTo(-rw / 2 - tailW, -rh / 2 + 6 + tailH);
+      targetCtx.lineTo(-rw / 2 + 4, -rh / 2 + 6 + tailH);
+      ctxCloseAndFill(targetCtx);
+
+      targetCtx.beginPath();
+      targetCtx.moveTo(rw / 2 - 4, -rh / 2 + 6);
+      targetCtx.lineTo(rw / 2 + tailW, -rh / 2 + 6);
+      targetCtx.lineTo(rw / 2 + tailW - 12, -rh / 2 + 6 + tailH / 2);
+      targetCtx.lineTo(rw / 2 + tailW, -rh / 2 + 6 + tailH);
+      targetCtx.lineTo(rw / 2 - 4, -rh / 2 + 6 + tailH);
+      ctxCloseAndFill(targetCtx);
+
+      targetCtx.fillStyle = bannerBgColor;
+      targetCtx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      targetCtx.shadowBlur = 8;
+      targetCtx.fillRect(-rw / 2, -rh / 2, rw, rh);
+      targetCtx.shadowColor = 'transparent';
+
+      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      targetCtx.lineWidth = 1.2;
+      targetCtx.strokeRect(-rw / 2 + 2, -rh / 2 + 2, rw - 4, rh - 4);
+
+      targetCtx.fillStyle = bannerTextColor;
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(fullText, 0, 1);
+    } else if (bannerStyle === 'calligraphy') {
+      const bw = tw + 48;
+      const bh = 42;
+      targetCtx.fillStyle = bannerBgColor;
+      targetCtx.beginPath();
+      targetCtx.moveTo(-bw / 2 + 10, -bh / 2);
+      targetCtx.quadraticCurveTo(0, -bh / 2 - 4, bw / 2 - 6, -bh / 2);
+      targetCtx.quadraticCurveTo(bw / 2 + 10, 0, bw / 2 - 12, bh / 2);
+      targetCtx.quadraticCurveTo(0, bh / 2 + 4, -bw / 2 + 6, bh / 2);
+      targetCtx.quadraticCurveTo(-bw / 2 - 8, 0, -bw / 2 + 10, -bh / 2);
+      targetCtx.fill();
+
+      targetCtx.font = 'bold italic 21px "Brush Script MT", "Snell Roundhand", cursive, sans-serif';
+      targetCtx.fillStyle = bannerTextColor;
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(fullText, 0, -1);
+
+      targetCtx.strokeStyle = bannerTextColor;
+      targetCtx.lineWidth = 1.8;
+      targetCtx.beginPath();
+      targetCtx.moveTo(-tw / 2, 14);
+      targetCtx.quadraticCurveTo(0, 20, tw / 2, 14);
+      targetCtx.stroke();
+    } else if (bannerStyle === 'pill') {
+      const pw = tw + 40;
+      const ph = 40;
+      targetCtx.fillStyle = bannerBgColor;
+      targetCtx.globalAlpha = 0.90;
+      targetCtx.beginPath();
+      if (targetCtx.roundRect) targetCtx.roundRect(-pw / 2, -ph / 2, pw, ph, 20);
+      else targetCtx.rect(-pw / 2, -ph / 2, pw, ph);
+      targetCtx.fill();
+
+      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.stroke();
+
+      targetCtx.globalAlpha = 1.0;
+      targetCtx.fillStyle = bannerTextColor;
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(fullText, 0, 0);
+    } else if (bannerStyle === 'tag') {
+      const tagW = tw + 56;
+      const tagH = 42;
+      targetCtx.fillStyle = bannerBgColor;
+      targetCtx.beginPath();
+      targetCtx.moveTo(-tagW / 2 + 14, -tagH / 2);
+      targetCtx.lineTo(tagW / 2 - 4, -tagH / 2);
+      targetCtx.lineTo(tagW / 2 - 4, tagH / 2);
+      targetCtx.lineTo(-tagW / 2 + 14, tagH / 2);
+      targetCtx.lineTo(-tagW / 2, 0);
+      ctxCloseAndFill(targetCtx);
+
+      targetCtx.fillStyle = '#d97706';
+      targetCtx.beginPath(); targetCtx.arc(-tagW / 2 + 10, 0, 4.5, 0, Math.PI * 2); targetCtx.fill();
+      targetCtx.fillStyle = '#1e1e1e';
+      targetCtx.beginPath(); targetCtx.arc(-tagW / 2 + 10, 0, 2.5, 0, Math.PI * 2); targetCtx.fill();
+
+      targetCtx.strokeStyle = '#d4af37';
+      targetCtx.lineWidth = 1.8;
+      targetCtx.beginPath();
+      targetCtx.moveTo(-tagW / 2 + 8, 0);
+      targetCtx.quadraticCurveTo(-tagW / 2 - 18, -12, -tagW / 2 - 28, -6);
+      targetCtx.stroke();
+
+      targetCtx.fillStyle = bannerTextColor;
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(fullText, 6, 0);
+    } else if (bannerStyle === 'stamp') {
+      const sw = tw + 44;
+      const sh = 42;
+      targetCtx.strokeStyle = bannerBgColor;
+      targetCtx.lineWidth = 2.5;
+      targetCtx.strokeRect(-sw / 2, -sh / 2, sw, sh);
+      targetCtx.lineWidth = 1;
+      targetCtx.strokeRect(-sw / 2 + 3, -sh / 2 + 3, sw - 6, sh - 6);
+
+      targetCtx.font = '900 18px "Courier New", Courier, monospace';
+      targetCtx.fillStyle = bannerBgColor;
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(fullText.toUpperCase(), 0, 0);
+    } else if (bannerStyle === 'garland') {
+      const words = fullText.split(' ');
+      const flagW = Math.max(30, (tw + 20) / Math.max(1, words.length));
+      const totalW = flagW * words.length;
+
+      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+      targetCtx.lineWidth = 1.8;
+      targetCtx.beginPath();
+      targetCtx.moveTo(-totalW / 2, -14);
+      targetCtx.quadraticCurveTo(0, -6, totalW / 2, -14);
+      targetCtx.stroke();
+
+      words.forEach((wrd, idx) => {
+        const fx = -totalW / 2 + idx * flagW + flagW / 2;
+        const t = (idx + 0.5) / words.length;
+        const fy = -14 + 8 * 4 * t * (1 - t);
+        targetCtx.fillStyle = bannerBgColor;
+        targetCtx.beginPath();
+        targetCtx.moveTo(fx - flagW / 2 + 2, fy);
+        targetCtx.lineTo(fx + flagW / 2 - 2, fy);
+        targetCtx.lineTo(fx, fy + 32);
+        ctxCloseAndFill(targetCtx);
+
+        targetCtx.font = 'bold 13px sans-serif';
+        targetCtx.fillStyle = bannerTextColor;
+        targetCtx.textAlign = 'center';
+        targetCtx.textBaseline = 'middle';
+        targetCtx.fillText(wrd, fx, fy + 12);
+      });
+    }
+
+    targetCtx.restore();
+  }
+
+  function ctxCloseAndFill(ctx) {
+    ctx.closePath();
+    ctx.fill();
+  }
       targetCtx.fillText(emoji, 0, 0);
     }
 
@@ -2385,6 +3482,37 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     if (valStickerRotEl) {
       const rot = parseFloat(document.getElementById('sliderStickerRotation')?.value || 0.0);
       valStickerRotEl.textContent = `${rot > 0 ? '+' : ''}${Math.round(rot)}°`;
+    }
+    const valStickerXEl = document.getElementById('valStickerX');
+    if (valStickerXEl) {
+      const sx = parseFloat(document.getElementById('sliderStickerX')?.value || 0.65);
+      valStickerXEl.textContent = `${sx >= 0 ? '+' : ''}${Math.round(sx * 100)}%`;
+    }
+    const valStickerYEl = document.getElementById('valStickerY');
+    if (valStickerYEl) {
+      const sy = parseFloat(document.getElementById('sliderStickerY')?.value || 0.65);
+      valStickerYEl.textContent = `${sy >= 0 ? '+' : ''}${Math.round(sy * 100)}%`;
+    }
+
+    const valBannerXEl = document.getElementById('valBannerX');
+    if (valBannerXEl) {
+      const bx = parseFloat(document.getElementById('sliderBannerX')?.value || 0.0);
+      valBannerXEl.textContent = `${bx >= 0 ? '+' : ''}${Math.round(bx * 100)}%`;
+    }
+    const valBannerYEl = document.getElementById('valBannerY');
+    if (valBannerYEl) {
+      const by = parseFloat(document.getElementById('sliderBannerY')?.value || 0.68);
+      valBannerYEl.textContent = `${by >= 0 ? '+' : ''}${Math.round(by * 100)}%`;
+    }
+    const valBannerScaleEl = document.getElementById('valBannerScale');
+    if (valBannerScaleEl) {
+      const bscale = parseFloat(document.getElementById('sliderBannerScale')?.value || 1.0);
+      valBannerScaleEl.textContent = `${Math.round(bscale * 100)}%`;
+    }
+    const valBannerRotEl = document.getElementById('valBannerRotation');
+    if (valBannerRotEl) {
+      const brot = parseFloat(document.getElementById('sliderBannerRotation')?.value || 0.0);
+      valBannerRotEl.textContent = `${brot > 0 ? '+' : ''}${Math.round(brot)}°`;
     }
 
     // Canvas background
@@ -2475,6 +3603,9 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
 
     // Sticker or Custom Image Overlay
     drawStickerOverlay(ctx, canvas.width, canvas.height);
+
+    // Custom Banner Overlay
+    drawCustomBanner(ctx, canvas.width, canvas.height);
 
     // Bottom caption & date
     const cap = document.getElementById('captionText').value.trim();
@@ -2840,25 +3971,91 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     });
   });
 
-  // Drag-to-pan handlers
+  // Drag handlers with hit-testing for Sticker, Banner, and Photo
+  let activeDragTarget = 'photo'; // 'photo', 'sticker', 'banner'
+
+  function hitTestCanvas(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return (primaryImg || collageImgs.length > 0) ? 'photo' : null;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clickX = (clientX - rect.left) * scaleX;
+    const clickY = (clientY - rect.top) * scaleY;
+
+    // 1. Check sticker / custom image hit
+    const stickerType = document.getElementById('stickerSelect')?.value || 'none';
+    const hasSticker = (stickerType !== 'none' || !!customStickerImage);
+    if (hasSticker) {
+      const stPos = getStickerCenterCoords(canvas.width, canvas.height);
+      const scale = parseFloat(document.getElementById('sliderStickerScale')?.value || 0.25);
+      const hitRadius = (Math.min(canvas.width, canvas.height) * scale * 0.70) + 24;
+      if (Math.hypot(clickX - stPos.cx, clickY - stPos.cy) <= hitRadius) {
+        return 'sticker';
+      }
+    }
+
+    // 2. Check custom banner hit
+    const bannerText = (document.getElementById('bannerTextInput')?.value || '').trim();
+    const bannerStyle = document.getElementById('bannerStyleSelect')?.value || 'none';
+    if (bannerText && bannerStyle !== 'none') {
+      const bnPos = getBannerCenterCoords(canvas.width, canvas.height);
+      const bnScale = parseFloat(document.getElementById('sliderBannerScale')?.value || 1.0);
+      const approxW = (bannerText.length * 20 + 80) * bnScale;
+      const approxH = 65 * bnScale;
+      if (Math.abs(clickX - bnPos.cx) <= approxW / 2 + 18 && Math.abs(clickY - bnPos.cy) <= approxH / 2 + 18) {
+        return 'banner';
+      }
+    }
+
+    return (primaryImg || collageImgs.length > 0) ? 'photo' : null;
+  }
+
   function handleDragStart(clientX, clientY) {
+    const hit = hitTestCanvas(clientX, clientY);
+    if (!hit) return;
     isDragging = true;
+    activeDragTarget = hit;
     dragStartX = clientX;
     dragStartY = clientY;
     panStartX = parseFloat(document.getElementById('sliderPanX').value);
     panStartY = parseFloat(document.getElementById('sliderPanY').value);
   }
+
   function handleDragMove(clientX, clientY) {
     if (!isDragging) return;
-    const dx = clientX - dragStartX;
-    const dy = clientY - dragStartY;
     const rect = canvas.getBoundingClientRect();
-    const panX = Math.max(-1.0, Math.min(1.0, panStartX + (dx / rect.width) * 2.0));
-    const panY = Math.max(-1.0, Math.min(1.0, panStartY + (dy / rect.height) * 2.0));
-    document.getElementById('sliderPanX').value = panX.toFixed(2);
-    document.getElementById('sliderPanY').value = panY.toFixed(2);
+    const halfW = (rect.width > 0 ? rect.width : canvas.clientWidth) / 2;
+    const halfH = (rect.height > 0 ? rect.height : canvas.clientHeight) / 2;
+    const dx = (clientX - dragStartX) / halfW;
+    const dy = (clientY - dragStartY) / halfH;
+    dragStartX = clientX;
+    dragStartY = clientY;
+
+    if (activeDragTarget === 'sticker') {
+      const sx = document.getElementById('sliderStickerX');
+      const sy = document.getElementById('sliderStickerY');
+      if (sx && sy) {
+        sx.value = Math.max(-1.0, Math.min(1.0, parseFloat(sx.value) + dx)).toFixed(2);
+        sy.value = Math.max(-1.0, Math.min(1.0, parseFloat(sy.value) + dy)).toFixed(2);
+        const posSel = document.getElementById('stickerPosSelect');
+        if (posSel) posSel.value = 'custom';
+      }
+    } else if (activeDragTarget === 'banner') {
+      const bx = document.getElementById('sliderBannerX');
+      const by = document.getElementById('sliderBannerY');
+      if (bx && by) {
+        bx.value = Math.max(-1.0, Math.min(1.0, parseFloat(bx.value) + dx)).toFixed(2);
+        by.value = Math.max(-1.0, Math.min(1.0, parseFloat(by.value) + dy)).toFixed(2);
+      }
+    } else if (activeDragTarget === 'photo') {
+      const panX = Math.max(-1.0, Math.min(1.0, parseFloat(document.getElementById('sliderPanX').value) + dx));
+      const panY = Math.max(-1.0, Math.min(1.0, parseFloat(document.getElementById('sliderPanY').value) + dy));
+      document.getElementById('sliderPanX').value = panX.toFixed(2);
+      document.getElementById('sliderPanY').value = panY.toFixed(2);
+    }
     renderCanvas();
   }
+
   function handleDragEnd() { isDragging = false; }
 
   canvas.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY));
