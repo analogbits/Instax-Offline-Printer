@@ -480,9 +480,25 @@ class InstaxDesktopApp(tk.Tk):
                     st = fut_st.result()
                     self.after(0, self._on_connected, st)
                 except Exception as e:
-                    err_msg = f"{e}\n\n💡 Tip: Instax printers only allow ONE Bluetooth connection at a time. If previously connected to your phone or tablet, please turn OFF Bluetooth on your phone so the printer is free to connect to your computer."
-                    self.after(0, lambda: messagebox.showerror("Connection Error", err_msg))
-                    self.after(0, lambda: self.lbl_status.config(text="Failed to connect. Make sure phone Bluetooth is OFF."))
+                    err_str = str(e)
+                    if "bluez" in err_str.lower() or "d-bus" in err_str.lower() or "not provided" in err_str.lower():
+                        err_msg = (
+                            f"No Bluetooth hardware or BlueZ service found on this system.\n\n"
+                            f"Details: {err_str}\n\n"
+                            f"💡 Note: Cloud environments (like GitHub Codespaces) and virtual machines do not have physical Bluetooth antennas.\n\n"
+                            f"👉 To test live printing with zero hardware right here in Codespaces, run the Legacy Instax Wi-Fi app (which includes a built-in virtual simulator):\n\n"
+                            f"python3 Legacy-Instax-Printer/Linux/LegacyInstaxPrinterGUI.py"
+                        )
+                        title = "Bluetooth Hardware Required"
+                    else:
+                        err_msg = (
+                            f"{e}\n\n"
+                            f"💡 Tip: Instax printers only allow ONE Bluetooth connection at a time. "
+                            f"If previously connected to your phone or tablet, please turn OFF Bluetooth on your phone so the printer is free to connect to your computer."
+                        )
+                        title = "Connection Error"
+                    self.after(0, lambda: messagebox.showerror(title, err_msg))
+                    self.after(0, lambda: self.lbl_status.config(text="Bluetooth hardware unavailable." if "bluez" in err_str.lower() else "Failed to connect. Make sure phone Bluetooth is OFF."))
             threading.Thread(target=_connect, daemon=True).start()
 
     def _on_connected(self, st):

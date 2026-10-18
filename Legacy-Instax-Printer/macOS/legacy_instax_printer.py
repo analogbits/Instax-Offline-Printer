@@ -422,7 +422,7 @@ class LegacyInstaxClient:
                 self._send_and_recv(s5, CMD_RESET)
                 info = self._send_and_recv(s5, CMD_MODEL_NAME)
                 notify(1.0, f"Dry Run Verified! 100% of {len(planar_bytes) // 1000} KB Sent (0 Film Used)")
-                return {"film": info["film"], "battery": info["battery"], "dry_run": True}
+                return {"ok": True, "film": info["film"], "battery": info["battery"], "dry_run": True}
             else:
                 notify(0.90, "Phase 5/5: Developing & Ejecting Instax Film...")
                 self._send_and_recv(s5, CMD_LOCK_STATE)
@@ -436,7 +436,7 @@ class LegacyInstaxClient:
                         break
                     time.sleep(0.5)
                 notify(1.0, f"Print Complete! ({film}/10 Film Remaining)")
-                return {"film": film, "battery": batt, "dry_run": False}
+                return {"ok": True, "film": film, "battery": batt, "dry_run": False}
 
 
 def _normalize_legacy_model(raw: str) -> str:
