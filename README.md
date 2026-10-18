@@ -88,12 +88,16 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
 #### 🎞️ B. Legacy Wi-Fi Direct Printers (Instax SHARE SP-1, SP-2 & SP-3)
 * **Live Online Web App:** [https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html) *(or [`/legacy.html`](https://analogbits.github.io/Instax-Offline-Printer/legacy.html))*
 * **Offline Studio File:** [`Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html`](Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)
-* **Browser Compatibility:** Works in **regular Apple Safari, Chrome, Firefox, Edge, and Brave** on macOS, Windows, and Linux! **Zero Chrome requirement for Wi-Fi printers.**
-* **📱 Have Photos on an iPhone or iPad? Just AirDrop to Mac in 1 Second!**
-  * You do **not** need any complicated bridges or network hopping between your phone and computer:
-  1. On your iPhone: select photo in Apple Photos $\to$ tap **Share** $\to$ tap **AirDrop** to your Mac (1 second).
-  2. In your Mac's Wi-Fi menu: connect to **`INSTAX-XXXXXXXX`** (Password: `11111111`).
-  3. Open `Legacy Instax Printer.app` (or [`LegacyInstaxPrinterWeb.html`](Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)), pick the photo from Downloads, and click **Print Over Wi-Fi Direct**!
+* **📱 Printing from iPhone or iPad (3 Easy Options):**
+  1. **Option 1 — Safari Web Studio via Local Wi-Fi Bridge:**
+     * Connect your computer to **`INSTAX-XXXXXXXX`** and double-click `Start-Legacy-iPhone-WiFi-Bridge.command` (macOS), `Start-iPhone-WiFi-Bridge.bat` (Windows), or `./Start-iPhone-WiFi-Bridge.sh` (Linux).
+     * Connect iPhone to **`INSTAX-XXXXXXXX`** and open the displayed URL (e.g. `http://192.168.0.x:8089`) in regular iPhone Safari.
+     * Pick photos from your Camera Roll, frame collages, apply filters, and print over Wi-Fi Direct!
+  2. **Option 2 — 1-Second AirDrop to Mac (Fastest for Mac Users):**
+     * In Apple Photos on iPhone, tap Share $\to$ AirDrop to your Mac in 1 second.
+     * Connect Mac to **`INSTAX-XXXXXXXX`**, open `Legacy Instax Printer.app` (or [`LegacyInstaxPrinterWeb.html`](Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)), pick the photo from Downloads, and click **Print Over Wi-Fi Direct**!
+  3. **Option 3 — Direct iPhone-to-Printer (No Computer Needed):**
+     * Connect iPhone to **`INSTAX-XXXXXXXX`** and print directly using Fujifilm's official [instax SHARE app](https://apps.apple.com/app/instax-share/id816944602) from the App Store.
 
 ---
 

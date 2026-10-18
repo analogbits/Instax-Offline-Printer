@@ -31,13 +31,19 @@ COMMAND LINE (CLI) USAGE:
 
 PRINTING FROM IPHONE OR IPAD:
 -----------------------------
-Option 1 (Direct from iPhone without Mac):
-  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111) and print
-  using the official "instax SHARE" app from the iOS App Store.
+Option 1 (Safari Web Studio via Local Wi-Fi Bridge):
+  Connect Mac Wi-Fi to "INSTAX-XXXXXXXX" and double-click
+  "Start-Legacy-iPhone-WiFi-Bridge.command" (on Desktop or in macOS/).
+  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX", open http://192.168.0.x:8089 in
+  regular iPhone Safari, frame your photos, and tap Print!
 
-Option 2 (Print iPhone Photos via Mac):
+Option 2 (1-Second AirDrop to Mac):
   AirDrop photo from iPhone to your Mac in 1 second, join Mac Wi-Fi to
   "INSTAX-XXXXXXXX", open "Legacy Instax Printer.app", and click Print!
+
+Option 3 (Direct from iPhone without Mac):
+  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111) and print
+  using the official "instax SHARE" app from the iOS App Store.
 
 LOCAL WEB STUDIO BACKEND (OPTIONAL):
 ------------------------------------

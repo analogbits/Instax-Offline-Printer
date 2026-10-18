@@ -25,13 +25,19 @@ COMMAND LINE USAGE:
 
 PRINTING FROM IPHONE OR IPAD:
 -----------------------------
-Option 1 (Direct from iPhone without PC):
-  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111) and print
-  using the official "instax SHARE" app from the iOS App Store.
+Option 1 (Safari Web Studio via Local Wi-Fi Bridge):
+  Connect Linux Wi-Fi to "INSTAX-XXXXXXXX" and run:
+  `./Start-iPhone-WiFi-Bridge.sh` (or `python3 legacy_web_bridge.py`).
+  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX", open http://192.168.0.x:8089 in
+  regular iPhone Safari, frame your photos, and tap Print!
 
 Option 2 (Print iPhone Photos via Linux):
   Transfer photo to your Linux PC (via local network, USB, or cloud), connect
   Wi-Fi to "INSTAX-XXXXXXXX", and run `./Legacy-Instax-Printer-Linux.sh` to print!
+
+Option 3 (Direct from iPhone without PC):
+  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111) and print
+  using the official "instax SHARE" app from the iOS App Store.
 
 LOCAL WEB STUDIO BACKEND (OPTIONAL):
 ------------------------------------

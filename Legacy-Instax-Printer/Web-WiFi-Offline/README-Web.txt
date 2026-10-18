@@ -9,15 +9,22 @@ Wi-Fi Direct TCP Bridge ("legacy_web_bridge.py") for Fujifilm Instax SHARE:
   - Instax SHARE SP-3 (SQUARE Film • 800 × 800 Planar RGB)
 
 ---------------------------------------------------------------------------
-📱 PRINTING FROM IPHONE OR IPAD:
+📱 PRINTING FROM IPHONE OR IPAD (3 EASY OPTIONS):
 ---------------------------------------------------------------------------
-Option 1 — Direct iPhone-to-Printer (No Computer Needed):
-  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111) and print
-  directly using Fujifilm's official "instax SHARE" app on the iOS App Store.
+Option 1 — Safari Web Studio via Local Wi-Fi Bridge:
+  1. Connect computer Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111).
+  2. Launch bridge: Double-click "Start-Legacy-iPhone-WiFi-Bridge.command" (Mac),
+     "Start-iPhone-WiFi-Bridge.bat" (Win), or run "./Start-iPhone-WiFi-Bridge.sh" (Linux).
+  3. Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX".
+  4. Open http://192.168.0.x:8089 in regular iPhone Safari, frame photo, and tap Print!
 
-Option 2 — Creative Desktop Suite (Collages, QR Codes, Filters):
+Option 2 — 1-Second AirDrop to Mac (Fastest for Mac Users):
   AirDrop photo from iPhone to your Mac in 1 second, connect Mac to
   "INSTAX-XXXXXXXX", and click Print in LegacyInstaxPrinterWeb.html!
+
+Option 3 — Direct iPhone-to-Printer (No Computer Needed):
+  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111) and print
+  directly using Fujifilm's official "instax SHARE" app on the iOS App Store.
 
 ---------------------------------------------------------------------------
 💻 LOCAL WEB STUDIO BACKEND (legacy_web_bridge.py):

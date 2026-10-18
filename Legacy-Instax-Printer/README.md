@@ -33,22 +33,37 @@ A dedicated, 100% offline desktop and web application suite for Fujifilm's class
 
 ---
 
-## 📱 Printing from iPhone or iPad: How It Works
+## 📱 Printing from iPhone or iPad (3 Easy Options)
 
-### Option 1: Direct iPhone-to-Printer Printing (No Computer Needed)
-You can print directly from your iPhone or iPad using Fujifilm's official **instax SHARE** app:
-1. **Power On Printer:** Turn on your Instax SHARE SP-1, SP-2, or SP-3 printer.
-2. **Join Printer Wi-Fi:** On your iPhone, open **Settings $\to$ Wi-Fi** and join **`INSTAX-XXXXXXXX`** (Default Password: **`11111111`**).
-   *(iOS may display "No Internet Connection" — this is completely normal since the printer is not a modem. Stay connected).*
-3. **Open App & Print:** Open the free [Fujifilm instax SHARE app](https://apps.apple.com/app/instax-share/id816944602) on your iPhone, select your photo, and tap Print!
+### Option 1: Mobile Safari Web Studio via Local Wi-Fi Bridge (Zero iOS Apps Needed!)
+Use this suite's full visual studio (collages, QR codes, artistic filters, dry-run) directly from regular iPhone or iPad Safari:
+1. **Connect Computer to Printer:** On your Mac, PC, or Linux computer, connect Wi-Fi to your printer's **`INSTAX-XXXXXXXX`** network (Factory Password: **`11111111`**).
+2. **Launch Wi-Fi Bridge:**
+   - **Mac:** Double-click `Start-Legacy-iPhone-WiFi-Bridge.command` (on Desktop or in `macOS/`).
+   - **Windows:** Double-click `Start-iPhone-WiFi-Bridge.bat` (in `Windows/`).
+   - **Linux:** Run `./Start-iPhone-WiFi-Bridge.sh` (in `Linux/`).
+   - *(Or run `python3 legacy_web_bridge.py` in your terminal)*.
+3. **Connect iPhone to Printer Wi-Fi:** On your iPhone, open **Settings $\to$ Wi-Fi** and join the same **`INSTAX-XXXXXXXX`** network.
+   *(iOS may show "No Internet Connection" — this is normal! Tap "Keep Trying Wi-Fi" or stay connected).*
+4. **Open Safari on iPhone & Print:**
+   - In regular iPhone Safari, open the address displayed in the terminal: `http://192.168.0.x:8089` (e.g. `http://192.168.0.2:8089`).
+   - Pick photos from your Camera Roll, frame collages, apply filters, and tap **Print Over Wi-Fi Direct**!
 
 ---
 
-### Option 2: Printing iPhone Photos via This Offline Desktop Suite (AirDrop in 1 Second!)
-If you want to take advantage of this suite's advanced creative studio (9-photo collages, QR code badges, border spacing, artistic filters, and film simulation) on a large computer screen:
-1. **AirDrop to Mac:** On your iPhone, select your photo in Apple Photos $\to$ tap **Share** $\to$ tap **AirDrop** to your Mac. The photo appears in your Mac's Downloads folder in 1 second.
+### Option 2: 1-Second AirDrop to Mac (Fastest for Mac Users)
+If you don't want to switch Wi-Fi networks on your iPhone at all:
+1. **AirDrop to Mac:** In Apple Photos on iPhone, tap **Share $\to$ AirDrop** and send the photo to your Mac (1 second).
 2. **Connect Mac to Printer:** In your Mac's Wi-Fi menu, join your printer's **`INSTAX-XXXXXXXX`** network (Default Password: **`11111111`**).
-3. **Click Print:** Open **`Legacy Instax Printer.app`** (or [`LegacyInstaxPrinterWeb.html`](Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)), pick your photo, and click **Print Over Wi-Fi Direct**!
+3. **Click Print:** Open **`Legacy Instax Printer.app`** (or [`LegacyInstaxPrinterWeb.html`](Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)), pick your photo from Downloads, and click **Print Over Wi-Fi Direct**!
+
+---
+
+### Option 3: Direct iPhone-to-Printer Printing (No Computer Needed)
+You can print directly from your iPhone or iPad using Fujifilm's official **instax SHARE** app:
+1. **Power On Printer:** Turn on your Instax SHARE SP-1, SP-2, or SP-3 printer.
+2. **Join Printer Wi-Fi:** On your iPhone, open **Settings $\to$ Wi-Fi** and join **`INSTAX-XXXXXXXX`** (Default Password: **`11111111`**).
+3. **Open App & Print:** Open the free [Fujifilm instax SHARE app](https://apps.apple.com/app/instax-share/id816944602) on your iPhone, select your photo, and tap Print!
 
 ---
 
