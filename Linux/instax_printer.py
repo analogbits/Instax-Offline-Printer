@@ -531,6 +531,12 @@ def _compress_pil_to_jpeg(canvas: Image.Image, max_bytes: int = 60 * 1024) -> by
 
 
 FILM_PRESETS = {
+    "default": {
+        "print_mode": "rich", "filter": "none", "brightness": 0.00, "contrast": 1.00,
+        "saturation": 1.00, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.00,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
     "polaroid_sx70": {
         "print_mode": "natural", "filter": "vintage", "brightness": 0.04, "contrast": 0.92,
         "saturation": 1.10, "warmth": 0.35, "vignette": 0.30, "light_leak": "sunburst",

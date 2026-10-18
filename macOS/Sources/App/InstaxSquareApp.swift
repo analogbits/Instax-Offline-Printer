@@ -309,7 +309,7 @@ final class InstaxAppViewModel: ObservableObject {
     @Published var rotationDegrees: Int = 0 { didSet { if !isLoadingSelection { updatePreview() } } }
 
     // Film Emulation Presets (Ported & Expanded for Polaroid, Vintage & Instax Profiles)
-    @Published var filmPreset: String = "none"
+    @Published var filmPreset: String = "default"
 
     func applyFilmPreset(_ id: String) {
         filmPreset = id
@@ -1059,7 +1059,7 @@ final class InstaxAppViewModel: ObservableObject {
 
     func resetAdjustments() {
         isLoadingSelection = true
-        filmPreset = "none"
+        filmPreset = "default"
         zoom = 1.0
         offsetX = 0.0
         offsetY = 0.0
@@ -1077,7 +1077,7 @@ final class InstaxAppViewModel: ObservableObject {
 
     func resetAnalogFX() {
         isLoadingSelection = true
-        filmPreset = "none"
+        filmPreset = "default"
         warmth = 0.0
         vignette = 0.0
         lightLeak = "none"
@@ -2524,6 +2524,7 @@ struct InstaxMainView: View {
                     get: { vm.filmPreset },
                     set: { newID in vm.applyFilmPreset(newID) }
                 )) {
+                    Text("Default / Base (No Effects)").tag("default")
                     Text("Custom / Manual (Unsaved)").tag("none")
 
                     Divider()

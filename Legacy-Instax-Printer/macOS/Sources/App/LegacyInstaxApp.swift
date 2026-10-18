@@ -84,7 +84,7 @@ final class LegacyStudioViewModel: ObservableObject {
         }
     }
 
-    @Published var filmPreset: String = "none"
+    @Published var filmPreset: String = "default"
 
     func applyFilmPreset(_ id: String) {
         filmPreset = id
@@ -113,7 +113,7 @@ final class LegacyStudioViewModel: ObservableObject {
     }
 
     func resetAnalogFX() {
-        filmPreset = "none"
+        filmPreset = "default"
         options.warmth = 0.0
         options.vignette = 0.0
         options.lightLeak = "none"
@@ -849,6 +849,7 @@ struct LegacyMainStudioView: View {
                 get: { vm.filmPreset },
                 set: { vm.applyFilmPreset($0) }
             )) {
+                Text("Default / Base (No Effects)").tag("default")
                 Text("Custom / Manual (Unsaved)").tag("none")
 
                 Divider()
@@ -947,7 +948,7 @@ struct LegacyMainStudioView: View {
             }
 
             Button("Reset Color Adjustments") {
-                vm.filmPreset = "none"
+                vm.filmPreset = "default"
                 vm.options.filter = .normal
                 vm.options.brightness = 0.0
                 vm.options.contrast = 1.0

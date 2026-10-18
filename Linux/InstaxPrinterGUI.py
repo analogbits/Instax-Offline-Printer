@@ -21,6 +21,7 @@ except ImportError:
     from .instax_printer import InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx
 
 FILM_PRESET_OPTIONS = [
+    ("default", "Default / Base (No Effects)"),
     ("none", "Custom / Manual (Unsaved)"),
     ("polaroid_sx70", "Polaroid SX-70 (1972 Warm Chemistry)"),
     ("polaroid_600", "Polaroid 600 (Classic 80s/90s Pop)"),
@@ -37,6 +38,12 @@ FILM_PRESET_OPTIONS = [
 ]
 
 FILM_PRESETS = {
+    "default": {
+        "print_mode": "rich", "filter": "none", "brightness": 0.00, "contrast": 1.00,
+        "saturation": 1.00, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.00,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
     "polaroid_sx70": {
         "print_mode": "natural", "filter": "vintage", "brightness": 0.04, "contrast": 0.92,
         "saturation": 1.10, "warmth": 0.35, "vignette": 0.30, "light_leak": "sunburst",
@@ -179,7 +186,7 @@ class InstaxDesktopApp(tk.Tk):
         self.leak_auto_seed = 12345
 
         # Film Preset Emulation State
-        self.film_preset_var = tk.StringVar(value="Custom / Manual (Unsaved)")
+        self.film_preset_var = tk.StringVar(value="Default / Base (No Effects)")
         self._is_applying_preset = False
 
         # Drag tracking
@@ -549,7 +556,7 @@ class InstaxDesktopApp(tk.Tk):
         self.contrast.set(1.0)
         self.saturation.set(1.0)
         self.filter_preset.set("none")
-        self.mark_manual_adjustment()
+        self.film_preset_var.set("Default / Base (No Effects)")
         self.update_preview()
 
     def action_reset_analog_fx(self):
@@ -564,7 +571,7 @@ class InstaxDesktopApp(tk.Tk):
         self.vintage_date_text.set("")
         self.vintage_date_color.set("amber")
         self.vintage_date_placement.set("bottomRight")
-        self.mark_manual_adjustment()
+        self.film_preset_var.set("Default / Base (No Effects)")
         self.update_preview()
 
     def action_surprise_me_analog_fx(self):

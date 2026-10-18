@@ -39,6 +39,7 @@ from legacy_instax_printer import (
 )
 
 FILM_PRESET_OPTIONS = [
+    ("default", "Default / Base (No Effects)"),
     ("none", "Custom / Manual (Unsaved)"),
     ("polaroid_sx70", "Polaroid SX-70 (1972 Warm Chemistry)"),
     ("polaroid_600", "Polaroid 600 (Classic 80s/90s Pop)"),
@@ -55,6 +56,11 @@ FILM_PRESET_OPTIONS = [
 ]
 
 FILM_PRESETS = {
+    "default": {
+        "filter": "Normal", "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.00,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
     "polaroid_sx70": {
         "filter": "Vintage Film", "warmth": 0.35, "vignette": 0.30, "light_leak": "sunburst",
         "leak_placement": "topRight", "leak_intensity": 0.35, "film_grain": 0.25,
@@ -415,7 +421,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.leak_auto_seed = 12345
 
         # Film Preset Emulation State
-        self.film_preset_var = tk.StringVar(value="Custom / Manual (Unsaved)")
+        self.film_preset_var = tk.StringVar(value="Default / Base (No Effects)")
         self._is_applying_preset = False
 
         # Authentic Telemetry State (None when disconnected!)
@@ -922,7 +928,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.vintage_date_text_var.set("")
         self.vintage_date_color_var.set("amber")
         self.vintage_date_placement_var.set("bottomRight")
-        self.mark_manual_adjustment()
+        self.film_preset_var.set("Default / Base (No Effects)")
         self.refresh_preview()
 
     def surprise_me_analog_fx(self):

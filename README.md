@@ -170,7 +170,8 @@ Embed high-resolution, scannable QR codes onto your physical prints—just like 
 
 ### 🎞️ Analog Creative FX & Film Emulation Studio (Ported from PolaroidEngine)
 Bring the nostalgic warmth, chemical quirks, and physical characteristics of vintage instant film to any photo with zero external dependencies:
-* **🎞️ Instant Film Emulation Presets Catalog (v1.8.0):**
+* **🎞️ Instant Film Emulation Presets Catalog (v1.8.1):**
+  * **Default / Base (No Effects):** Clean neutral baseline with zero analog effects, neutral color reproduction, and pristine digital clarity.
   * **Polaroid Film Simulations:**
     * **Polaroid SX-70 (1972 Warm Chemistry):** Iconic warm, muted tones, soft contrast, sunburst corner leak, and authentic chemical texture.
     * **Polaroid 600 (Classic 80s/90s Pop):** High-contrast, punchy color rendition with left-hinge film burn leak and tactile grain.

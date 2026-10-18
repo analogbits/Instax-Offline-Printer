@@ -196,6 +196,27 @@ public struct InstaxFilmPresetDefinition: Identifiable, Hashable {
 
 public struct InstaxFilmCatalog {
     public static let presets: [InstaxFilmPresetDefinition] = [
+        // Default / Base Clean Image
+        InstaxFilmPresetDefinition(
+            id: "default",
+            title: "Default / Base (No Effects)",
+            category: "Base",
+            printMode: .rich,
+            filter: .none,
+            brightness: 0.0,
+            contrast: 1.0,
+            saturation: 1.0,
+            warmth: 0.0,
+            vignette: 0.0,
+            lightLeak: "none",
+            leakPlacement: "auto",
+            leakIntensity: 0.70,
+            filmGrain: 0.0,
+            analogWear: 0.0,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
         // Polaroid Emulations
         InstaxFilmPresetDefinition(
             id: "polaroid_sx70",

@@ -195,6 +195,26 @@ public struct LegacyFilmPresetDefinition: Identifiable, Hashable {
 
 public struct LegacyFilmCatalog {
     public static let presets: [LegacyFilmPresetDefinition] = [
+        // Default / Base Clean Image
+        LegacyFilmPresetDefinition(
+            id: "default",
+            title: "Default / Base (No Effects)",
+            category: "Base",
+            filter: .normal,
+            brightness: 0.0,
+            contrast: 1.0,
+            saturation: 1.0,
+            warmth: 0.0,
+            vignette: 0.0,
+            lightLeak: "none",
+            leakPlacement: "auto",
+            leakIntensity: 0.70,
+            filmGrain: 0.0,
+            analogWear: 0.0,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
         // Polaroid Emulations
         LegacyFilmPresetDefinition(
             id: "polaroid_sx70",

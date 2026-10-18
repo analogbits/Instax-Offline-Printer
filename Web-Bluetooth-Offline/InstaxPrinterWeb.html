@@ -354,6 +354,7 @@
           <div class="field-row">
             <div class="field-label"><span style="font-weight: 600; color: #f59e0b;">🎞️ Film Preset Emulation</span></div>
             <select id="filmPresetSelectColor" onchange="onFilmPresetChange(this.value)">
+              <option value="default">Default / Base (No Effects)</option>
               <option value="none">Custom / Manual (Unsaved)</option>
               <optgroup label="── Polaroid Film Simulations ──">
                 <option value="polaroid_sx70">Polaroid SX-70 (1972 Warm Chemistry)</option>
@@ -417,6 +418,7 @@
           <div class="field-row" style="margin-bottom: 10px;">
             <div class="field-label"><span style="font-weight: 600; color: #f59e0b;">🎞️ Film Preset Emulation</span></div>
             <select id="filmPresetSelect" onchange="onFilmPresetChange(this.value)">
+              <option value="default">Default / Base (No Effects)</option>
               <option value="none">Custom / Manual (Unsaved)</option>
               <optgroup label="── Polaroid Film Simulations ──">
                 <option value="polaroid_sx70">Polaroid SX-70 (1972 Warm Chemistry)</option>
@@ -967,6 +969,23 @@ function getFilteredSource(img, opts) {
 // Film Emulation Presets & Analog FX Engine
 // ==========================================
 const FILM_PRESETS = {
+  default: {
+    printMode: 'rich',
+    filter: 'none',
+    brightness: 0.00,
+    contrast: 1.00,
+    saturation: 1.00,
+    warmth: 0.00,
+    vignette: 0.00,
+    lightLeak: 'none',
+    leakPlacement: 'auto',
+    leakIntensity: 0.70,
+    filmGrain: 0.00,
+    analogWear: 0.00,
+    showDate: false,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  },
   polaroid_sx70: {
     printMode: 'natural',
     filter: 'vintage',
