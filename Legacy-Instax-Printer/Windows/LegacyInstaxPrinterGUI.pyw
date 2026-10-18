@@ -84,6 +84,14 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.refresh_preview()
         self.scan_wifi_and_printers()
 
+    def safe_after(self, fn):
+        """Thread-safe UI callback that avoids RuntimeError if window is closed."""
+        try:
+            if self.winfo_exists():
+                self.after(0, fn)
+        except Exception:
+            pass
+
     def _build_ui(self):
         # Top Wi-Fi Discovery & Connection Bar
         top = tk.Frame(self, bg="#27272A", padx=12, pady=8)
@@ -320,7 +328,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
                 if choices:
                     self.wifi_choice_var.set(choices[0])
 
-            self.after(0, update_cb)
+            self.safe_after(update_cb)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -552,7 +560,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
                         f"✅ Connected to {st['model']} ({st['firmware']}) • {st['film']}/10 Film Left • Battery {st['battery']}/4 • Total Prints: {st['total_prints']}"
                     )
 
-                self.after(0, on_ok)
+                self.safe_after(on_ok)
             except Exception as exc:
                 def on_err():
                     self.is_connected = False
@@ -561,7 +569,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
                     self.update_led_display()
                     self.status_var.set(f"❌ Connection Error: {exc}")
 
-                self.after(0, on_err)
+                self.safe_after(on_err)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -583,7 +591,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
                     planar,
                     model_name=model,
                     dry_run=dry,
-                    progress_cb=lambda frac, msg: self.after(0, lambda: self.status_var.set(f"[{int(frac * 100)}%] {msg}")),
+                    progress_cb=lambda frac, msg: self.safe_after(lambda: self.status_var.set(f"[{int(frac * 100)}%] {msg}")),
                 )
 
                 def on_done():
@@ -594,9 +602,9 @@ class LegacyInstaxPrinterGUI(tk.Tk):
                     if dry:
                         messagebox.showinfo("Dry Run Verified (0 Film Used)", f"All {len(planar) // 1000} KB verified by {model}! Film remaining: {res['film']}/10")
 
-                self.after(0, on_done)
+                self.safe_after(on_done)
             except Exception as exc:
-                self.after(0, lambda: self.status_var.set(f"❌ Print Error: {exc}"))
+                self.safe_after(lambda: self.status_var.set(f"❌ Print Error: {exc}"))
 
         threading.Thread(target=worker, daemon=True).start()
 
