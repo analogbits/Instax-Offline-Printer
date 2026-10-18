@@ -718,7 +718,7 @@
         return;
       }
     } catch (_) {}
-    sEl.textContent = 'Bridge offline — enter printer IP manually or start Start-iPhone-WiFi-Bridge.';
+    sEl.textContent = 'Bridge offline — enter printer IP manually or run python3 legacy_web_bridge.py.';
   }
 
   // Dedicated Wi-Fi Diagnostics Modal
@@ -782,19 +782,25 @@
           <td colspan="4" style="padding:14px 4px;">
             <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); padding:14px; border-radius:8px; color:#fde68a; line-height:1.5;">
               <div style="font-weight:700; font-size:13px; margin-bottom:6px; color:#fbbf24; display:flex; align-items:center; gap:6px;">
-                <span>💡</span><span>Local Wi-Fi Bridge is Not Running</span>
+                <span>💡</span><span>Local Web Bridge is Not Running</span>
               </div>
               <div style="font-size:12px; color:#e4e4e7; margin-bottom:10px;">
-                Web browsers run inside a security sandbox and cannot scan your computer's Wi-Fi card or open raw TCP sockets to <code>192.168.0.251:8080</code> without the local bridge running.
+                Web browsers run inside a security sandbox and cannot scan your computer's Wi-Fi card or open raw TCP sockets to <code>192.168.0.251:8080</code> without the local helper running.
               </div>
               <div style="background:#18181f; padding:10px 12px; border-radius:6px; border:1px solid var(--border); font-size:12px; color:#f4f4f6;">
-                <b>To start the Wi-Fi scanner &amp; printer bridge:</b><br>
-                • <b>Mac:</b> Double-click <code style="color:#60a5fa;">Start-Legacy-iPhone-WiFi-Bridge.command</code> (on your Desktop or in <code>macOS/</code>).<br>
-                • <b>Windows:</b> Double-click <code style="color:#60a5fa;">Start-iPhone-WiFi-Bridge.bat</code>.<br>
-                • <b>Linux:</b> Run <code style="color:#60a5fa;">./Start-iPhone-WiFi-Bridge.sh</code>.<br><br>
-                <i>Once started, it displays your local Wi-Fi URL (e.g. <code>http://192.168.1.77:8089</code>) so you can also open it in <b>iPhone / iPad Safari</b>!</i>
+                <b>To connect via this web browser:</b><br>
+                • Open your terminal and run: <code style="color:#60a5fa;">python3 legacy_web_bridge.py</code><br>
+                <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
+                  <b>Or use the native desktop apps directly (no bridge needed!):</b><br>
+                  • <b>Mac:</b> Open <code style="color:#34d399;">Legacy Instax Printer.app</code> on your Desktop.<br>
+                  • <b>Windows:</b> Double-click <code style="color:#34d399;">Legacy-Instax-Printer.vbs</code>.<br>
+                  • <b>Linux:</b> Run <code style="color:#34d399;">./Legacy-Instax-Printer-Linux.sh</code>.
+                </div>
               </div>
-              <div style="margin-top:10px; font-size:11px; color:#fbbf24;">
+              <div style="margin-top:10px; font-size:12px; color:#e4e4e7;">
+                📱 <b>Photos on iPhone / iPad?</b> Simply <b>AirDrop</b> them to your Mac in 1 second, then click Print!
+              </div>
+              <div style="margin-top:8px; font-size:11px; color:#fbbf24;">
                 🧪 <b>Want to test right now?</b> Close this dialog and check the <b>'Virtual SP Simulator'</b> box in the top bar to test image framing, dry-runs, and collages directly inside your browser!
               </div>
             </div>

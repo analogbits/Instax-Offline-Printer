@@ -613,7 +613,7 @@ def main():
     parser.add_argument("--status", action="store_true", help="Query printer status and exit")
     parser.add_argument("--dry-run", action="store_true", help="Verify Wi-Fi transfer with 0 film used")
     parser.add_argument("--simulate", action="store_true", help="Run against built-in local simulator (127.0.0.1:18080)")
-    parser.add_argument("--serve", action="store_true", help="Launch Local Wi-Fi Bridge for iPhone / iPad Safari")
+    parser.add_argument("--serve", action="store_true", help="Launch Local Web Studio Bridge (127.0.0.1:8089)")
     parser.add_argument("--fit", action="store_true", help="Fit image inside frame with borders (default: crop to fill)")
     parser.add_argument("--caption", default="", help="Optional bottom caption text")
     parser.add_argument("--qr", default="", help="Optional scannable QR code text/URL")
