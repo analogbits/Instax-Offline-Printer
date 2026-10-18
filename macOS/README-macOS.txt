@@ -7,23 +7,20 @@ printing to Instax SQUARE Link, Link WIDE, and Mini Link printers over
 Bluetooth Low Energy (100% offline).
 
 --------------------------------------------------------------------------------
-⚠️ CRITICAL PREREQUISITE: TURN OFF BLUETOOTH ON YOUR PHONE / TABLET
+⚠️ ESSENTIAL PREREQUISITES (PRIOR TO FIRST USE!)
 --------------------------------------------------------------------------------
-Instax printers only allow ONE Bluetooth connection at a time!
-If the printer was previously paired with your iPhone, iPad, or Android device:
-  1. The printer stops broadcasting beacons and will be INVISIBLE to your Mac.
-  2. SOLUTION: Turn OFF Bluetooth in iOS Settings / Control Center on your phone,
-     then turn the printer off and back on. It will immediately appear on your Mac.
---------------------------------------------------------------------------------
+1. STEP 1 — UPDATE PRINTER FIRMWARE PRIOR TO USE:
+   Always ensure your printer is on the latest firmware before desktop printing!
+   * Instax Link WIDE on initial factory firmware 0100 has a known manufacturer
+     BLE buffer bug that causes image transfers to stall or fail.
+   * Updating to firmware 0101 (or newer) via the official mobile app resolves
+     this completely.
 
---------------------------------------------------------------------------------
-⚠️ IMPORTANT: ENSURE PRINTER FIRMWARE IS UP TO DATE (v0101+ for Link WIDE)
---------------------------------------------------------------------------------
-Make sure your printer's firmware is up to date before desktop printing:
-  * Instax Link WIDE on initial factory firmware 0100 has a known manufacturer
-    BLE buffer bug that causes image transfers to stall or fail.
-  * Updating to firmware 0101 (or newer) via the official mobile app resolves
-    this completely.
+2. STEP 2 — TURN OFF BLUETOOTH ON YOUR PHONE / TABLET:
+   Instax printers only allow ONE Bluetooth connection at a time!
+   * Once updated, turn OFF Bluetooth in iOS Settings / Control Center on your phone.
+   * If your phone stays connected, the printer will be INVISIBLE to your Mac.
+   * Power-cycle the printer; it will immediately appear on your Mac.
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------

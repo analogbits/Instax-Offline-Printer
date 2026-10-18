@@ -22,26 +22,25 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
 
 ---
 
-## ⚠️ CRITICAL: Turn OFF Bluetooth on Your Phone / Tablet First!
-> [!IMPORTANT]
-> **Instax printers only allow ONE Bluetooth connection at a time.**
-> If your printer was previously paired with an iPhone, iPad, or Android device:
-> 1. The printer **completely stops broadcasting** its Bluetooth beacons while connected to your phone.
-> 2. It will appear **invisible** or fail to connect on your computer.
-> 3. **Solution:** Temporarily turn **OFF** Bluetooth on your smartphone or iPad (or close the official Instax app), then turn your printer off and back on. It will immediately show up on your computer.
+## ⚠️ Essential Prerequisites (Prior to First Use!)
 
----
+To ensure a smooth, error-free experience, follow these two quick steps **prior to printing** from your computer:
 
-## 🆙 CRITICAL: Ensure Printer Firmware is Up to Date (v0101+ for Link WIDE)
+### 1️⃣ Step 1: Update Your Printer Firmware First (Prior to Use!)
 > [!IMPORTANT]
-> **Make sure your printer is updated to the latest firmware before printing from your computer!**
-> * **Instax Link WIDE Issue with Firmware `0100`:** Printers running the initial factory firmware **`0100`** have a known manufacturer bug with BLE packet buffer overflows, causing image transfers to hang, time out, or abort midway. Updating to firmware **`0101`** (or newer) completely resolves this issue.
-> * **How to Update Firmware:**
->   1. Temporarily turn on Bluetooth on your smartphone or tablet.
->   2. Open the official Fujifilm mobile app (e.g., ***instax Link WIDE***, ***instax SQUARE Link***, or ***instax mini Link***).
->   3. Connect to your printer and navigate to **Settings $\to$ Firmware Update** (or **Printer Settings $\to$ Firmware Version**).
->   4. Let the app install the update.
->   5. Once complete, turn **OFF** Bluetooth on your phone again so your computer can connect!
+> **Always ensure your printer is on the latest firmware before using this offline suite!**
+> * **Why this matters (e.g. Instax Link WIDE):** Printers running the initial factory firmware **`0100`** have a known manufacturer bug with BLE packet buffer overflows, causing image data transfers to hang, time out, or abort midway. Updating your printer to firmware **`0101`** (or newer) completely resolves this issue and ensures 100% reliable printing.
+> * **How to update prior to use:**
+>   1. Turn on your printer and open the official Fujifilm mobile app (e.g., ***instax Link WIDE***, ***instax SQUARE Link***, or ***instax mini Link***) on your phone.
+>   2. Connect to your printer and navigate to **Settings $\to$ Firmware Update** (or **Printer Settings $\to$ Firmware Version**).
+>   3. Let the official app install the latest firmware update to the printer.
+
+### 2️⃣ Step 2: Turn OFF Bluetooth on Your Phone / Tablet
+> [!IMPORTANT]
+> **Instax printers only allow ONE active Bluetooth connection at a time.**
+> * Once the firmware is updated, **turn OFF Bluetooth** in your phone's Settings/Control Center (or force-close the official Instax mobile app).
+> * If your phone remains connected, the printer **completely stops broadcasting** its Bluetooth beacons and will appear **invisible** to your computer.
+> * Turn your printer off and back on — it will now immediately appear and connect on your computer!
 
 ---
 
