@@ -32,6 +32,19 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
 
 ---
 
+## 🆙 CRITICAL: Ensure Printer Firmware is Up to Date (v0101+ for Link WIDE)
+> [!IMPORTANT]
+> **Make sure your printer is updated to the latest firmware before printing from your computer!**
+> * **Instax Link WIDE Issue with Firmware `0100`:** Printers running the initial factory firmware **`0100`** have a known manufacturer bug with BLE packet buffer overflows, causing image transfers to hang, time out, or abort midway. Updating to firmware **`0101`** (or newer) completely resolves this issue.
+> * **How to Update Firmware:**
+>   1. Temporarily turn on Bluetooth on your smartphone or tablet.
+>   2. Open the official Fujifilm mobile app (e.g., ***instax Link WIDE***, ***instax SQUARE Link***, or ***instax mini Link***).
+>   3. Connect to your printer and navigate to **Settings $\to$ Firmware Update** (or **Printer Settings $\to$ Firmware Version**).
+>   4. Let the app install the update.
+>   5. Once complete, turn **OFF** Bluetooth on your phone again so your computer can connect!
+
+---
+
 ## 🚀 Quick Start Guide by Operating System
 
 ### 🍏 1. macOS (`macOS/` & `Legacy-Instax-Printer/macOS/`)
@@ -161,7 +174,7 @@ Embed high-resolution, scannable QR codes onto your physical prints—just like 
 | Model | Connection Protocol | Image Canvas Resolution | Payload Format & Buffer | Format Aspect |
 | :--- | :--- | :--- | :--- | :--- |
 | **Instax SQUARE Link** | Bluetooth LE (GATT) | `800 × 800 px` | JPEG (`≤ 60 KB`, `900 B` chunks) | 1:1 Square |
-| **Instax Link WIDE** & **Link WIDE 2™** | Bluetooth LE (GATT) | `1260 × 840 px` | JPEG (`≤ 110 KB`, `1800 B` chunks) | 3:2 Landscape |
+| **Instax Link WIDE** & **Link WIDE 2™** | Bluetooth LE (GATT) | `1260 × 840 px` | JPEG (`≤ 110 KB`, `1800 B` chunks) | 3:2 Landscape *(Firmware v0101+ required; v0100 has BLE buffer bug)* |
 | **Instax Mini Link 1 / 2** | Bluetooth LE (GATT) | `600 × 800 px` | JPEG (`≤ 60 KB`, `600 B` chunks) | 3:4 Portrait |
 | **Instax Mini Link 3** & **mini Link+™** | Bluetooth LE (GATT) | `600 × 800 px` | JPEG (`≤ 54 KB`, `600 B` chunks) | 3:4 Portrait |
 | **Instax SHARE SP-1 & SP-2** | Wi-Fi Direct (`192.168.0.251:8080`) | `600 × 800 px` | Planar RGB (`1,440 KB`, `24 × 60 KB` segments) | 3:4 Portrait |
@@ -212,6 +225,9 @@ working directory.
 * **Answer:** You have two easy options:
   1. **Direct from iPhone (No Computer Needed):** Connect your iPhone's Wi-Fi to `INSTAX-XXXXXXXX` (Password: `11111111`) and print directly using Fujifilm's official [instax SHARE app](https://apps.apple.com/app/instax-share/id816944602) on the iOS App Store.
   2. **Print via Desktop Suite (For Collages, QR Codes & Filters):** AirDrop your photo from iPhone to your Mac in 1 second, join your Mac to `INSTAX-XXXXXXXX`, open `Legacy Instax Printer.app`, and click Print!
+
+### Q: Why does my Instax Link WIDE fail to print, stall midway, or disconnect during image transmission?
+* **Answer:** Check your printer's firmware version! Instax Link WIDE units running original factory firmware **`0100`** suffer from a known manufacturer bug with BLE packet buffer overflows, causing transmissions to stall or drop. Updating your Link WIDE to firmware **`0101`** (or newer) via Fujifilm's official *instax Link WIDE* mobile app resolves this bug completely.
 
 ### Q: Why do the web apps need a local bridge script (`legacy_web_bridge.py` or `instax_wifi_bridge.py`)?
 * **Answer:** For security reasons, modern web browsers operate in a strict sandbox that prohibits client-side JavaScript from opening raw binary TCP sockets (needed for `192.168.0.251:8080`) or controlling OS-level Bluetooth hardware. The lightweight local bridge script acts as a safe, local translator between your desktop browser and the physical printer hardware.

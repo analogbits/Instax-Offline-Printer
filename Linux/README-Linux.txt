@@ -16,6 +16,16 @@ If the printer was previously paired with your iPhone, iPad, or Android device:
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
+⚠️ IMPORTANT: ENSURE PRINTER FIRMWARE IS UP TO DATE (v0101+ for Link WIDE)
+--------------------------------------------------------------------------------
+Make sure your printer's firmware is up to date before desktop printing:
+  * Instax Link WIDE on initial factory firmware 0100 has a known manufacturer
+    BLE buffer bug that causes image transfers to stall or fail.
+  * Updating to firmware 0101 (or newer) via the official mobile app resolves
+    this completely.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
 OPTION 1: ALL-IN-ONE STANDALONE APPLICATION (RECOMMENDED — ZERO INSTALL)
 --------------------------------------------------------------------------------
 * No Python, no pip packages, and no Tkinter required!

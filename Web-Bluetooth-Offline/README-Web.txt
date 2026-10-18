@@ -78,6 +78,15 @@ Looking for Legacy Wi-Fi Direct Printers (Instax SHARE SP-1, SP-2, SP-3)?
   to your computer in 1 second and click Print!).
 
 --------------------------------------------------------------------------------
+⚠️ IMPORTANT: ENSURE PRINTER FIRMWARE IS UP TO DATE (v0101+ for Link WIDE)
+--------------------------------------------------------------------------------
+Make sure your printer's firmware is up to date before desktop/browser printing:
+  * Instax Link WIDE on initial factory firmware 0100 has a known manufacturer
+    BLE buffer bug that causes image transfers to stall or fail.
+  * Updating to firmware 0101 (or newer) via the official mobile app resolves
+    this completely.
+
+--------------------------------------------------------------------------------
 HOW TO USE:
 --------------------------------------------------------------------------------
 1. Turn on your Instax printer (press and hold power button until the LED glows).

@@ -33,6 +33,8 @@ Supports **all** Fujifilm Instax portable printers:
 > **macOS Note:** On your first print or Dry Run from Lightroom Classic, macOS will ask to allow **"Instax CLI Helper"** (`InstaxCLIHelper.app`) to access **Bluetooth**. Click **Allow**. This dedicated background helper bundle ensures macOS TCC grants Bluetooth access cleanly even though Adobe Lightroom Classic itself does not declare `NSBluetoothAlwaysUsageDescription`.
 >
 > **Windows Note:** Ensure Python 3.9+ is installed (`python --version`). On first print, the plugin's `bin/win/` engine automatically uses `bleak` and `Pillow` (`pip install bleak pillow qrcode`).
+>
+> **Printer Firmware Note:** Ensure your printer is running the latest firmware before printing from Lightroom. Specifically, **Instax Link WIDE** requires firmware **`0101` or newer** (the initial factory firmware `0100` has a known manufacturer BLE buffer overflow bug that stalls image transfers). Update via Fujifilm's official mobile app before printing.
 
 ---
 
