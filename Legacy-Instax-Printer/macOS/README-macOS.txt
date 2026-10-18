@@ -27,10 +27,34 @@ COMMAND LINE (CLI) USAGE:
   ./legacy-instax --simulate --model sp2 --status
   ./legacy-instax --model sp2 --dry-run photo.jpg
   ./legacy-instax --model sp3 photo.jpg
+  ./legacy-instax --serve
 
-IPHONE & IPAD SAFARI PRINTING (LOCAL WI-FI BRIDGE):
-----------------------------------------------------
-  Double-click "Start-iPhone-WiFi-Bridge.command" to host the Web Studio on
-  your home network. Open the displayed URL (http://<your-mac-ip>:8089)
-  in Safari on your iPhone or iPad to print straight from your camera roll!
+IPHONE & IPAD SAFARI PRINTING (3 EASY SETUPS):
+------------------------------------------------
+Your Mac has a single Wi-Fi antenna. Because Instax SHARE SP-1/2/3 printers
+broadcast their own Wi-Fi ("INSTAX-XXXXXXXX"), connecting to the printer
+disconnects your Mac from your home router. You have 3 easy ways to print:
+
+  • SETUP 1 (All-Wireless Direct — Recommended):
+    1. Connect Mac Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111).
+    2. Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111).
+       (Ignore the "No Internet Connection" notice on iOS).
+    3. Double-click "Start-iPhone-WiFi-Bridge.command".
+    4. Open the displayed URL (http://192.168.0.x:8089) in regular iPhone Safari.
+    5. Pick photos from your Camera Roll and tap "Print Over Wi-Fi Direct"!
+
+  • SETUP 2 (Dual Network — Mac on Ethernet):
+    Plug Mac into home router with Ethernet, and connect Mac Wi-Fi to
+    "INSTAX-XXXXXXXX". iPhone stays on Home Wi-Fi and prints via Safari!
+
+  • SETUP 3 (1-Second AirDrop — Fastest for iPhone):
+    AirDrop photo from iPhone to Mac, then open "Legacy Instax Printer.app"
+    and click "Print"!
+
+ZERO CHROME REQUIREMENT FOR WI-FI PRINTERS:
+--------------------------------------------
+Unlike Bluetooth LE printers (which need Chrome for Web Bluetooth), Instax
+SHARE Wi-Fi Direct printers use standard HTTP & TCP. Regular Apple Safari on
+macOS and iOS works 100% natively with zero extra apps required!
+
 

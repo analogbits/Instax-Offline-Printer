@@ -65,6 +65,18 @@ SUPPORTED PLATFORMS & BROWSERS:
      * macOS Safari
      * Mozilla Firefox
 
+How BLE Link iPhone Printing Works:
+  Your computer uses TWO separate radios simultaneously:
+  1. Wi-Fi connects to your Home router to receive the image from iPhone Safari.
+  2. Bluetooth connects directly to your Instax Link printer.
+  (Both devices stay on your normal Home Wi-Fi with full internet access).
+
+Looking for Legacy Wi-Fi Direct Printers (Instax SHARE SP-1, SP-2, SP-3)?
+  Older Instax SHARE printers do not have Bluetooth—they communicate via
+  Wi-Fi Direct (192.168.0.251:8080).
+  See the dedicated "Legacy-Instax-Printer/Web-WiFi-Offline/" folder and run
+  "Start-Legacy-iPhone-WiFi-Bridge.command" (Safari works 100% natively!).
+
 --------------------------------------------------------------------------------
 HOW TO USE:
 --------------------------------------------------------------------------------

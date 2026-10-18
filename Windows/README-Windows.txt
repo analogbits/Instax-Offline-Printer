@@ -62,6 +62,16 @@ to host the Web App on your home Wi-Fi (http://192.168.1.x:8765) with a scannabl
 QR code. Point your iPhone camera at the QR code to open it in regular iPhone
 Safari and print any photo from your iPhone Camera Roll via your PC's Bluetooth!
 
+How BLE Link iPhone Printing Works:
+  Your PC uses TWO separate radios simultaneously:
+  1. Wi-Fi connects to your Home router to communicate with your iPhone.
+  2. Bluetooth connects directly to your Instax Link printer.
+  (Both devices stay on your normal Home Wi-Fi with full internet access).
+
+Looking for Legacy Wi-Fi Direct Printers (SP-1, SP-2, SP-3)?
+  See the dedicated "Legacy-Instax-Printer/Windows/" folder and run
+  "Start-iPhone-WiFi-Bridge.bat" inside that folder.
+
 --------------------------------------------------------------------------------
 WINDOWS TROUBLESHOOTING & HELP:
 --------------------------------------------------------------------------------

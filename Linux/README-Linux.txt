@@ -58,6 +58,16 @@ Mozilla disables it in Firefox). Run "./Start-iPhone-WiFi-Bridge.sh" (or
 iPhone camera to open it in regular iPhone Safari and print via your Linux
 machine's BlueZ Bluetooth stack!
 
+How BLE Link iPhone Printing Works:
+  Your Linux PC uses TWO separate radios simultaneously:
+  1. Wi-Fi connects to your Home router to communicate with your iPhone.
+  2. Bluetooth connects directly to your Instax Link printer.
+  (Both devices stay on your normal Home Wi-Fi with full internet access).
+
+Looking for Legacy Wi-Fi Direct Printers (SP-1, SP-2, SP-3)?
+  See the dedicated "Legacy-Instax-Printer/Linux/" folder and run
+  "./Start-iPhone-WiFi-Bridge.sh" inside that folder.
+
 --------------------------------------------------------------------------------
 INSTALLING THE DESKTOP SHORTCUT:
 --------------------------------------------------------------------------------

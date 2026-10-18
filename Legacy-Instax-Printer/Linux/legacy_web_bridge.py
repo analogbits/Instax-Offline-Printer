@@ -21,6 +21,7 @@ import base64
 import json
 import os
 import platform
+import re
 import socket
 import struct
 import subprocess
@@ -57,20 +58,57 @@ except ImportError:
 SIM_SERVER = VirtualInstaxShareServer(port=18080, model="SP-2", pin=1111) if VirtualInstaxShareServer else None
 
 
+def get_all_lan_ips() -> list:
+    """Detect all non-loopback IPv4 addresses across all active network interfaces."""
+    ips = []
+    # Test routing to public DNS and printer gateway
+    for target in [("8.8.8.8", 80), ("192.168.0.251", 8080), ("1.1.1.1", 80)]:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(0.3)
+            s.connect(target)
+            ip = s.getsockname()[0]
+            s.close()
+            if ip and not ip.startswith("127.") and ip not in ips:
+                ips.append(ip)
+        except Exception:
+            pass
+
+    # Platform specific enumeration
+    sys_name = platform.system().lower()
+    try:
+        if "darwin" in sys_name or "linux" in sys_name:
+            out = subprocess.check_output(["ifconfig"], text=True, errors="ignore", timeout=2)
+            for match in re.findall(r"inet\s+(\d+\.\d+\.\d+\.\d+)", out):
+                if not match.startswith("127.") and match not in ips:
+                    ips.append(match)
+        elif "windows" in sys_name:
+            out = subprocess.check_output(["ipconfig"], text=True, errors="ignore", timeout=3)
+            for match in re.findall(r"IPv4 Address[.\s]+:\s*(\d+\.\d+\.\d+\.\d+)", out):
+                if not match.startswith("127.") and match not in ips:
+                    ips.append(match)
+    except Exception:
+        pass
+
+    if not ips:
+        try:
+            ip = socket.gethostbyname(socket.gethostname())
+            if not ip.startswith("127."):
+                ips.append(ip)
+        except Exception:
+            pass
+
+    return ips or ["127.0.0.1"]
+
+
 def get_lan_ip() -> str:
     """Detect the machine's primary Wi-Fi / LAN IP address."""
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(0.5)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
-    except Exception:
-        try:
-            return socket.gethostbyname(socket.gethostname())
-        except Exception:
-            return "127.0.0.1"
+    ips = get_all_lan_ips()
+    # Prefer 192.168.0.x if connected to Instax Wi-Fi, otherwise first IP
+    for ip in ips:
+        if ip.startswith("192.168.0."):
+            return ip
+    return ips[0]
 
 
 def get_connected_wifi_ssid() -> str:
@@ -429,25 +467,37 @@ def main():
     args = parser.parse_args()
 
     lan_ip = get_lan_ip()
-    lan_url = f"http://{lan_ip}:{args.port}"
+    all_ips = get_all_lan_ips()
     local_url = f"http://127.0.0.1:{args.port}"
     connected_wifi = get_connected_wifi_ssid()
 
-    print("=" * 74)
+    print("=" * 76)
     print("📸 LEGACY INSTAX WI-FI DIRECT BRIDGE (SP-1 • SP-2 • SP-3 • iPhone / Safari)")
-    print("=" * 74)
-    print(f"  🟢 Status:          Running on {platform.system()} ({socket.gethostname()})")
-    print(f"  📶 Connected Wi-Fi: {connected_wifi}")
-    print(f"  📱 iPhone / iPad:   Open Safari on your phone and go to:")
-    print(f"                      👉  {lan_url}")
+    print("=" * 76)
+    print(f"  🟢 Host Machine:    {platform.system()} ({socket.gethostname()})")
+    print(f"  📶 Current Wi-Fi:   {connected_wifi}")
     print(f"  💻 This Computer:   {local_url}")
-    print("-" * 74)
-    print("  💡 How it works:")
-    print("     1. Keep this window open on your computer.")
-    print(f"     2. On your iPhone/iPad (connected to same Wi-Fi), open {lan_url} in Safari.")
-    print("     3. Pick photos from your camera roll & tap Print Over Wi-Fi Direct!")
+    print("-" * 76)
+    print("  📱 iPhone / iPad Safari Printing Addresses:")
+    for ip in all_ips:
+        if ip.startswith("192.168.0."):
+            print(f"     👉 http://{ip}:{args.port}  (iPhone joined to printer's {connected_wifi})")
+        else:
+            print(f"     👉 http://{ip}:{args.port}  (iPhone on Home Wi-Fi / LAN)")
+    print("-" * 76)
+    print("  💡 HOW SINGLE WI-FI RADIO ON COMPUTERS WORKS (3 Easy Setups):")
+    print("     • Setup 1 (All-Wireless Direct — Recommended):")
+    print("       1. Turn on Instax SHARE printer.")
+    print("       2. Connect Mac/PC Wi-Fi to 'INSTAX-XXXXXXXX' (Password: 11111111).")
+    print("       3. Connect iPhone Wi-Fi to 'INSTAX-XXXXXXXX' (Password: 11111111).")
+    print(f"       4. In iPhone Safari, go to: http://{lan_ip}:{args.port} & tap Print!")
+    print("     • Setup 2 (Dual Network — Mac on Ethernet + Wi-Fi to Printer):")
+    print("       Connect Mac Ethernet to home router & Mac Wi-Fi to 'INSTAX-XXXXXXXX'.")
+    print("       iPhone stays on normal Home Wi-Fi and prints seamlessly.")
+    print("     • Setup 3 (1-Second AirDrop — Fastest for iPhone):")
+    print("       AirDrop photo from iPhone to Mac, then click Print in the app!")
     print("     (Press Ctrl+C to stop the bridge)")
-    print("=" * 74)
+    print("=" * 76)
 
     class ReusableThreadingHTTPServer(ThreadingHTTPServer):
         allow_reuse_address = True

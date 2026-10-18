@@ -613,10 +613,24 @@ def main():
     parser.add_argument("--status", action="store_true", help="Query printer status and exit")
     parser.add_argument("--dry-run", action="store_true", help="Verify Wi-Fi transfer with 0 film used")
     parser.add_argument("--simulate", action="store_true", help="Run against built-in local simulator (127.0.0.1:18080)")
+    parser.add_argument("--serve", action="store_true", help="Launch Local Wi-Fi Bridge for iPhone / iPad Safari")
     parser.add_argument("--fit", action="store_true", help="Fit image inside frame with borders (default: crop to fill)")
     parser.add_argument("--caption", default="", help="Optional bottom caption text")
     parser.add_argument("--qr", default="", help="Optional scannable QR code text/URL")
     args, _ = parser.parse_known_args()
+
+    if getattr(args, "serve", False):
+        bridge_candidates = [
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "legacy_web_bridge.py"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Web-WiFi-Offline", "legacy_web_bridge.py"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "Web-WiFi-Offline", "legacy_web_bridge.py"),
+        ]
+        for cand in bridge_candidates:
+            if os.path.exists(cand):
+                subprocess.run([sys.executable, cand])
+                return
+        print("❌ Could not find legacy_web_bridge.py")
+        return
 
     model_name = _normalize_legacy_model(args.model)
 
