@@ -85,6 +85,7 @@ class InstaxDesktopApp(tk.Tk):
         self.vintage_date_text = tk.StringVar(value="")
         self.vintage_date_color = tk.StringVar(value="amber")
         self.vintage_date_placement = tk.StringVar(value="bottomRight")
+        self.leak_auto_seed = 12345
 
         # Drag tracking
         self.drag_start_x = 0
@@ -259,9 +260,12 @@ class InstaxDesktopApp(tk.Tk):
         cb_leak.pack(fill=tk.X)
 
         ttk.Label(tab_analog, text="Leak Placement:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(6, 2))
-        cb_place = ttk.Combobox(tab_analog, textvariable=self.leak_placement, values=["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"], state="readonly")
-        cb_place.bind("<<ComboboxSelected>>", lambda e: self.update_preview())
-        cb_place.pack(fill=tk.X)
+        f_place = ttk.Frame(tab_analog)
+        f_place.pack(fill=tk.X)
+        cb_place = ttk.Combobox(f_place, textvariable=self.leak_placement, values=["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"], state="readonly")
+        cb_place.bind("<<ComboboxSelected>>", self.on_leak_placement_selected)
+        cb_place.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(f_place, text="🎲", width=3, command=self.roll_auto_leak).pack(side=tk.LEFT, padx=(4, 0))
 
         ttk.Label(tab_analog, text="Leak Intensity:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(6, 2))
         ttk.Scale(tab_analog, from_=0.1, to=1.0, variable=self.leak_intensity, command=lambda e: self.update_preview()).pack(fill=tk.X)
@@ -402,6 +406,18 @@ class InstaxDesktopApp(tk.Tk):
         self.vintage_date_placement.set(random.choice(["bottomRight", "bottomLeft", "topRight", "topLeft"]))
         self.update_preview()
 
+    def roll_auto_leak(self):
+        import random
+        self.leak_placement.set("auto")
+        self.leak_auto_seed = random.randint(1, 1000000)
+        self.update_preview()
+
+    def on_leak_placement_selected(self, event=None):
+        import random
+        if self.leak_placement.get() == "auto":
+            self.leak_auto_seed = random.randint(1, 1000000)
+        self.update_preview()
+
     def _render_full_canvas(self, source_img: Image.Image, target_w: int, target_h: int) -> Image.Image:
         img = source_img.copy()
         if self.rotation.get() != 0:
@@ -475,6 +491,7 @@ class InstaxDesktopApp(tk.Tk):
             vintage_date_text=self.vintage_date_text.get(),
             vintage_date_color=self.vintage_date_color.get(),
             vintage_date_placement=self.vintage_date_placement.get(),
+            seed=self.leak_auto_seed,
         )
         return canvas
 

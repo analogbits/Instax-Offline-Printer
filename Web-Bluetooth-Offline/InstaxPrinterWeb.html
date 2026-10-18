@@ -406,7 +406,7 @@
 
           <div class="field-row">
             <div class="field-label"><span>Analog Light Leak</span></div>
-            <select id="leakTypeSelect" onchange="renderCanvas()">
+            <select id="leakTypeSelect" onchange="onLeakTypeChange()">
               <option value="none">None (Off)</option>
               <option value="burn">Red Film Burn (Fiery Edge)</option>
               <option value="sunburst">Golden Sunburst Flare</option>
@@ -417,16 +417,19 @@
 
           <div class="field-row">
             <div class="field-label"><span>Leak Placement</span></div>
-            <select id="leakPlacementSelect" onchange="renderCanvas()">
-              <option value="auto">Auto (Authentic Placement)</option>
-              <option value="left">Left Edge (Film Door Hinge)</option>
-              <option value="right">Right Edge (Takeup Spool)</option>
-              <option value="topRight">Top-Right Corner (Sunburst)</option>
-              <option value="topLeft">Top-Left Corner (Sunburst)</option>
-              <option value="bottomLeft">Bottom-Left Corner</option>
-              <option value="bottomRight">Bottom-Right Corner</option>
-              <option value="diagonal">Diagonal Sweep</option>
-            </select>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <select id="leakPlacementSelect" style="flex:1;" onchange="onLeakPlacementChange()">
+                <option value="auto">🎲 Auto (Random Placement)</option>
+                <option value="left">Left Edge (Film Door Hinge)</option>
+                <option value="right">Right Edge (Takeup Spool)</option>
+                <option value="topRight">Top-Right Corner (Sunburst)</option>
+                <option value="topLeft">Top-Left Corner (Sunburst)</option>
+                <option value="bottomLeft">Bottom-Left Corner</option>
+                <option value="bottomRight">Bottom-Right Corner</option>
+                <option value="diagonal">Diagonal Sweep</option>
+              </select>
+              <button type="button" onclick="rollAutoLeak()" title="Roll / randomize leak placement (🎲)" style="background:var(--card-inner); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:6px 10px; cursor:pointer; font-size:13px;">🎲</button>
+            </div>
           </div>
 
           <div class="field-row">
@@ -957,6 +960,27 @@ function resetAnalogFX() {
   renderCanvas();
 }
 
+function rollAutoLeak() {
+  analogRandomSeed = Math.floor(Math.random() * 900000) + 10000;
+  const sel = document.getElementById('leakPlacementSelect');
+  if (sel) sel.value = 'auto';
+  renderCanvas();
+}
+
+function onLeakPlacementChange() {
+  if (document.getElementById('leakPlacementSelect')?.value === 'auto') {
+    analogRandomSeed = Math.floor(Math.random() * 900000) + 10000;
+  }
+  renderCanvas();
+}
+
+function onLeakTypeChange() {
+  if (document.getElementById('leakPlacementSelect')?.value === 'auto') {
+    analogRandomSeed = Math.floor(Math.random() * 900000) + 10000;
+  }
+  renderCanvas();
+}
+
 function applyAnalogWarmth(targetCtx, x, y, w, h, warmth) {
   if (Math.abs(warmth) < 0.01) return;
   targetCtx.save();
@@ -1008,17 +1032,9 @@ function drawLightLeakEffect(targetCtx, x, y, w, h, type, placement, intensity, 
 
   let p = placement;
   if (!p || p === 'auto') {
-    if (type === 'burn') {
-      p = (seed % 2 === 0) ? 'left' : 'right';
-    } else if (type === 'sunburst') {
-      p = (seed % 2 === 0) ? 'topRight' : 'topLeft';
-    } else if (type === 'sunset') {
-      p = 'bottomLeft';
-    } else if (type === 'rainbow') {
-      p = (seed % 2 === 0) ? 'right' : 'diagonal';
-    } else {
-      p = 'left';
-    }
+    const leakPlacements = ['left', 'right', 'topRight', 'topLeft', 'bottomLeft', 'bottomRight', 'diagonal'];
+    const s = Math.abs(seed || 0);
+    p = leakPlacements[s % leakPlacements.length];
   }
 
   let c1, c2, c3;

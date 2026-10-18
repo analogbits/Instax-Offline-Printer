@@ -318,8 +318,47 @@ final class InstaxAppViewModel: ObservableObject {
     // Analog Creative FX Options (Ported from PolaroidEngine)
     @Published var warmth: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var vignette: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var lightLeak: String = "none" { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var leakPlacement: String = "auto" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var lightLeak: String = "none" {
+        didSet {
+            if lightLeak != "none" && leakPlacement == "auto" {
+                rollAutoLeakPlacement()
+            }
+            if !isLoadingSelection { updatePreview() }
+        }
+    }
+    @Published var leakPlacement: String = "auto" {
+        didSet {
+            if leakPlacement == "auto" {
+                rollAutoLeakPlacement()
+            }
+            if !isLoadingSelection { updatePreview() }
+        }
+    }
+    @Published var currentAutoLeakPlacement: String = "right"
+    @Published var analogSeed: Int = Int.random(in: 1...1_000_000)
+
+    func rollAutoLeakPlacement() {
+        let placements = ["left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"]
+        let candidates = placements.filter { $0 != currentAutoLeakPlacement }
+        currentAutoLeakPlacement = candidates.randomElement() ?? "left"
+        analogSeed = Int.random(in: 1...1_000_000)
+        if !isLoadingSelection {
+            updatePreview()
+        }
+    }
+
+    func leakPlacementTitle(_ key: String) -> String {
+        switch key {
+        case "left": return "Left Edge"
+        case "right": return "Right Edge"
+        case "topRight": return "Top Right"
+        case "topLeft": return "Top Left"
+        case "bottomLeft": return "Bottom Left"
+        case "bottomRight": return "Bottom Right"
+        case "diagonal": return "Diagonal"
+        default: return key
+        }
+    }
     @Published var leakIntensity: Double = 0.70 { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var filmGrain: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var analogWear: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
@@ -615,8 +654,9 @@ final class InstaxAppViewModel: ObservableObject {
         opts.warmth = warmth
         opts.vignette = vignette
         opts.lightLeak = lightLeak
-        opts.leakPlacement = leakPlacement
+        opts.leakPlacement = (leakPlacement == "auto") ? currentAutoLeakPlacement : leakPlacement
         opts.leakIntensity = leakIntensity
+        opts.analogSeed = analogSeed
         opts.filmGrain = filmGrain
         opts.analogWear = analogWear
         opts.showVintageDate = showVintageDate
@@ -2593,17 +2633,29 @@ struct InstaxMainView: View {
                     .pickerStyle(.menu)
 
                     if vm.lightLeak != "none" {
-                        Picker("Placement", selection: $vm.leakPlacement) {
-                            Text("🎲 Auto (Organic)").tag("auto")
-                            Text("Left Edge").tag("left")
-                            Text("Right Edge").tag("right")
-                            Text("Top Right Corner").tag("topRight")
-                            Text("Top Left Corner").tag("topLeft")
-                            Text("Bottom Left Streak").tag("bottomLeft")
-                            Text("Bottom Right Corner").tag("bottomRight")
-                            Text("Diagonal Across").tag("diagonal")
+                        HStack(spacing: 8) {
+                            Picker("Placement", selection: $vm.leakPlacement) {
+                                Text(vm.leakPlacement == "auto" ? "🎲 Auto (\(vm.leakPlacementTitle(vm.currentAutoLeakPlacement)))" : "🎲 Auto (Randomize)").tag("auto")
+                                Text("Left Edge").tag("left")
+                                Text("Right Edge").tag("right")
+                                Text("Top Right Corner").tag("topRight")
+                                Text("Top Left Corner").tag("topLeft")
+                                Text("Bottom Left Streak").tag("bottomLeft")
+                                Text("Bottom Right Corner").tag("bottomRight")
+                                Text("Diagonal Across").tag("diagonal")
+                            }
+                            .pickerStyle(.menu)
+
+                            if vm.leakPlacement == "auto" {
+                                Button(action: {
+                                    vm.rollAutoLeakPlacement()
+                                }) {
+                                    Image(systemName: "die.face.5.fill")
+                                }
+                                .help("Roll / randomize auto leak position again (🎲)")
+                                .buttonStyle(.borderless)
+                            }
                         }
-                        .pickerStyle(.menu)
 
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {

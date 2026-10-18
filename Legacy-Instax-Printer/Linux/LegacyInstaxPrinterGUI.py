@@ -94,16 +94,11 @@ def apply_analog_fx(
     if light_leak and light_leak != "none" and leak_intensity > 0.01:
         p = leak_placement or "auto"
         if p == "auto":
-            if light_leak == "burn":
-                p = "left" if (seed % 2 == 0) else "right"
-            elif light_leak == "sunburst":
-                p = "topRight" if (seed % 2 == 0) else "topLeft"
-            elif light_leak == "sunset":
-                p = "bottomLeft"
-            elif light_leak == "rainbow":
-                p = "right" if (seed % 2 == 0) else "diagonal"
+            placements = ["left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"]
+            if seed and seed != 12345:
+                p = placements[abs(seed) % len(placements)]
             else:
-                p = "left"
+                p = random.choice(placements)
 
         if light_leak == "sunburst":
             c1, c2, c3 = (255, 250, 215), (255, 175, 45), (240, 70, 38)
@@ -338,6 +333,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.vintage_date_text_var = tk.StringVar(value="")
         self.vintage_date_color_var = tk.StringVar(value="amber")
         self.vintage_date_placement_var = tk.StringVar(value="bottomRight")
+        self.leak_auto_seed = 12345
 
         # Authentic Telemetry State (None when disconnected!)
         self.is_connected = False
@@ -505,10 +501,12 @@ class LegacyInstaxPrinterGUI(tk.Tk):
 
         # Light Leak
         ttk.Combobox(right, textvariable=self.leak_type_var, values=["none", "burn", "sunburst", "sunset", "rainbow"], state="readonly").pack(fill=tk.X, pady=2)
-        self.leak_type_var.trace_add("write", lambda *_: self.refresh_preview())
-
-        ttk.Combobox(right, textvariable=self.leak_placement_var, values=["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"], state="readonly").pack(fill=tk.X, pady=2)
-        self.leak_placement_var.trace_add("write", lambda *_: self.refresh_preview())
+        f_leak_p = tk.Frame(right, bg=self.bg_card)
+        f_leak_p.pack(fill=tk.X, pady=2)
+        cb_place = ttk.Combobox(f_leak_p, textvariable=self.leak_placement_var, values=["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"], state="readonly")
+        cb_place.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        tk.Button(f_leak_p, text="🎲", width=3, bg=self.bg_card, fg=self.fg_text, command=self.roll_auto_leak).pack(side=tk.LEFT, padx=(4, 0))
+        self.leak_placement_var.trace_add("write", self.on_leak_placement_selected)
 
         # Grain & Wear Scales
         tk.Label(right, text="Silver Halide Grain:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
@@ -797,6 +795,18 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.vintage_date_placement_var.set(random.choice(["bottomRight", "bottomLeft", "topRight", "topLeft"]))
         self.refresh_preview()
 
+    def roll_auto_leak(self):
+        import random
+        self.leak_placement_var.set("auto")
+        self.leak_auto_seed = random.randint(1, 1000000)
+        self.refresh_preview()
+
+    def on_leak_placement_selected(self, *_):
+        import random
+        if self.leak_placement_var.get() == "auto":
+            self.leak_auto_seed = random.randint(1, 1000000)
+        self.refresh_preview()
+
     def refresh_preview(self):
         spec = MODELS.get(self.model_var.get(), MODELS["SP-2"])
         w, h = spec["width"], spec["height"]
@@ -851,6 +861,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             vintage_date_text=self.vintage_date_text_var.get(),
             vintage_date_color=self.vintage_date_color_var.get(),
             vintage_date_placement=self.vintage_date_placement_var.get(),
+            seed=self.leak_auto_seed,
         )
 
         draw = ImageDraw.Draw(canvas)

@@ -99,6 +99,30 @@ final class LegacyStudioViewModel: ObservableObject {
         refreshPreview()
     }
 
+    @Published var currentAutoLeakPlacement: String = "right"
+
+    func rollAutoLeakPlacement() {
+        let placements = ["left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"]
+        let candidates = placements.filter { $0 != currentAutoLeakPlacement }
+        currentAutoLeakPlacement = candidates.randomElement() ?? "left"
+        options.analogSeed = Int.random(in: 1...1_000_000)
+        options.leakPlacement = "auto"
+        refreshPreview()
+    }
+
+    func leakPlacementTitle(_ key: String) -> String {
+        switch key {
+        case "left": return "Left Edge"
+        case "right": return "Right Edge"
+        case "topRight": return "Top Right"
+        case "topLeft": return "Top Left"
+        case "bottomLeft": return "Bottom Left"
+        case "bottomRight": return "Bottom Right"
+        case "diagonal": return "Diagonal"
+        default: return key
+        }
+    }
+
     func surpriseMeAnalogFX() {
         options.warmth = Double(Int.random(in: -30...60)) / 100.0
         options.vignette = Double(Int.random(in: 25...75)) / 100.0
@@ -918,18 +942,37 @@ struct LegacyMainStudioView: View {
             }
 
             if vm.options.lightLeak != "none" {
-                Picker("Placement", selection: Binding(
-                    get: { vm.options.leakPlacement },
-                    set: { vm.options.leakPlacement = $0; vm.refreshPreview() }
-                )) {
-                    Text("🎲 Auto (Organic)").tag("auto")
-                    Text("Left Edge").tag("left")
-                    Text("Right Edge").tag("right")
-                    Text("Top Right Corner").tag("topRight")
-                    Text("Top Left Corner").tag("topLeft")
-                    Text("Bottom Left Streak").tag("bottomLeft")
-                    Text("Bottom Right Corner").tag("bottomRight")
-                    Text("Diagonal Across").tag("diagonal")
+                HStack(spacing: 8) {
+                    Picker("Placement", selection: Binding(
+                        get: { vm.options.leakPlacement },
+                        set: {
+                            if $0 == "auto" {
+                                vm.rollAutoLeakPlacement()
+                            } else {
+                                vm.options.leakPlacement = $0
+                                vm.refreshPreview()
+                            }
+                        }
+                    )) {
+                        Text(vm.options.leakPlacement == "auto" ? "🎲 Auto (\(vm.leakPlacementTitle(vm.currentAutoLeakPlacement)))" : "🎲 Auto (Randomize)").tag("auto")
+                        Text("Left Edge").tag("left")
+                        Text("Right Edge").tag("right")
+                        Text("Top Right Corner").tag("topRight")
+                        Text("Top Left Corner").tag("topLeft")
+                        Text("Bottom Left Streak").tag("bottomLeft")
+                        Text("Bottom Right Corner").tag("bottomRight")
+                        Text("Diagonal Across").tag("diagonal")
+                    }
+
+                    if vm.options.leakPlacement == "auto" {
+                        Button(action: {
+                            vm.rollAutoLeakPlacement()
+                        }) {
+                            Image(systemName: "die.face.5.fill")
+                        }
+                        .help("Roll / randomize auto leak position again (🎲)")
+                        .buttonStyle(.borderless)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 4) {

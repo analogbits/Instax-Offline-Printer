@@ -585,16 +585,11 @@ def apply_analog_fx(
     if light_leak and light_leak != "none" and leak_intensity > 0.01:
         p = leak_placement or "auto"
         if p == "auto":
-            if light_leak == "burn":
-                p = "left" if (seed % 2 == 0) else "right"
-            elif light_leak == "sunburst":
-                p = "topRight" if (seed % 2 == 0) else "topLeft"
-            elif light_leak == "sunset":
-                p = "bottomLeft"
-            elif light_leak == "rainbow":
-                p = "right" if (seed % 2 == 0) else "diagonal"
+            placements = ["left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"]
+            if seed and seed != 12345:
+                p = placements[abs(seed) % len(placements)]
             else:
-                p = "left"
+                p = random.choice(placements)
 
         if light_leak == "sunburst":
             c1, c2, c3 = (255, 250, 215), (255, 175, 45), (240, 70, 38)

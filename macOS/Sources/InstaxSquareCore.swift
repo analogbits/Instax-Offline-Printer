@@ -356,6 +356,7 @@ public struct InstaxImageOptions {
     public var vintageDateText: String = ""  // Custom or auto "'YY MM DD"
     public var vintageDateColor: String = "amber" // "amber", "red", "green", "white"
     public var vintageDatePlacement: String = "bottomRight" // "bottomRight", "bottomLeft", "topRight", "topLeft"
+    public var analogSeed: Int = Int.random(in: 1...1_000_000)
 
     public init() {}
 }
@@ -679,9 +680,9 @@ public enum InstaxImageRenderer {
         let fxRect: CGRect = (options.fitMode == .fit) ? drawRect : CGRect(x: 0, y: 0, width: dstW, height: dstH)
         applyAnalogWarmth(ctx: ctx, rect: fxRect, warmth: options.warmth)
         drawLensVignette(ctx: ctx, rect: fxRect, intensity: options.vignette)
-        drawLightLeakEffect(ctx: ctx, rect: fxRect, type: options.lightLeak, placement: options.leakPlacement, intensity: options.leakIntensity)
-        drawTactileFilmGrain(ctx: ctx, rect: fxRect, intensity: options.filmGrain)
-        drawAnalogWear(ctx: ctx, rect: fxRect, intensity: options.analogWear)
+        drawLightLeakEffect(ctx: ctx, rect: fxRect, type: options.lightLeak, placement: options.leakPlacement, intensity: options.leakIntensity, seed: options.analogSeed)
+        drawTactileFilmGrain(ctx: ctx, rect: fxRect, intensity: options.filmGrain, seed: options.analogSeed)
+        drawAnalogWear(ctx: ctx, rect: fxRect, intensity: options.analogWear, seed: options.analogSeed)
         if options.showVintageDate {
             drawVintageDateStamp(ctx: ctx, rect: fxRect, text: options.vintageDateText, colorName: options.vintageDateColor, placement: options.vintageDatePlacement)
         }
@@ -837,16 +838,11 @@ public enum InstaxImageRenderer {
 
         var p = placement
         if p.isEmpty || p == "auto" {
-            if type == "burn" {
-                p = (seed % 2 == 0) ? "left" : "right"
-            } else if type == "sunburst" {
-                p = (seed % 2 == 0) ? "topRight" : "topLeft"
-            } else if type == "sunset" {
-                p = "bottomLeft"
-            } else if type == "rainbow" {
-                p = (seed % 2 == 0) ? "right" : "diagonal"
+            let placements = ["left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"]
+            if seed == 12345 {
+                p = placements.randomElement() ?? "right"
             } else {
-                p = "left"
+                p = placements[abs(seed) % placements.count]
             }
         }
 
