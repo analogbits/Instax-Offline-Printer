@@ -2,6 +2,9 @@
 **Universal 100% Offline Printing for macOS, Windows, Linux, Web, and iOS**  
 *Document Version: 1.6.2 • Standard: ISO/IEC/IEEE 26511 Software Documentation Specification • Repository Release: v1.6.2*
 
+> 🔬 **Developer Notice**: For line-by-line annotated source code breakdowns, reverse-engineered protocol math, and function-level explanations, see the companion document:  
+> 👉 **[Code Walkthrough & Developer Reference Manual (`CODE_WALKTHROUGH.md`)](CODE_WALKTHROUGH.md)**
+
 ---
 
 ## 📑 Table of Contents

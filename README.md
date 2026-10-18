@@ -5,6 +5,7 @@
 [![Try Legacy Wi-Fi Web App](https://img.shields.io/badge/Legacy_Web_App-SHARE_SP--1_%7C_SP--2_%7C_SP--3-10b981?style=for-the-badge&logo=wifi&logoColor=white)](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)
 [![Download Offline Suite](https://img.shields.io/badge/Download-Offline_Suite_(.zip)-22c55e?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/analogbits/Instax-Offline-Printer/releases/latest)
 [![Software Documentation & Runbook](https://img.shields.io/badge/Documentation-Comprehensive_Runbook-8b5cf6?style=for-the-badge&logo=readthedocs&logoColor=white)](DOCUMENTATION.md)
+[![Code Walkthrough](https://img.shields.io/badge/Code_Walkthrough-Annotated_Guide-06b6d4?style=for-the-badge&logo=github&logoColor=white)](CODE_WALKTHROUGH.md)
 
 > 🚀 **Try either Web App right now in your browser (macOS, Windows, Linux, Android & iPhone/iPad):**  
 > - **🔵 [👉 Launch Web Bluetooth Printer (SQUARE Link • Link WIDE • Mini Link)](https://analogbits.github.io/Instax-Offline-Printer/)** *(Works natively in Chrome, Edge, Brave & Opera on Mac/Windows/Linux/Android — and on **iPhone / iPad** via the built-in **Local Wi-Fi Bluetooth Bridge** in regular Safari or the free **Bluefy** app!)*  
@@ -245,7 +246,8 @@ working directory.
 
 ## 📖 Software Engineering Documentation & Full Runbook
 For complete architectural specifications, hardware protocol schemas (BLE GATT & Wi-Fi Direct `ISTX` framing), planar RGB scanline math, sequence diagrams, troubleshooting trees, and ISO/IEC/IEEE software engineering standards, see the dedicated:
-👉 **[Full Software Documentation & Operational Runbook (`DOCUMENTATION.md`)](DOCUMENTATION.md)**
+👉 **[Full Software Documentation & Operational Runbook (`DOCUMENTATION.md`)](DOCUMENTATION.md)**  
+👉 **[Developer Code Walkthrough & Annotated Source Guide (`CODE_WALKTHROUGH.md`)](CODE_WALKTHROUGH.md)**
 
 ---
 
