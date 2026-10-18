@@ -7,9 +7,9 @@
     <key>CFBundleName</key>
     <string>legacy-instax</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.5.0</string>
+    <string>1.7.0</string>
     <key>CFBundleVersion</key>
-    <string>150</string>
+    <string>7</string>
     <key>NSLocalNetworkUsageDescription</key>
     <string>legacy-instax CLI communicates directly with Fujifilm Instax SHARE SP-1, SP-2, and SP-3 printers over Wi-Fi Direct TCP.</string>
 </dict>

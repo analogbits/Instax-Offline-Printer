@@ -7,9 +7,9 @@
     <key>CFBundleName</key>
     <string>instax-square</string>
     <key>CFBundleVersion</key>
-    <string>1.4.0</string>
+    <string>1.7.0</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.4.0</string>
+    <string>1.7.0</string>
     <key>NSBluetoothAlwaysUsageDescription</key>
     <string>instax-square requires Bluetooth access to communicate with Fujifilm Instax printers.</string>
 </dict>

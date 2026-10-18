@@ -55,6 +55,18 @@ echo "🔨 [4/4] Compiling Legacy Instax Printer macOS SwiftUI Application..."
 
 cp legacy-instax "$APP_BUNDLE/Contents/MacOS/legacy-instax"
 xattr -cr "$APP_BUNDLE"
-/usr/bin/codesign --force --deep --sign - "$APP_BUNDLE"
+/usr/bin/codesign --force --sign - "$APP_BUNDLE"
+
+touch "$APP_BUNDLE"
+touch legacy-instax
+
+# Register bundle with macOS LaunchServices so Finder immediately reflects version 1.7.0
+if [ -x /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister ]; then
+    /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP_BUNDLE" 2>/dev/null || true
+fi
+
+echo "📦 Packaging Legacy-Instax-Printer-macOS.zip..."
+rm -f ../Legacy-Instax-Printer-macOS.zip
+zip -q -r -y ../Legacy-Instax-Printer-macOS.zip "$APP_BUNDLE" legacy-instax
 
 echo "✅ Successfully built '$APP_BUNDLE' and 'legacy-instax'!"
