@@ -1702,10 +1702,8 @@ struct InstaxMainView: View {
 
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
-                    ScrollView([.vertical, .horizontal], showsIndicators: false) {
-                        previewWorkspace
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    previewWorkspace
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     Divider()
                     bulkQueueStrip
                         .fixedSize(horizontal: false, vertical: true)
@@ -2071,9 +2069,11 @@ struct InstaxMainView: View {
 
                 Spacer()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 14)
             .padding(.horizontal, 16)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: Bottom Bulk Print Queue Strip
