@@ -237,24 +237,6 @@ class InstaxWiFiBridgeHandler(BaseHTTPRequestHandler):
                     pass
                 return
 
-        # Also allow serving LegacyInstaxPrinterWeb.html if navigated via header button
-        if path.endswith("LegacyInstaxPrinterWeb.html"):
-            legacy_html = os.path.join(REPO_ROOT, "Legacy-Instax-Printer", "Web-WiFi-Offline", "LegacyInstaxPrinterWeb.html")
-            if os.path.isfile(legacy_html):
-                with open(legacy_html, "rb") as f:
-                    content = f.read()
-                try:
-                    self.send_response(200)
-                    self.send_header("Content-Type", "text/html; charset=utf-8")
-                    self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
-                    self.send_header("Connection", "close")
-                    self.send_header("Content-Length", str(len(content)))
-                    self.end_headers()
-                    self.wfile.write(content)
-                except (ConnectionResetError, BrokenPipeError, OSError):
-                    pass
-                return
-
         try:
             self.send_error(404, "Not Found")
         except (ConnectionResetError, BrokenPipeError, OSError):
