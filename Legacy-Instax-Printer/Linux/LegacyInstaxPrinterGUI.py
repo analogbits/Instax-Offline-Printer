@@ -38,6 +38,85 @@ from legacy_instax_printer import (
     encode_planar_rgb,
 )
 
+FILM_PRESET_OPTIONS = [
+    ("none", "Custom / Manual (Unsaved)"),
+    ("polaroid_sx70", "Polaroid SX-70 (1972 Warm Chemistry)"),
+    ("polaroid_600", "Polaroid 600 (Classic 80s/90s Pop)"),
+    ("polaroid_itype", "Polaroid I-Type / Modern Color"),
+    ("polaroid_spectra", "Polaroid Spectra / Image System"),
+    ("vintage_70s", "1970s Golden Vintage"),
+    ("retro_80s", "1980s Retro Flash Pop"),
+    ("pns_90s", "1990s Point & Shoot / Disposable"),
+    ("mono_silver", "1960s Monochrome Silver Halide"),
+    ("instax_rich", "🌈 instax-Rich (Vibrant High Contrast)"),
+    ("instax_natural", "📷 instax-Natural (3D-LUT Fuji Emulation)"),
+    ("instax_mono", "Instax Monochrome (B&W Street Film)"),
+    ("instax_sepia", "Instax Warm Sepia (Nostalgic Tea Wash)"),
+]
+
+FILM_PRESETS = {
+    "polaroid_sx70": {
+        "filter": "Vintage Film", "warmth": 0.35, "vignette": 0.30, "light_leak": "sunburst",
+        "leak_placement": "topRight", "leak_intensity": 0.35, "film_grain": 0.25,
+        "analog_wear": 0.10, "show_date": False, "date_color": "amber",
+    },
+    "polaroid_600": {
+        "filter": "Normal", "warmth": 0.15, "vignette": 0.45, "light_leak": "burn",
+        "leak_placement": "left", "leak_intensity": 0.40, "film_grain": 0.35,
+        "analog_wear": 0.15, "show_date": False, "date_color": "amber",
+    },
+    "polaroid_itype": {
+        "filter": "Normal", "warmth": 0.05, "vignette": 0.20, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.15,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
+    "polaroid_spectra": {
+        "filter": "Normal", "warmth": 0.25, "vignette": 0.35, "light_leak": "sunset",
+        "leak_placement": "right", "leak_intensity": 0.30, "film_grain": 0.20,
+        "analog_wear": 0.05, "show_date": False, "date_color": "amber",
+    },
+    "vintage_70s": {
+        "filter": "Vintage Film", "warmth": 0.55, "vignette": 0.50, "light_leak": "sunburst",
+        "leak_placement": "topRight", "leak_intensity": 0.60, "film_grain": 0.45,
+        "analog_wear": 0.30, "show_date": False, "date_color": "amber",
+    },
+    "retro_80s": {
+        "filter": "Vivid Velvia", "warmth": -0.10, "vignette": 0.40, "light_leak": "rainbow",
+        "leak_placement": "diagonal", "leak_intensity": 0.50, "film_grain": 0.40,
+        "analog_wear": 0.15, "show_date": True, "date_color": "red",
+    },
+    "pns_90s": {
+        "filter": "Normal", "warmth": 0.15, "vignette": 0.55, "light_leak": "burn",
+        "leak_placement": "right", "leak_intensity": 0.35, "film_grain": 0.35,
+        "analog_wear": 0.10, "show_date": True, "date_color": "amber",
+    },
+    "mono_silver": {
+        "filter": "Monochrome", "warmth": 0.00, "vignette": 0.40, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.60,
+        "analog_wear": 0.20, "show_date": False, "date_color": "white",
+    },
+    "instax_rich": {
+        "filter": "Fujifilm Intelligence", "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.05,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
+    "instax_natural": {
+        "filter": "Normal", "warmth": 0.10, "vignette": 0.10, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.10,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
+    "instax_mono": {
+        "filter": "Monochrome", "warmth": 0.00, "vignette": 0.15, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.25,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
+    "instax_sepia": {
+        "filter": "Sepia", "warmth": 0.40, "vignette": 0.25, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.20,
+        "analog_wear": 0.05, "show_date": False, "date_color": "amber",
+    },
+}
+
 
 def apply_analog_fx(
     canvas: Image.Image,
@@ -335,6 +414,10 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.vintage_date_placement_var = tk.StringVar(value="bottomRight")
         self.leak_auto_seed = 12345
 
+        # Film Preset Emulation State
+        self.film_preset_var = tk.StringVar(value="Custom / Manual (Unsaved)")
+        self._is_applying_preset = False
+
         # Authentic Telemetry State (None when disconnected!)
         self.is_connected = False
         self.film_remaining = None
@@ -477,52 +560,59 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             command=lambda: self.start_print(force_dry_run=False),
         ).pack(side=tk.LEFT, padx=8)
 
+        tk.Label(right, text="FILM PRESET EMULATION", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        cb_preset = ttk.Combobox(right, textvariable=self.film_preset_var, values=[t for _, t in FILM_PRESET_OPTIONS], state="readonly")
+        cb_preset.pack(fill=tk.X, pady=(2, 6))
+        cb_preset.bind("<<ComboboxSelected>>", self.on_film_preset_changed)
+
         tk.Label(right, text="FRAMING & FILTERS", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w")
         ttk.Combobox(right, textvariable=self.fit_mode_var, values=["fill", "fit"], state="readonly").pack(fill=tk.X, pady=4)
-        self.fit_mode_var.trace_add("write", lambda *_: self.refresh_preview())
+        self.fit_mode_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
 
         ttk.Combobox(
             right,
             textvariable=self.filter_var,
-            values=["Normal", "Fujifilm Intelligence", "Monochrome", "Sepia", "Vivid Velvia"],
+            values=["Normal", "Fujifilm Intelligence", "Monochrome", "Sepia", "Vintage Film", "Vivid Velvia"],
             state="readonly",
         ).pack(fill=tk.X, pady=4)
-        self.filter_var.trace_add("write", lambda *_: self.refresh_preview())
+        self.filter_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
 
         tk.Label(right, text="ANALOG CREATIVE FX", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(10, 2))
 
         # Warmth Scale
         tk.Label(right, text="Warmth Dial (-1.0..+1.0):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
-        tk.Scale(right, from_=-1.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.warmth_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+        tk.Scale(right, from_=-1.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.warmth_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
 
         # Vignette Scale
         tk.Label(right, text="Lens Vignette Falloff:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
-        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.vignette_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.vignette_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
 
         # Light Leak
-        ttk.Combobox(right, textvariable=self.leak_type_var, values=["none", "burn", "sunburst", "sunset", "rainbow"], state="readonly").pack(fill=tk.X, pady=2)
+        cb_leak = ttk.Combobox(right, textvariable=self.leak_type_var, values=["none", "burn", "sunburst", "sunset", "rainbow"], state="readonly")
+        cb_leak.pack(fill=tk.X, pady=2)
+        cb_leak.bind("<<ComboboxSelected>>", lambda _e: (self.mark_manual_adjustment(), self.refresh_preview()))
         f_leak_p = tk.Frame(right, bg=self.bg_card)
         f_leak_p.pack(fill=tk.X, pady=2)
         cb_place = ttk.Combobox(f_leak_p, textvariable=self.leak_placement_var, values=["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"], state="readonly")
         cb_place.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        tk.Button(f_leak_p, text="🎲", width=3, bg=self.bg_card, fg=self.fg_text, command=self.roll_auto_leak).pack(side=tk.LEFT, padx=(4, 0))
-        self.leak_placement_var.trace_add("write", self.on_leak_placement_selected)
+        tk.Button(f_leak_p, text="🎲", width=3, bg=self.bg_card, fg=self.fg_text, command=lambda: (self.roll_auto_leak(), self.mark_manual_adjustment())).pack(side=tk.LEFT, padx=(4, 0))
+        self.leak_placement_var.trace_add("write", lambda *_: (self.on_leak_placement_selected(), self.mark_manual_adjustment()))
 
         # Grain & Wear Scales
         tk.Label(right, text="Silver Halide Grain:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
-        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.film_grain_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.film_grain_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
 
         tk.Label(right, text="Analog Wear & Dust:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
-        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.analog_wear_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.analog_wear_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
 
         # Date Stamp
-        tk.Checkbutton(right, text="LED Date Stamp", variable=self.vintage_date_var, bg=self.bg_card, fg=self.fg_text, selectcolor=self.bg_root, command=self.refresh_preview).pack(anchor="w", pady=(4, 0))
+        tk.Checkbutton(right, text="LED Date Stamp", variable=self.vintage_date_var, bg=self.bg_card, fg=self.fg_text, selectcolor=self.bg_root, command=lambda: (self.mark_manual_adjustment(), self.refresh_preview())).pack(anchor="w", pady=(4, 0))
         d_row = tk.Frame(right, bg=self.bg_card)
         d_row.pack(fill=tk.X, pady=2)
         tk.Entry(d_row, textvariable=self.vintage_date_text_var, width=12).pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.vintage_date_text_var.trace_add("write", lambda *_: self.refresh_preview())
+        self.vintage_date_text_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
         ttk.Combobox(d_row, textvariable=self.vintage_date_color_var, values=["amber", "red", "green", "white"], width=7, state="readonly").pack(side=tk.LEFT, padx=2)
-        self.vintage_date_color_var.trace_add("write", lambda *_: self.refresh_preview())
+        self.vintage_date_color_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
 
         fx_row = tk.Frame(right, bg=self.bg_card)
         fx_row.pack(fill=tk.X, pady=4)
@@ -751,6 +841,52 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         draw.text((w // 2 - 125, h // 2 - 18), f"INSTAX SHARE {model} ({w}x{h})", fill=(255, 255, 255))
         return img
 
+    def mark_manual_adjustment(self):
+        if self._is_applying_preset:
+            return
+        if self.film_preset_var.get() != "Custom / Manual (Unsaved)":
+            self.film_preset_var.set("Custom / Manual (Unsaved)")
+
+    def on_film_preset_changed(self, event=None):
+        sel_title = self.film_preset_var.get()
+        preset_id = None
+        for pid, title in FILM_PRESET_OPTIONS:
+            if title == sel_title:
+                preset_id = pid
+                break
+        if not preset_id or preset_id == "none":
+            return
+        p = FILM_PRESETS.get(preset_id)
+        if not p:
+            return
+
+        self._is_applying_preset = True
+        try:
+            if "filter" in p:
+                self.filter_var.set(p["filter"])
+            if "warmth" in p:
+                self.warmth_var.set(p["warmth"])
+            if "vignette" in p:
+                self.vignette_var.set(p["vignette"])
+            if "light_leak" in p:
+                self.leak_type_var.set(p["light_leak"])
+            if "leak_placement" in p:
+                self.leak_placement_var.set(p["leak_placement"])
+            if "leak_intensity" in p:
+                self.leak_intensity_var.set(p["leak_intensity"])
+            if "film_grain" in p:
+                self.film_grain_var.set(p["film_grain"])
+            if "analog_wear" in p:
+                self.analog_wear_var.set(p["analog_wear"])
+            if "show_date" in p:
+                self.vintage_date_var.set(p["show_date"])
+            if "date_color" in p:
+                self.vintage_date_color_var.set(p["date_color"])
+            self.film_preset_var.set(sel_title)
+        finally:
+            self._is_applying_preset = False
+        self.refresh_preview()
+
     def _apply_filter(self, img: Image.Image) -> Image.Image:
         out = img.convert("RGB")
         if self.rotation_deg:
@@ -759,12 +895,18 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         if flt == "Fujifilm Intelligence":
             out = ImageEnhance.Contrast(out).enhance(1.12)
             out = ImageEnhance.Color(out).enhance(1.15)
-        elif flt == "Monochrome":
+        elif flt in ("Monochrome", "mono"):
             out = ImageOps.grayscale(out).convert("RGB")
-        elif flt == "Sepia":
+        elif flt in ("Sepia", "sepia"):
             g = ImageOps.grayscale(out)
             out = ImageOps.colorize(g, "#2B1B0E", "#F5E1C0")
-        elif flt == "Vivid Velvia":
+        elif flt in ("Vintage Film", "vintage"):
+            g = ImageOps.grayscale(out)
+            sepia_layer = ImageOps.colorize(g, "#3D2714", "#F5ECD0")
+            out = Image.blend(out, sepia_layer, 0.35)
+            out = ImageEnhance.Contrast(out).enhance(0.95)
+            out = ImageEnhance.Brightness(out).enhance(1.05)
+        elif flt in ("Vivid Velvia", "vivid"):
             out = ImageEnhance.Color(out).enhance(1.4)
         return out
 
@@ -780,6 +922,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.vintage_date_text_var.set("")
         self.vintage_date_color_var.set("amber")
         self.vintage_date_placement_var.set("bottomRight")
+        self.mark_manual_adjustment()
         self.refresh_preview()
 
     def surprise_me_analog_fx(self):
@@ -793,6 +936,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.vintage_date_var.set(True)
         self.vintage_date_color_var.set(random.choice(["amber", "red", "green", "white"]))
         self.vintage_date_placement_var.set(random.choice(["bottomRight", "bottomLeft", "topRight", "topLeft"]))
+        self.mark_manual_adjustment()
         self.refresh_preview()
 
     def roll_auto_leak(self):

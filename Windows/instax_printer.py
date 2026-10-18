@@ -530,6 +530,82 @@ def _compress_pil_to_jpeg(canvas: Image.Image, max_bytes: int = 60 * 1024) -> by
     return data
 
 
+FILM_PRESETS = {
+    "polaroid_sx70": {
+        "print_mode": "natural", "filter": "vintage", "brightness": 0.04, "contrast": 0.92,
+        "saturation": 1.10, "warmth": 0.35, "vignette": 0.30, "light_leak": "sunburst",
+        "leak_placement": "topRight", "leak_intensity": 0.35, "film_grain": 0.25,
+        "analog_wear": 0.10, "show_date": False, "date_color": "amber",
+    },
+    "polaroid_600": {
+        "print_mode": "rich", "filter": "none", "brightness": 0.02, "contrast": 1.20,
+        "saturation": 1.25, "warmth": 0.15, "vignette": 0.45, "light_leak": "burn",
+        "leak_placement": "left", "leak_intensity": 0.40, "film_grain": 0.35,
+        "analog_wear": 0.15, "show_date": False, "date_color": "amber",
+    },
+    "polaroid_itype": {
+        "print_mode": "rich", "filter": "none", "brightness": 0.00, "contrast": 1.10,
+        "saturation": 1.15, "warmth": 0.05, "vignette": 0.20, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.15,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
+    "polaroid_spectra": {
+        "print_mode": "natural", "filter": "none", "brightness": 0.03, "contrast": 1.05,
+        "saturation": 1.10, "warmth": 0.25, "vignette": 0.35, "light_leak": "sunset",
+        "leak_placement": "right", "leak_intensity": 0.30, "film_grain": 0.20,
+        "analog_wear": 0.05, "show_date": False, "date_color": "amber",
+    },
+    "vintage_70s": {
+        "print_mode": "natural", "filter": "vintage", "brightness": 0.06, "contrast": 0.88,
+        "saturation": 0.90, "warmth": 0.55, "vignette": 0.50, "light_leak": "sunburst",
+        "leak_placement": "topRight", "leak_intensity": 0.60, "film_grain": 0.45,
+        "analog_wear": 0.30, "show_date": False, "date_color": "amber",
+    },
+    "retro_80s": {
+        "print_mode": "rich", "filter": "vivid", "brightness": 0.05, "contrast": 1.30,
+        "saturation": 1.40, "warmth": -0.10, "vignette": 0.40, "light_leak": "rainbow",
+        "leak_placement": "diagonal", "leak_intensity": 0.50, "film_grain": 0.40,
+        "analog_wear": 0.15, "show_date": True, "date_color": "red",
+    },
+    "pns_90s": {
+        "print_mode": "rich", "filter": "none", "brightness": 0.02, "contrast": 1.18,
+        "saturation": 1.15, "warmth": 0.15, "vignette": 0.55, "light_leak": "burn",
+        "leak_placement": "right", "leak_intensity": 0.35, "film_grain": 0.35,
+        "analog_wear": 0.10, "show_date": True, "date_color": "amber",
+    },
+    "mono_silver": {
+        "print_mode": "natural", "filter": "monochrome", "brightness": 0.00, "contrast": 1.35,
+        "saturation": 0.00, "warmth": 0.00, "vignette": 0.40, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.60,
+        "analog_wear": 0.20, "show_date": False, "date_color": "white",
+    },
+    "instax_rich": {
+        "print_mode": "rich", "filter": "none", "brightness": 0.00, "contrast": 1.15,
+        "saturation": 1.20, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.05,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
+    "instax_natural": {
+        "print_mode": "natural", "filter": "none", "brightness": 0.00, "contrast": 1.00,
+        "saturation": 1.00, "warmth": 0.10, "vignette": 0.10, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.10,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
+    "instax_mono": {
+        "print_mode": "rich", "filter": "monochrome", "brightness": 0.00, "contrast": 1.15,
+        "saturation": 0.00, "warmth": 0.00, "vignette": 0.15, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.25,
+        "analog_wear": 0.00, "show_date": False, "date_color": "amber",
+    },
+    "instax_sepia": {
+        "print_mode": "natural", "filter": "sepia", "brightness": 0.02, "contrast": 1.05,
+        "saturation": 0.70, "warmth": 0.40, "vignette": 0.25, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.20,
+        "analog_wear": 0.05, "show_date": False, "date_color": "amber",
+    },
+}
+
+
 def apply_analog_fx(
     canvas: Image.Image,
     photo_box: Optional[Tuple[int, int, int, int]] = None,
@@ -986,6 +1062,7 @@ async def main_cli():
     p_print.add_argument("--height", type=int, default=0)
 
     for p in (p_prev, p_print):
+        p.add_argument("--film-preset", choices=["none"] + list(FILM_PRESETS.keys()), default="none", help="Film preset emulation (Polaroid SX-70/600/I-Type/Spectra, Vintage 70s/80s/90s/60s, Instax Rich/Natural/Mono/Sepia)")
         p.add_argument("--warmth", type=float, default=0.0, help="Analog warmth (-1.0 to 1.0)")
         p.add_argument("--vignette", type=float, default=0.0, help="Lens vignette falloff (0.0 to 1.0)")
         p.add_argument("--light-leak", choices=["none", "burn", "sunburst", "sunset", "rainbow"], default="none", help="Light leak type")
@@ -999,19 +1076,24 @@ async def main_cli():
 
     args = parser.parse_args()
 
+    film_preset = getattr(args, "film_preset", "none")
+    preset_data = FILM_PRESETS.get(film_preset, {})
+
     analog_kwargs = {
-        "warmth": getattr(args, "warmth", 0.0),
-        "vignette": getattr(args, "vignette", 0.0),
-        "light_leak": getattr(args, "light_leak", "none"),
-        "leak_placement": getattr(args, "leak_placement", "auto"),
-        "leak_intensity": getattr(args, "leak_intensity", 0.70),
-        "film_grain": getattr(args, "grain", 0.0),
-        "analog_wear": getattr(args, "wear", 0.0),
-        "show_vintage_date": bool(getattr(args, "date", "").strip()),
+        "warmth": args.warmth if args.warmth != 0.0 else preset_data.get("warmth", 0.0),
+        "vignette": args.vignette if args.vignette != 0.0 else preset_data.get("vignette", 0.0),
+        "light_leak": args.light_leak if args.light_leak != "none" else preset_data.get("light_leak", "none"),
+        "leak_placement": args.leak_placement if args.leak_placement != "auto" else preset_data.get("leak_placement", "auto"),
+        "leak_intensity": args.leak_intensity if args.leak_intensity != 0.70 else preset_data.get("leak_intensity", 0.70),
+        "film_grain": args.grain if args.grain != 0.0 else preset_data.get("film_grain", 0.0),
+        "analog_wear": args.wear if args.wear != 0.0 else preset_data.get("analog_wear", 0.0),
+        "show_vintage_date": bool(getattr(args, "date", "").strip()) or preset_data.get("show_date", False),
         "vintage_date_text": getattr(args, "date", ""),
-        "vintage_date_color": getattr(args, "date_color", "amber"),
+        "vintage_date_color": args.date_color if args.date_color != "amber" else preset_data.get("date_color", "amber"),
         "vintage_date_placement": getattr(args, "date_placement", "bottomRight"),
     }
+    if hasattr(args, "mode") and "print_mode" in preset_data and args.mode == "rich":
+        args.mode = preset_data["print_mode"]
 
     if args.command == "preview":
         m = (args.model or "square").lower()

@@ -84,7 +84,36 @@ final class LegacyStudioViewModel: ObservableObject {
         }
     }
 
+    @Published var filmPreset: String = "none"
+
+    func applyFilmPreset(_ id: String) {
+        filmPreset = id
+        guard id != "none", !id.hasPrefix("header_"), let preset = LegacyFilmCatalog.presets.first(where: { $0.id == id }) else {
+            return
+        }
+        options.filter = preset.filter
+        options.brightness = preset.brightness
+        options.contrast = preset.contrast
+        options.saturation = preset.saturation
+        options.warmth = preset.warmth
+        options.vignette = preset.vignette
+        options.lightLeak = preset.lightLeak
+        if preset.lightLeak != "none" {
+            options.leakPlacement = preset.leakPlacement
+            options.leakIntensity = preset.leakIntensity
+        }
+        options.filmGrain = preset.filmGrain
+        options.analogWear = preset.analogWear
+        options.showVintageDate = preset.showVintageDate
+        if preset.showVintageDate {
+            options.vintageDateColor = preset.vintageDateColor
+            options.vintageDatePlacement = preset.vintageDatePlacement
+        }
+        refreshPreview()
+    }
+
     func resetAnalogFX() {
+        filmPreset = "none"
         options.warmth = 0.0
         options.vignette = 0.0
         options.lightLeak = "none"
@@ -810,15 +839,59 @@ struct LegacyMainStudioView: View {
         }
     }
 
+    private var filmPresetsBox: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("FILM EMULATION PRESETS")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.secondary)
+
+            Picker("Preset", selection: Binding(
+                get: { vm.filmPreset },
+                set: { vm.applyFilmPreset($0) }
+            )) {
+                Text("Custom / Manual (Unsaved)").tag("none")
+
+                Divider()
+                Text("── Polaroid Emulations ──").tag("header_polaroid")
+                Text("Polaroid SX-70 (1972 Warm Chemistry)").tag("polaroid_sx70")
+                Text("Polaroid 600 (Classic 80s/90s Pop)").tag("polaroid_600")
+                Text("Polaroid I-Type / Modern Color").tag("polaroid_itype")
+                Text("Polaroid Spectra / Image System").tag("polaroid_spectra")
+
+                Divider()
+                Text("── Vintage & Nostalgia Eras ──").tag("header_vintage")
+                Text("1970s Golden Vintage").tag("vintage_70s")
+                Text("1980s Retro Flash Pop").tag("retro_80s")
+                Text("1990s Point & Shoot / Disposable").tag("pns_90s")
+                Text("1960s Monochrome Silver Halide").tag("mono_silver")
+
+                Divider()
+                Text("── Instax Film Profiles ──").tag("header_instax")
+                Text("🌈 instax-Rich (Vibrant High Contrast)").tag("instax_rich")
+                Text("📷 instax-Natural (3D-LUT Fuji Emulation)").tag("instax_natural")
+                Text("Instax Monochrome (B&W Street Film)").tag("instax_mono")
+                Text("Instax Warm Sepia (Nostalgic Tea Wash)").tag("instax_sepia")
+            }
+
+            Text("Applying a preset synchronizes color, filters, light leaks, vignette, grain & date stamps across tabs.")
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+        }
+    }
+
     private var filtersTabView: some View {
         VStack(alignment: .leading, spacing: 14) {
+            filmPresetsBox
+
+            Divider()
+
             Text("FUJIFILM SHARE FILTERS")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundColor(.secondary)
 
             Picker("Filter Preset", selection: Binding(
                 get: { vm.options.filter },
-                set: { vm.options.filter = $0; vm.refreshPreview() }
+                set: { vm.filmPreset = "none"; vm.options.filter = $0; vm.refreshPreview() }
             )) {
                 ForEach(LegacyPhotoFilter.allCases) { f in
                     Text(f.rawValue).tag(f)
@@ -841,7 +914,7 @@ struct LegacyMainStudioView: View {
                 }
                 Slider(value: Binding(
                     get: { vm.options.brightness },
-                    set: { vm.options.brightness = $0; vm.refreshPreview() }
+                    set: { vm.filmPreset = "none"; vm.options.brightness = $0; vm.refreshPreview() }
                 ), in: -0.35...0.35)
             }
 
@@ -855,7 +928,7 @@ struct LegacyMainStudioView: View {
                 }
                 Slider(value: Binding(
                     get: { vm.options.contrast },
-                    set: { vm.options.contrast = $0; vm.refreshPreview() }
+                    set: { vm.filmPreset = "none"; vm.options.contrast = $0; vm.refreshPreview() }
                 ), in: 0.6...1.6)
             }
 
@@ -869,11 +942,12 @@ struct LegacyMainStudioView: View {
                 }
                 Slider(value: Binding(
                     get: { vm.options.saturation },
-                    set: { vm.options.saturation = $0; vm.refreshPreview() }
+                    set: { vm.filmPreset = "none"; vm.options.saturation = $0; vm.refreshPreview() }
                 ), in: 0.0...2.0)
             }
 
             Button("Reset Color Adjustments") {
+                vm.filmPreset = "none"
                 vm.options.filter = .normal
                 vm.options.brightness = 0.0
                 vm.options.contrast = 1.0
@@ -886,6 +960,10 @@ struct LegacyMainStudioView: View {
 
     private var analogFXTabView: some View {
         VStack(alignment: .leading, spacing: 14) {
+            filmPresetsBox
+
+            Divider()
+
             Text("ANALOG CREATIVE FX")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundColor(.secondary)

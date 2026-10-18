@@ -170,6 +170,23 @@ Embed high-resolution, scannable QR codes onto your physical prints—just like 
 
 ### 🎞️ Analog Creative FX & Film Emulation Studio (Ported from PolaroidEngine)
 Bring the nostalgic warmth, chemical quirks, and physical characteristics of vintage instant film to any photo with zero external dependencies:
+* **🎞️ Instant Film Emulation Presets Catalog (v1.8.0):**
+  * **Polaroid Film Simulations:**
+    * **Polaroid SX-70 (1972 Warm Chemistry):** Iconic warm, muted tones, soft contrast, sunburst corner leak, and authentic chemical texture.
+    * **Polaroid 600 (Classic 80s/90s Pop):** High-contrast, punchy color rendition with left-hinge film burn leak and tactile grain.
+    * **Polaroid I-Type / Modern Color:** Clean, crisp modern instant color emulsion with subtle grain and gentle lens vignette.
+    * **Polaroid Spectra / Image System:** Wide-format rich color rendition with sunset gradient and balanced optical warmth.
+  * **Vintage & Nostalgia Eras:**
+    * **1970s Golden Vintage:** Deep amber color wash, heavy sunburst flare, high silver grain, and analog dust/scratches.
+    * **1980s Retro Flash Pop:** Vibrant saturation, cool-balanced highlights, diagonal rainbow prism leak, and glowing red LED date stamp.
+    * **1990s Point & Shoot / Disposable:** Flash pop, moderate edge burn leak, tactile grain, and classic amber LED date stamp.
+    * **1960s Monochrome Silver Halide:** Dense silver halide crystals, rich black-and-white tonal contrast, and subtle darkroom wear.
+  * **Instax Film Profiles:**
+    * **🌈 instax-Rich (Vibrant High Contrast):** Maximizes dynamic range and color saturation for vivid landscapes and portraits.
+    * **📷 instax-Natural (3D-LUT Fuji Emulation):** Fujifilm's signature 3D-LUT profile with soft analog instant film highlights.
+    * **Instax Monochrome (B&W Street Film):** High-contrast street documentary black-and-white emulsion.
+    * **Instax Warm Sepia (Nostalgic Tea Wash):** Warm tea-toned monochrome wash with gentle vintage vignette.
+* **🔄 Bi-Directional Cross-Tab Synchronization:** Selecting any film preset automatically synchronizes settings across **both** the Color/Filters tab (print mode, filter preset, brightness, contrast, saturation) and Analog FX tab (warmth, vignette, light leak, intensity, grain, wear, date stamp). Fine-tuning any individual slider or combobox automatically switches the preset dropdown to `Custom / Manual (Unsaved)`.
 * **Warmth / Color Temp Dial:** Shift color temperature non-destructively from `-1.0` (Cool Arctic Blue) to `+1.0` (Golden Amber Sunlight).
 * **Lens Vignette:** Dial in `0%` to `100%` optical falloff shadow around the edges of the frame.
 * **Authentic Light Leaks:** Choose from 4 physical film leak behaviors:

@@ -54,6 +54,7 @@ echo "🔨 [4/4] Compiling Legacy Instax Printer macOS SwiftUI Application..."
     -o "$APP_BUNDLE/Contents/MacOS/LegacyInstaxPrinter"
 
 cp legacy-instax "$APP_BUNDLE/Contents/MacOS/legacy-instax"
+dot_clean "$APP_BUNDLE" 2>/dev/null || true
 xattr -r -d com.apple.FinderInfo "$APP_BUNDLE" 2>/dev/null || true
 xattr -cr "$APP_BUNDLE"
 /usr/bin/codesign --force --sign - "$APP_BUNDLE"

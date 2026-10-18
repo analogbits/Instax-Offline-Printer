@@ -352,8 +352,33 @@
         <!-- Color & Filters Tab Content -->
         <div id="tabColorContent" style="display: none;">
           <div class="field-row">
+            <div class="field-label"><span style="font-weight: 600; color: #f59e0b;">🎞️ Film Preset Emulation</span></div>
+            <select id="filmPresetSelectColor" onchange="onFilmPresetChange(this.value)">
+              <option value="none">Custom / Manual (Unsaved)</option>
+              <optgroup label="── Polaroid Film Simulations ──">
+                <option value="polaroid_sx70">Polaroid SX-70 (1972 Warm Chemistry)</option>
+                <option value="polaroid_600">Polaroid 600 (Classic 80s/90s Pop)</option>
+                <option value="polaroid_itype">Polaroid I-Type / Modern Color</option>
+                <option value="polaroid_spectra">Polaroid Spectra / Image System</option>
+              </optgroup>
+              <optgroup label="── Vintage & Nostalgia Eras ──">
+                <option value="vintage_70s">1970s Golden Vintage</option>
+                <option value="retro_80s">1980s Retro Flash Pop</option>
+                <option value="pns_90s">1990s Point & Shoot / Disposable</option>
+                <option value="mono_silver">1960s Monochrome Silver Halide</option>
+              </optgroup>
+              <optgroup label="── Instax Film Profiles ──">
+                <option value="instax_rich">🌈 instax-Rich (Vibrant High Contrast)</option>
+                <option value="instax_natural">📷 instax-Natural (3D-LUT Fuji Emulation)</option>
+                <option value="instax_mono">Instax Monochrome (B&W Street Film)</option>
+                <option value="instax_sepia">Instax Warm Sepia (Nostalgic Tea Wash)</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="field-row">
             <div class="field-label"><span>Print Mode</span></div>
-            <select id="printModeSelect" onchange="renderCanvas()">
+            <select id="printModeSelect" onchange="markManualAdjustment(); renderCanvas()">
               <option value="rich">instax-Rich Mode (Vibrant Pop)</option>
               <option value="natural">instax-Natural Mode (Classic 3D-LUT)</option>
             </select>
@@ -361,7 +386,7 @@
 
           <div class="field-row">
             <div class="field-label"><span>Artistic Filter</span></div>
-            <select id="filterPresetSelect" onchange="renderCanvas()">
+            <select id="filterPresetSelect" onchange="markManualAdjustment(); renderCanvas()">
               <option value="none">Original (No Filter)</option>
               <option value="mono">B&W Monochrome</option>
               <option value="sepia">Warm Sepia</option>
@@ -373,22 +398,47 @@
 
           <div class="field-row">
             <div class="field-label"><span>Brightness</span><span class="field-value" id="valBright">0.00</span></div>
-            <input type="range" id="sliderBright" min="-0.4" max="0.4" step="0.02" value="0.0" oninput="renderCanvas()">
+            <input type="range" id="sliderBright" min="-0.4" max="0.4" step="0.02" value="0.0" oninput="markManualAdjustment(); renderCanvas()">
           </div>
 
           <div class="field-row">
             <div class="field-label"><span>Contrast</span><span class="field-value" id="valContrast">1.00</span></div>
-            <input type="range" id="sliderContrast" min="0.6" max="1.6" step="0.05" value="1.0" oninput="renderCanvas()">
+            <input type="range" id="sliderContrast" min="0.6" max="1.6" step="0.05" value="1.0" oninput="markManualAdjustment(); renderCanvas()">
           </div>
 
           <div class="field-row">
             <div class="field-label"><span>Saturation</span><span class="field-value" id="valSat">1.00</span></div>
-            <input type="range" id="sliderSat" min="0.0" max="2.0" step="0.05" value="1.0" oninput="renderCanvas()">
+            <input type="range" id="sliderSat" min="0.0" max="2.0" step="0.05" value="1.0" oninput="markManualAdjustment(); renderCanvas()">
           </div>
         </div>
 
         <!-- Analog FX Tab Content (Ported from PolaroidEngine) -->
         <div id="tabAnalogContent" style="display: none;">
+          <div class="field-row" style="margin-bottom: 10px;">
+            <div class="field-label"><span style="font-weight: 600; color: #f59e0b;">🎞️ Film Preset Emulation</span></div>
+            <select id="filmPresetSelect" onchange="onFilmPresetChange(this.value)">
+              <option value="none">Custom / Manual (Unsaved)</option>
+              <optgroup label="── Polaroid Film Simulations ──">
+                <option value="polaroid_sx70">Polaroid SX-70 (1972 Warm Chemistry)</option>
+                <option value="polaroid_600">Polaroid 600 (Classic 80s/90s Pop)</option>
+                <option value="polaroid_itype">Polaroid I-Type / Modern Color</option>
+                <option value="polaroid_spectra">Polaroid Spectra / Image System</option>
+              </optgroup>
+              <optgroup label="── Vintage & Nostalgia Eras ──">
+                <option value="vintage_70s">1970s Golden Vintage</option>
+                <option value="retro_80s">1980s Retro Flash Pop</option>
+                <option value="pns_90s">1990s Point & Shoot / Disposable</option>
+                <option value="mono_silver">1960s Monochrome Silver Halide</option>
+              </optgroup>
+              <optgroup label="── Instax Film Profiles ──">
+                <option value="instax_rich">🌈 instax-Rich (Vibrant High Contrast)</option>
+                <option value="instax_natural">📷 instax-Natural (3D-LUT Fuji Emulation)</option>
+                <option value="instax_mono">Instax Monochrome (B&W Street Film)</option>
+                <option value="instax_sepia">Instax Warm Sepia (Nostalgic Tea Wash)</option>
+              </optgroup>
+            </select>
+          </div>
+
           <div style="display: flex; gap: 6px; margin-bottom: 12px;">
             <button class="primary" style="flex: 1; padding: 6px 10px; font-size: 11px; background: linear-gradient(135deg, #f59e0b, #ec4899); border: none; font-weight: 600;" onclick="randomizeAnalogFX()">🎲 Surprise Me!</button>
             <button class="secondary" style="padding: 6px 10px; font-size: 11px;" onclick="resetAnalogFX()">↺ Reset</button>
@@ -396,12 +446,12 @@
 
           <div class="field-row">
             <div class="field-label"><span>Warmth / Temperature</span><span class="field-value" id="valWarmth">0.00 (Neutral)</span></div>
-            <input type="range" id="sliderWarmth" min="-1.0" max="1.0" step="0.05" value="0.0" oninput="renderCanvas()">
+            <input type="range" id="sliderWarmth" min="-1.0" max="1.0" step="0.05" value="0.0" oninput="markManualAdjustment(); renderCanvas()">
           </div>
 
           <div class="field-row">
             <div class="field-label"><span>Lens Vignette</span><span class="field-value" id="valVignette">0%</span></div>
-            <input type="range" id="sliderVignette" min="0.0" max="1.0" step="0.05" value="0.0" oninput="renderCanvas()">
+            <input type="range" id="sliderVignette" min="0.0" max="1.0" step="0.05" value="0.0" oninput="markManualAdjustment(); renderCanvas()">
           </div>
 
           <div class="field-row">
@@ -914,13 +964,273 @@ function getFilteredSource(img, opts) {
 }
 
 // ==========================================
-// Analog Creative FX Engine (Ported from PolaroidEngine)
+// Film Emulation Presets & Analog FX Engine
 // ==========================================
+const FILM_PRESETS = {
+  polaroid_sx70: {
+    printMode: 'natural',
+    filter: 'vintage',
+    brightness: 0.04,
+    contrast: 0.92,
+    saturation: 1.10,
+    warmth: 0.35,
+    vignette: 0.30,
+    lightLeak: 'sunburst',
+    leakPlacement: 'topRight',
+    leakIntensity: 0.35,
+    filmGrain: 0.25,
+    analogWear: 0.10,
+    showDate: false,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  },
+  polaroid_600: {
+    printMode: 'rich',
+    filter: 'none',
+    brightness: 0.02,
+    contrast: 1.20,
+    saturation: 1.25,
+    warmth: 0.15,
+    vignette: 0.45,
+    lightLeak: 'burn',
+    leakPlacement: 'left',
+    leakIntensity: 0.40,
+    filmGrain: 0.35,
+    analogWear: 0.15,
+    showDate: false,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  },
+  polaroid_itype: {
+    printMode: 'rich',
+    filter: 'none',
+    brightness: 0.00,
+    contrast: 1.10,
+    saturation: 1.15,
+    warmth: 0.05,
+    vignette: 0.20,
+    lightLeak: 'none',
+    leakPlacement: 'auto',
+    leakIntensity: 0.70,
+    filmGrain: 0.15,
+    analogWear: 0.00,
+    showDate: false,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  },
+  polaroid_spectra: {
+    printMode: 'natural',
+    filter: 'none',
+    brightness: 0.03,
+    contrast: 1.05,
+    saturation: 1.10,
+    warmth: 0.25,
+    vignette: 0.35,
+    lightLeak: 'sunset',
+    leakPlacement: 'right',
+    leakIntensity: 0.30,
+    filmGrain: 0.20,
+    analogWear: 0.05,
+    showDate: false,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  },
+  vintage_70s: {
+    printMode: 'natural',
+    filter: 'vintage',
+    brightness: 0.06,
+    contrast: 0.88,
+    saturation: 0.90,
+    warmth: 0.55,
+    vignette: 0.50,
+    lightLeak: 'sunburst',
+    leakPlacement: 'topRight',
+    leakIntensity: 0.60,
+    filmGrain: 0.45,
+    analogWear: 0.30,
+    showDate: false,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  },
+  retro_80s: {
+    printMode: 'rich',
+    filter: 'vivid',
+    brightness: 0.05,
+    contrast: 1.30,
+    saturation: 1.40,
+    warmth: -0.10,
+    vignette: 0.40,
+    lightLeak: 'rainbow',
+    leakPlacement: 'diagonal',
+    leakIntensity: 0.50,
+    filmGrain: 0.40,
+    analogWear: 0.15,
+    showDate: true,
+    dateColor: 'red',
+    datePlacement: 'bottomRight'
+  },
+  pns_90s: {
+    printMode: 'rich',
+    filter: 'none',
+    brightness: 0.02,
+    contrast: 1.18,
+    saturation: 1.15,
+    warmth: 0.15,
+    vignette: 0.55,
+    lightLeak: 'burn',
+    leakPlacement: 'right',
+    leakIntensity: 0.35,
+    filmGrain: 0.35,
+    analogWear: 0.10,
+    showDate: true,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  },
+  mono_silver: {
+    printMode: 'natural',
+    filter: 'mono',
+    brightness: 0.00,
+    contrast: 1.35,
+    saturation: 0.00,
+    warmth: 0.00,
+    vignette: 0.40,
+    lightLeak: 'none',
+    leakPlacement: 'auto',
+    leakIntensity: 0.70,
+    filmGrain: 0.60,
+    analogWear: 0.20,
+    showDate: false,
+    dateColor: 'white',
+    datePlacement: 'bottomRight'
+  },
+  instax_rich: {
+    printMode: 'rich',
+    filter: 'none',
+    brightness: 0.00,
+    contrast: 1.15,
+    saturation: 1.20,
+    warmth: 0.00,
+    vignette: 0.00,
+    lightLeak: 'none',
+    leakPlacement: 'auto',
+    leakIntensity: 0.70,
+    filmGrain: 0.05,
+    analogWear: 0.00,
+    showDate: false,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  },
+  instax_natural: {
+    printMode: 'natural',
+    filter: 'none',
+    brightness: 0.00,
+    contrast: 1.00,
+    saturation: 1.00,
+    warmth: 0.10,
+    vignette: 0.10,
+    lightLeak: 'none',
+    leakPlacement: 'auto',
+    leakIntensity: 0.70,
+    filmGrain: 0.10,
+    analogWear: 0.00,
+    showDate: false,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  },
+  instax_mono: {
+    printMode: 'rich',
+    filter: 'mono',
+    brightness: 0.00,
+    contrast: 1.15,
+    saturation: 0.00,
+    warmth: 0.00,
+    vignette: 0.15,
+    lightLeak: 'none',
+    leakPlacement: 'auto',
+    leakIntensity: 0.70,
+    filmGrain: 0.25,
+    analogWear: 0.00,
+    showDate: false,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  },
+  instax_sepia: {
+    printMode: 'natural',
+    filter: 'sepia',
+    brightness: 0.02,
+    contrast: 1.05,
+    saturation: 0.70,
+    warmth: 0.40,
+    vignette: 0.25,
+    lightLeak: 'none',
+    leakPlacement: 'auto',
+    leakIntensity: 0.70,
+    filmGrain: 0.20,
+    analogWear: 0.05,
+    showDate: false,
+    dateColor: 'amber',
+    datePlacement: 'bottomRight'
+  }
+};
+
+let _isApplyingPreset = false;
+
+function markManualAdjustment() {
+  if (_isApplyingPreset) return;
+  const selColor = document.getElementById('filmPresetSelectColor');
+  const selAnalog = document.getElementById('filmPresetSelect');
+  if (selColor && selColor.value !== 'none') selColor.value = 'none';
+  if (selAnalog && selAnalog.value !== 'none') selAnalog.value = 'none';
+}
+
+function onFilmPresetChange(id) {
+  const p = FILM_PRESETS[id];
+  const selColor = document.getElementById('filmPresetSelectColor');
+  const selAnalog = document.getElementById('filmPresetSelect');
+  if (selColor) selColor.value = id;
+  if (selAnalog) selAnalog.value = id;
+
+  if (!p) {
+    renderCanvas();
+    return;
+  }
+
+  _isApplyingPreset = true;
+
+  // Update Color & Filters tab
+  if (document.getElementById('printModeSelect')) document.getElementById('printModeSelect').value = p.printMode;
+  if (document.getElementById('filterPresetSelect')) document.getElementById('filterPresetSelect').value = p.filter;
+  if (document.getElementById('sliderBright')) document.getElementById('sliderBright').value = p.brightness.toFixed(2);
+  if (document.getElementById('sliderContrast')) document.getElementById('sliderContrast').value = p.contrast.toFixed(2);
+  if (document.getElementById('sliderSat')) document.getElementById('sliderSat').value = p.saturation.toFixed(2);
+
+  // Update Analog FX tab
+  if (document.getElementById('sliderWarmth')) document.getElementById('sliderWarmth').value = p.warmth.toFixed(2);
+  if (document.getElementById('sliderVignette')) document.getElementById('sliderVignette').value = p.vignette.toFixed(2);
+  if (document.getElementById('leakTypeSelect')) document.getElementById('leakTypeSelect').value = p.lightLeak;
+  if (document.getElementById('leakPlacementSelect')) document.getElementById('leakPlacementSelect').value = p.leakPlacement;
+  if (document.getElementById('sliderLeakIntensity')) document.getElementById('sliderLeakIntensity').value = p.leakIntensity.toFixed(2);
+  if (document.getElementById('sliderFilmGrain')) document.getElementById('sliderFilmGrain').value = p.filmGrain.toFixed(2);
+  if (document.getElementById('sliderAnalogWear')) document.getElementById('sliderAnalogWear').value = p.analogWear.toFixed(2);
+  if (document.getElementById('chkDateStamp')) document.getElementById('chkDateStamp').checked = p.showDate;
+  if (document.getElementById('dateColorSelect')) document.getElementById('dateColorSelect').value = p.dateColor;
+  if (document.getElementById('datePlacementSelect')) document.getElementById('datePlacementSelect').value = p.datePlacement;
+
+  if (loadedImage) {
+    delete loadedImage._filteredCanvas;
+    delete loadedImage._filteredCacheKey;
+  }
+
+  _isApplyingPreset = false;
+  renderCanvas();
+}
+
 let analogRandomSeed = 54321;
 let _grainNoiseCanvas = null;
 let _grainNoiseSeed = null;
 
 function randomizeAnalogFX() {
+  markManualAdjustment();
   const leaks = ['burn', 'sunburst', 'sunset', 'rainbow'];
   const colors = ['amber', 'red', 'green', 'white'];
   const placements = ['auto', 'left', 'right', 'topRight', 'topLeft', 'bottomLeft', 'bottomRight', 'diagonal'];
@@ -947,6 +1257,7 @@ function randomizeAnalogFX() {
 }
 
 function resetAnalogFX() {
+  markManualAdjustment();
   document.getElementById('sliderWarmth').value = '0.00';
   document.getElementById('sliderVignette').value = '0.00';
   document.getElementById('leakTypeSelect').value = 'none';

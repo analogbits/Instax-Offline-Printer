@@ -684,6 +684,8 @@ function drawLightLeakEffect(targetCtx, x, y, w, h, type, placement, intensity, 
    Uses a seeded linear congruential pseudo-random generator (LCG) to deterministically generate curved fibers, hairline scratches, fine dust motes, and a chemical roller spread gradient that stay stable as sliders are adjusted.
 5. `drawVintageDateStamp`:
    Renders authentic 90s monospaced digital LED datestamps (`'YY MM DD`) with custom color glow halos (`shadowColor` + `shadowBlur: 6`) in Amber Gold (`#FF8C00`), Ruby Red (`#FF2525`), Emerald Green (`#00E676`), or Crisp White (`#F5F5F7`).
+6. `FILM_PRESETS` & Cross-Tab Synchronization:
+   Maintains a unified 12-preset dictionary (Polaroid SX-70, 600, I-Type, Spectra; 1970s, 1980s, 1990s, 1960s; Instax Rich, Natural, Monochrome, Sepia). When a preset is chosen, both the Color/Filters tab and Analog FX tab update synchronously. Whenever any slider or selector is manually nudged, `markManualAdjustment()` automatically tags the dropdown as `Custom / Manual (Unsaved)`.
 
 ---
 

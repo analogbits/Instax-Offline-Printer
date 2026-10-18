@@ -308,18 +308,57 @@ final class InstaxAppViewModel: ObservableObject {
     @Published var offsetY: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var rotationDegrees: Int = 0 { didSet { if !isLoadingSelection { updatePreview() } } }
 
+    // Film Emulation Presets (Ported & Expanded for Polaroid, Vintage & Instax Profiles)
+    @Published var filmPreset: String = "none"
+
+    func applyFilmPreset(_ id: String) {
+        filmPreset = id
+        guard id != "none", !id.hasPrefix("header_"), let preset = InstaxFilmCatalog.presets.first(where: { $0.id == id }) else {
+            return
+        }
+        isLoadingSelection = true
+        printMode = preset.printMode
+        filterPreset = preset.filter
+        brightness = preset.brightness
+        contrast = preset.contrast
+        saturation = preset.saturation
+        warmth = preset.warmth
+        vignette = preset.vignette
+        lightLeak = preset.lightLeak
+        if preset.lightLeak != "none" {
+            leakPlacement = preset.leakPlacement
+            leakIntensity = preset.leakIntensity
+        }
+        filmGrain = preset.filmGrain
+        analogWear = preset.analogWear
+        showVintageDate = preset.showVintageDate
+        if preset.showVintageDate {
+            vintageDateColor = preset.vintageDateColor
+            vintageDatePlacement = preset.vintageDatePlacement
+        }
+        isLoadingSelection = false
+        updatePreview()
+    }
+
+    private func markCustomAdjustment() {
+        if !isLoadingSelection && filmPreset != "none" {
+            filmPreset = "none"
+        }
+    }
+
     // Color & Filters Options
-    @Published var printMode: InstaxPrintMode = .rich { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var filterPreset: InstaxFilterPreset = .none { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var brightness: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var contrast: Double = 1.0 { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var saturation: Double = 1.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var printMode: InstaxPrintMode = .rich { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var filterPreset: InstaxFilterPreset = .none { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var brightness: Double = 0.0 { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var contrast: Double = 1.0 { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var saturation: Double = 1.0 { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
 
     // Analog Creative FX Options (Ported from PolaroidEngine)
-    @Published var warmth: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var vignette: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var warmth: Double = 0.0 { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var vignette: Double = 0.0 { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
     @Published var lightLeak: String = "none" {
         didSet {
+            markCustomAdjustment()
             if lightLeak != "none" && leakPlacement == "auto" {
                 rollAutoLeakPlacement()
             }
@@ -328,6 +367,7 @@ final class InstaxAppViewModel: ObservableObject {
     }
     @Published var leakPlacement: String = "auto" {
         didSet {
+            markCustomAdjustment()
             if leakPlacement == "auto" {
                 rollAutoLeakPlacement()
             }
@@ -359,13 +399,13 @@ final class InstaxAppViewModel: ObservableObject {
         default: return key
         }
     }
-    @Published var leakIntensity: Double = 0.70 { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var filmGrain: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var analogWear: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var showVintageDate: Bool = false { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var vintageDateText: String = "" { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var vintageDateColor: String = "amber" { didSet { if !isLoadingSelection { updatePreview() } } }
-    @Published var vintageDatePlacement: String = "bottomRight" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var leakIntensity: Double = 0.70 { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var filmGrain: Double = 0.0 { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var analogWear: Double = 0.0 { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var showVintageDate: Bool = false { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var vintageDateText: String = "" { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var vintageDateColor: String = "amber" { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var vintageDatePlacement: String = "bottomRight" { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
 
     // Collage & Border Options
     @Published var borderColor: InstaxBorderColor = .white { didSet { if !isLoadingSelection { updatePreview() } } }
@@ -642,6 +682,7 @@ final class InstaxAppViewModel: ObservableObject {
         opts.saturation = saturation
         opts.printMode = printMode
         opts.filter = filterPreset
+        opts.filmPreset = filmPreset
         opts.borderColor = borderColor
         opts.captionText = captionText
         opts.showDateStamp = showDateStamp
@@ -795,6 +836,7 @@ final class InstaxAppViewModel: ObservableObject {
         fitMode = item.options.fitMode
         printMode = item.options.printMode
         filterPreset = item.options.filter
+        filmPreset = item.options.filmPreset
         borderColor = item.options.borderColor
         captionText = item.options.captionText
         showDateStamp = item.options.showDateStamp
@@ -1017,6 +1059,7 @@ final class InstaxAppViewModel: ObservableObject {
 
     func resetAdjustments() {
         isLoadingSelection = true
+        filmPreset = "none"
         zoom = 1.0
         offsetX = 0.0
         offsetY = 0.0
@@ -1034,6 +1077,7 @@ final class InstaxAppViewModel: ObservableObject {
 
     func resetAnalogFX() {
         isLoadingSelection = true
+        filmPreset = "none"
         warmth = 0.0
         vignette = 0.0
         lightLeak = "none"
@@ -1051,6 +1095,7 @@ final class InstaxAppViewModel: ObservableObject {
 
     func surpriseMeAnalogFX() {
         isLoadingSelection = true
+        filmPreset = "none"
         warmth = Double(Int.random(in: -30...60)) / 100.0
         vignette = Double(Int.random(in: 25...75)) / 100.0
         let leaks = ["none", "burn", "sunburst", "sunset", "rainbow"]
@@ -2472,8 +2517,50 @@ struct InstaxMainView: View {
         }
     }
 
+    private var filmPresetsBox: some View {
+        GroupBox(label: Label("Film Emulation Presets", systemImage: "film.stack")) {
+            VStack(alignment: .leading, spacing: 8) {
+                Picker("Preset", selection: Binding(
+                    get: { vm.filmPreset },
+                    set: { newID in vm.applyFilmPreset(newID) }
+                )) {
+                    Text("Custom / Manual (Unsaved)").tag("none")
+
+                    Divider()
+                    Text("── Polaroid Emulations ──").tag("header_polaroid")
+                    Text("Polaroid SX-70 (1972 Warm Chemistry)").tag("polaroid_sx70")
+                    Text("Polaroid 600 (Classic 80s/90s Pop)").tag("polaroid_600")
+                    Text("Polaroid I-Type / Modern Color").tag("polaroid_itype")
+                    Text("Polaroid Spectra / Image System").tag("polaroid_spectra")
+
+                    Divider()
+                    Text("── Vintage & Nostalgia Eras ──").tag("header_vintage")
+                    Text("1970s Golden Vintage").tag("vintage_70s")
+                    Text("1980s Retro Flash Pop").tag("retro_80s")
+                    Text("1990s Point & Shoot / Disposable").tag("pns_90s")
+                    Text("1960s Monochrome Silver Halide").tag("mono_silver")
+
+                    Divider()
+                    Text("── Instax Film Profiles ──").tag("header_instax")
+                    Text("🌈 instax-Rich (Vibrant High Contrast)").tag("instax_rich")
+                    Text("📷 instax-Natural (3D-LUT Fuji Emulation)").tag("instax_natural")
+                    Text("Instax Monochrome (B&W Street Film)").tag("instax_mono")
+                    Text("Instax Warm Sepia (Nostalgic Tea Wash)").tag("instax_sepia")
+                }
+                .pickerStyle(.menu)
+
+                Text("Applying a preset synchronizes color, filters, light leaks, vignette, grain & date stamps across tabs.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(8)
+        }
+    }
+
     private var colorAndFiltersTabContent: some View {
         VStack(alignment: .leading, spacing: 14) {
+            filmPresetsBox
+
             GroupBox(label: Label("Instax Film Profile (3D-LUT)", systemImage: "camera.filters")) {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("Profile", selection: $vm.printMode) {
@@ -2576,6 +2663,8 @@ struct InstaxMainView: View {
 
     private var analogFXTabContent: some View {
         VStack(alignment: .leading, spacing: 14) {
+            filmPresetsBox
+
             GroupBox(label: Label("Analog Warmth & Temperature", systemImage: "thermometer.sun.fill")) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {

@@ -135,6 +135,300 @@ public enum LegacyPhotoFilter: String, CaseIterable, Identifiable {
     public var id: String { rawValue }
 }
 
+public struct LegacyFilmPresetDefinition: Identifiable, Hashable {
+    public let id: String
+    public let title: String
+    public let category: String
+    public let filter: LegacyPhotoFilter
+    public let brightness: Double
+    public let contrast: Double
+    public let saturation: Double
+    public let warmth: Double
+    public let vignette: Double
+    public let lightLeak: String
+    public let leakPlacement: String
+    public let leakIntensity: Double
+    public let filmGrain: Double
+    public let analogWear: Double
+    public let showVintageDate: Bool
+    public let vintageDateColor: String
+    public let vintageDatePlacement: String
+
+    public init(
+        id: String,
+        title: String,
+        category: String,
+        filter: LegacyPhotoFilter,
+        brightness: Double,
+        contrast: Double,
+        saturation: Double,
+        warmth: Double,
+        vignette: Double,
+        lightLeak: String,
+        leakPlacement: String,
+        leakIntensity: Double,
+        filmGrain: Double,
+        analogWear: Double,
+        showVintageDate: Bool,
+        vintageDateColor: String,
+        vintageDatePlacement: String
+    ) {
+        self.id = id
+        self.title = title
+        self.category = category
+        self.filter = filter
+        self.brightness = brightness
+        self.contrast = contrast
+        self.saturation = saturation
+        self.warmth = warmth
+        self.vignette = vignette
+        self.lightLeak = lightLeak
+        self.leakPlacement = leakPlacement
+        self.leakIntensity = leakIntensity
+        self.filmGrain = filmGrain
+        self.analogWear = analogWear
+        self.showVintageDate = showVintageDate
+        self.vintageDateColor = vintageDateColor
+        self.vintageDatePlacement = vintageDatePlacement
+    }
+}
+
+public struct LegacyFilmCatalog {
+    public static let presets: [LegacyFilmPresetDefinition] = [
+        // Polaroid Emulations
+        LegacyFilmPresetDefinition(
+            id: "polaroid_sx70",
+            title: "Polaroid SX-70 (1972 Warm Chemistry)",
+            category: "Polaroid Film",
+            filter: .vintage,
+            brightness: 0.04,
+            contrast: 0.92,
+            saturation: 1.10,
+            warmth: 0.35,
+            vignette: 0.30,
+            lightLeak: "sunburst",
+            leakPlacement: "topRight",
+            leakIntensity: 0.35,
+            filmGrain: 0.25,
+            analogWear: 0.10,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
+        LegacyFilmPresetDefinition(
+            id: "polaroid_600",
+            title: "Polaroid 600 (Classic 80s/90s Pop)",
+            category: "Polaroid Film",
+            filter: .normal,
+            brightness: 0.02,
+            contrast: 1.20,
+            saturation: 1.25,
+            warmth: 0.15,
+            vignette: 0.45,
+            lightLeak: "burn",
+            leakPlacement: "left",
+            leakIntensity: 0.40,
+            filmGrain: 0.35,
+            analogWear: 0.15,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
+        LegacyFilmPresetDefinition(
+            id: "polaroid_itype",
+            title: "Polaroid I-Type / Modern Color",
+            category: "Polaroid Film",
+            filter: .normal,
+            brightness: 0.00,
+            contrast: 1.10,
+            saturation: 1.15,
+            warmth: 0.05,
+            vignette: 0.20,
+            lightLeak: "none",
+            leakPlacement: "auto",
+            leakIntensity: 0.70,
+            filmGrain: 0.15,
+            analogWear: 0.00,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
+        LegacyFilmPresetDefinition(
+            id: "polaroid_spectra",
+            title: "Polaroid Spectra / Image System",
+            category: "Polaroid Film",
+            filter: .normal,
+            brightness: 0.03,
+            contrast: 1.05,
+            saturation: 1.10,
+            warmth: 0.25,
+            vignette: 0.35,
+            lightLeak: "sunset",
+            leakPlacement: "right",
+            leakIntensity: 0.30,
+            filmGrain: 0.20,
+            analogWear: 0.05,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
+        // Vintage & Nostalgia Eras
+        LegacyFilmPresetDefinition(
+            id: "vintage_70s",
+            title: "1970s Golden Vintage",
+            category: "Vintage Eras",
+            filter: .vintage,
+            brightness: 0.06,
+            contrast: 0.88,
+            saturation: 0.90,
+            warmth: 0.55,
+            vignette: 0.50,
+            lightLeak: "sunburst",
+            leakPlacement: "topRight",
+            leakIntensity: 0.60,
+            filmGrain: 0.45,
+            analogWear: 0.30,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
+        LegacyFilmPresetDefinition(
+            id: "retro_80s",
+            title: "1980s Retro Flash Pop",
+            category: "Vintage Eras",
+            filter: .vivid,
+            brightness: 0.05,
+            contrast: 1.30,
+            saturation: 1.40,
+            warmth: -0.10,
+            vignette: 0.40,
+            lightLeak: "rainbow",
+            leakPlacement: "diagonal",
+            leakIntensity: 0.50,
+            filmGrain: 0.40,
+            analogWear: 0.15,
+            showVintageDate: true,
+            vintageDateColor: "red",
+            vintageDatePlacement: "bottomRight"
+        ),
+        LegacyFilmPresetDefinition(
+            id: "pns_90s",
+            title: "1990s Point & Shoot / Disposable",
+            category: "Vintage Eras",
+            filter: .normal,
+            brightness: 0.02,
+            contrast: 1.18,
+            saturation: 1.15,
+            warmth: 0.15,
+            vignette: 0.55,
+            lightLeak: "burn",
+            leakPlacement: "right",
+            leakIntensity: 0.35,
+            filmGrain: 0.35,
+            analogWear: 0.10,
+            showVintageDate: true,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
+        LegacyFilmPresetDefinition(
+            id: "mono_silver",
+            title: "1960s Monochrome Silver Halide",
+            category: "Vintage Eras",
+            filter: .mono,
+            brightness: 0.00,
+            contrast: 1.35,
+            saturation: 0.00,
+            warmth: 0.00,
+            vignette: 0.40,
+            lightLeak: "none",
+            leakPlacement: "auto",
+            leakIntensity: 0.70,
+            filmGrain: 0.60,
+            analogWear: 0.20,
+            showVintageDate: false,
+            vintageDateColor: "white",
+            vintageDatePlacement: "bottomRight"
+        ),
+        // Instax Film Profiles
+        LegacyFilmPresetDefinition(
+            id: "instax_rich",
+            title: "🌈 instax-Rich (Vibrant High Contrast)",
+            category: "Instax Profiles",
+            filter: .fujiIntelligence,
+            brightness: 0.00,
+            contrast: 1.15,
+            saturation: 1.20,
+            warmth: 0.00,
+            vignette: 0.00,
+            lightLeak: "none",
+            leakPlacement: "auto",
+            leakIntensity: 0.70,
+            filmGrain: 0.05,
+            analogWear: 0.00,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
+        LegacyFilmPresetDefinition(
+            id: "instax_natural",
+            title: "📷 instax-Natural (3D-LUT Fuji Emulation)",
+            category: "Instax Profiles",
+            filter: .normal,
+            brightness: 0.00,
+            contrast: 1.00,
+            saturation: 1.00,
+            warmth: 0.10,
+            vignette: 0.10,
+            lightLeak: "none",
+            leakPlacement: "auto",
+            leakIntensity: 0.70,
+            filmGrain: 0.10,
+            analogWear: 0.00,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
+        LegacyFilmPresetDefinition(
+            id: "instax_mono",
+            title: "Instax Monochrome (B&W Street Film)",
+            category: "Instax Profiles",
+            filter: .mono,
+            brightness: 0.00,
+            contrast: 1.15,
+            saturation: 0.00,
+            warmth: 0.00,
+            vignette: 0.15,
+            lightLeak: "none",
+            leakPlacement: "auto",
+            leakIntensity: 0.70,
+            filmGrain: 0.25,
+            analogWear: 0.00,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        ),
+        LegacyFilmPresetDefinition(
+            id: "instax_sepia",
+            title: "Instax Warm Sepia (Nostalgic Tea Wash)",
+            category: "Instax Profiles",
+            filter: .sepia,
+            brightness: 0.02,
+            contrast: 1.05,
+            saturation: 0.70,
+            warmth: 0.40,
+            vignette: 0.25,
+            lightLeak: "none",
+            leakPlacement: "auto",
+            leakIntensity: 0.70,
+            filmGrain: 0.20,
+            analogWear: 0.05,
+            showVintageDate: false,
+            vintageDateColor: "amber",
+            vintageDatePlacement: "bottomRight"
+        )
+    ]
+}
+
 public enum LegacyCollageLayout: String, CaseIterable, Identifiable {
     case single = "Single Photo"
     case splitVertical = "2-Up Vertical Split"
@@ -230,6 +524,7 @@ public struct LegacyPrintOptions {
     public var fitMode: LegacyFitMode = .fill
     public var matteColor: LegacyMatteColor = .white
     public var filter: LegacyPhotoFilter = .normal
+    public var filmPreset: String = "none"
     public var brightness: Double = 0.0
     public var contrast: Double = 1.0
     public var saturation: Double = 1.0
