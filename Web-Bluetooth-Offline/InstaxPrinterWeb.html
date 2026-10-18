@@ -1077,11 +1077,8 @@ function actionTestCard() {
 }
 
 // Canvas Drag (Photo Pan + Sticker Drag + Banner Drag for Mouse + iPhone/iPad Touch)
-let isDragging = false;
 let canvasDragMode = 'auto'; // 'auto', 'photo', 'sticker', 'banner'
 let activeDragTarget = 'photo'; // 'photo', 'sticker', 'banner'
-let dragStartX = 0;
-let dragStartY = 0;
 
 function setDragFocus(mode) {
   canvasDragMode = mode;

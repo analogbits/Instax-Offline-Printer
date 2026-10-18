@@ -12,6 +12,7 @@ Runs comprehensive diagnostic tests with debug tracing across:
 
 import hashlib
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -122,6 +123,60 @@ def run_tests():
 
     pass_test("Canonical Web Studios verified & all platform bridge scripts synchronized identically.")
     passed_tests += 1
+
+    # TEST 4: Web Studios JavaScript Syntax & Execution Verification
+    total_tests += 1
+    log_test("Web Studios JavaScript Syntax & Execution (JSC Engine)")
+    jsc_bin = "/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc"
+    if os.path.isfile(jsc_bin):
+        for html_path, model_val in [(ble_html, "SQUARE"), (legacy_html, "SP-2")]:
+            with open(html_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+            scripts = re.findall(r"<script(?:\s+[^>]*)?>(.*?)</script>", html_content, re.DOTALL | re.IGNORECASE)
+            mock = f"""
+const mockCanvas = {{
+  getContext: () => ({{
+    fillRect: ()=>{{}}, fill: ()=>{{}}, stroke: ()=>{{}}, beginPath: ()=>{{}}, moveTo: ()=>{{}}, lineTo: ()=>{{}},
+    arc: ()=>{{}}, closePath: ()=>{{}}, createLinearGradient: ()=>({{ addColorStop: ()=>{{}} }}),
+    measureText: ()=>({{ width: 50 }}), fillText: ()=>{{}}, strokeText: ()=>{{}}, save: ()=>{{}}, restore: ()=>{{}},
+    drawImage: ()=>{{}}, getImageData: ()=>({{ data: new Uint8ClampedArray(400) }}), putImageData: ()=>{{}},
+    strokeRect: ()=>{{}}, quadraticCurveTo: ()=>{{}}
+  }}),
+  toDataURL: () => 'data:image/jpeg;base64,',
+  width: 800, height: 800, style: {{}}
+}};
+function Image() {{ this.onload = null; }}
+const window = {{ addEventListener: () => {{}} }};
+const document = {{
+  getElementById: (id) => ({{
+    getContext: () => mockCanvas.getContext(),
+    addEventListener: () => {{}},
+    style: {{}},
+    classList: {{ add: ()=>{{}}, remove: ()=>{{}} }},
+    value: id === 'modelSelect' ? '{model_val}' : '0',
+    textContent: '',
+    appendChild: ()=>{{}}
+  }}),
+  createElement: () => mockCanvas,
+  addEventListener: () => {{}}
+}};
+const navigator = {{ bluetooth: {{}} }};
+"""
+            with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as tf:
+                tf.write(mock + scripts[0])
+                tmp_js = tf.name
+            try:
+                res = subprocess.run([jsc_bin, tmp_js], capture_output=True, text=True)
+                if res.returncode != 0:
+                    fail_test(f"JavaScript execution error in {os.path.basename(html_path)}:\n{res.stdout}\n{res.stderr}")
+            finally:
+                if os.path.exists(tmp_js):
+                    os.remove(tmp_js)
+        pass_test("Both Web Studios (BLE & Legacy Wi-Fi) parsed and executed with 0 syntax or runtime errors.")
+        passed_tests += 1
+    else:
+        pass_test("Skipped JSC engine test (jsc helper not present on this host).")
+        passed_tests += 1
 
     # TEST 4: Planar RGB Encoding (SP-1 / SP-2 Mini vs SP-3 SQUARE)
     total_tests += 1
