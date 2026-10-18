@@ -1,0 +1,37 @@
+{
+  "name": "Instax Offline Printer (Linux & Windows Testbed)",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/desktop-lite:1": {
+      "password": "none"
+    }
+  },
+  "forwardPorts": [6080, 8089, 8765, 18080],
+  "portsAttributes": {
+    "6080": {
+      "label": "🖥️ Linux & Windows Web Desktop (noVNC)",
+      "onAutoForward": "openBrowser"
+    },
+    "8089": {
+      "label": "🎞️ Legacy Instax Wi-Fi Bridge",
+      "onAutoForward": "silent"
+    },
+    "8765": {
+      "label": "🔵 Modern BLE Wi-Fi Bridge",
+      "onAutoForward": "silent"
+    },
+    "18080": {
+      "label": "🧪 Virtual SP Simulator",
+      "onAutoForward": "silent"
+    }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y python3-tk python3-pil wine wine64 xvfb && pip install --upgrade pip && pip install pillow bleak qrcode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  }
+}

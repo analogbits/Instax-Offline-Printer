@@ -103,11 +103,34 @@ def parse_response_packet(data: bytes) -> dict:
     }
 
 
-def encode_planar_rgb(pil_image: "Image.Image", model_name: str = "SP-2", hw_width: Optional[int] = None, hw_height: Optional[int] = None) -> bytes:
+def encode_planar_rgb(
+    pil_image: "Image.Image",
+    model_name: str = "SP-2",
+    hw_width: Optional[int] = None,
+    hw_height: Optional[int] = None,
+    fit_mode: str = "crop",
+) -> bytes:
     spec = MODELS.get(model_name.upper(), MODELS["SP-2"])
     portrait_w = hw_width or spec["width"]
     portrait_h = hw_height or spec["height"]
-    img = pil_image.convert("RGB").resize((portrait_w, portrait_h), Image.Resampling.LANCZOS)
+    img = pil_image.convert("RGB")
+
+    if fit_mode == "fit":
+        img.thumbnail((portrait_w, portrait_h), Image.Resampling.LANCZOS)
+        framed = Image.new("RGB", (portrait_w, portrait_h), (255, 255, 255))
+        ox = (portrait_w - img.width) // 2
+        oy = (portrait_h - img.height) // 2
+        framed.paste(img, (ox, oy))
+        img = framed
+    else:
+        iw, ih = img.size
+        scale = max(portrait_w / iw, portrait_h / ih)
+        new_w, new_h = int(iw * scale), int(ih * scale)
+        img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        left = (new_w - portrait_w) // 2
+        top = (new_h - portrait_h) // 2
+        img = img.crop((left, top, left + portrait_w, top + portrait_h))
+
     # Rotate 90 degrees clockwise so printWidth = portrait_h (800 scanlines) and printHeight = portrait_w (600 or 800 dots)
     img = img.rotate(-90, expand=True)
     print_w, print_h = img.size
