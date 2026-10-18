@@ -264,6 +264,13 @@ public enum InstaxQRStyle: String, CaseIterable, Identifiable {
         case .minimal: return "Dark Vignette"
         }
     }
+    public var shortTitle: String {
+        switch self {
+        case .frosted: return "Glass"
+        case .solidWhite: return "White"
+        case .minimal: return "Dark"
+        }
+    }
 }
 
 public enum InstaxBorderColor: String, CaseIterable, Identifiable {

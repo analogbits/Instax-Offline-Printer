@@ -176,6 +176,16 @@ enum InspectorTab: String, CaseIterable, Identifiable {
         case .qrOverlay: return "qrcode"
         }
     }
+
+    var tabLabel: String {
+        switch self {
+        case .framing: return "Framing"
+        case .color: return "Filters"
+        case .analogFX: return "Analog"
+        case .collage: return "Collage"
+        case .qrOverlay: return "QR/Text"
+        }
+    }
 }
 
 enum LogCategory: String, CaseIterable, Identifiable {
@@ -1692,21 +1702,24 @@ struct InstaxMainView: View {
 
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
-                    previewWorkspace
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    ScrollView([.vertical, .horizontal], showsIndicators: false) {
+                        previewWorkspace
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     Divider()
                     bulkQueueStrip
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Divider()
                 controlsSidebar
-                    .frame(width: 415)
+                    .frame(width: 445)
             }
 
             Divider()
             footerStatusBar
         }
         .background(Color(NSColor.windowBackgroundColor))
-        .frame(minWidth: 1180, minHeight: 820)
+        .frame(minWidth: 1220, idealWidth: 1300, maxWidth: .infinity, minHeight: 840, idealHeight: 900, maxHeight: .infinity)
         .onDrop(of: [.fileURL, .image], isTargeted: nil) { providers in
             handleDrop(providers: providers)
         }
@@ -1734,6 +1747,8 @@ struct InstaxMainView: View {
                     .frame(width: 10, height: 10)
                 Text(vm.isConnected && !vm.connectedDeviceName.isEmpty ? vm.connectedDeviceName : vm.selectedModel.displayName)
                     .font(.system(size: 15, weight: .bold))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
 
             // Model format toggle (SQUARE / WIDE / MINI)
@@ -1745,6 +1760,7 @@ struct InstaxMainView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .frame(width: 170)
+            .fixedSize(horizontal: true, vertical: false)
             .help("Switch between Instax SQUARE (800×800), WIDE (1260×840), and MINI (600×800)")
 
             // Multi-Printer Dropdown / Selection List
@@ -1819,6 +1835,7 @@ struct InstaxMainView: View {
                     Text(vm.targetDeviceName.isEmpty ? "Select Printer..." : vm.targetDeviceName)
                         .font(.system(.body, design: .monospaced))
                         .fontWeight(.semibold)
+                        .lineLimit(1)
                     Image(systemName: "chevron.down")
                         .font(.caption2)
                         .foregroundColor(.secondary)
@@ -1828,6 +1845,7 @@ struct InstaxMainView: View {
                 .background(Color.secondary.opacity(0.12))
                 .cornerRadius(6)
             }
+            .fixedSize(horizontal: true, vertical: false)
             .help("Select from discovered nearby Instax printers, saved devices, or custom entry")
 
             Button(action: { vm.toggleConnection() }) {
@@ -1839,51 +1857,69 @@ struct InstaxMainView: View {
             .buttonStyle(.borderedProminent)
             .tint(vm.isConnected ? .gray : .blue)
             .controlSize(.regular)
+            .fixedSize(horizontal: true, vertical: false)
             .disabled(vm.isConnecting || vm.isPrinting)
 
             Button(action: { vm.refreshStatus() }) {
                 Label("Status", systemImage: "arrow.clockwise")
             }
             .controlSize(.regular)
+            .fixedSize(horizontal: true, vertical: false)
             .disabled(vm.isConnecting || vm.isPrinting)
 
-            Button(action: { vm.flashLEDOnce() }) {
-                Label("Flash LED", systemImage: "sparkles")
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    Button(action: { vm.flashLEDOnce() }) {
+                        Label("Flash LED", systemImage: "sparkles")
+                    }
+                    .controlSize(.regular)
+                    .help("Flash the printer's front LED once and auto-stop")
+                    .disabled(vm.isConnecting || vm.isPrinting)
+
+                    Button(action: { vm.stopLEDNow() }) {
+                        Label("Stop LED", systemImage: "lightbulb.slash")
+                    }
+                    .controlSize(.regular)
+                    .help("Immediately stop any continuous LED flashing on the printer")
+                    .disabled(vm.isConnecting || vm.isPrinting)
+
+                    Button(action: { vm.ejectFilmCoverNow() }) {
+                        Label("Eject Cover", systemImage: "eject.circle")
+                    }
+                    .controlSize(.regular)
+                    .help("Eject the black protective plastic dark slide from a newly loaded film pack")
+                    .disabled(vm.isConnecting || vm.isPrinting)
+
+                    Button(action: { vm.showHelpSheet = true }) {
+                        Label("Help", systemImage: "questionmark.circle")
+                    }
+                    .controlSize(.regular)
+                    .help("Open User Guide & Printing Help (⌘?)")
+                }
+
+                Menu {
+                    Button { vm.flashLEDOnce() } label: { Label("Flash LED Once", systemImage: "sparkles") }
+                    Button { vm.stopLEDNow() } label: { Label("Stop LED", systemImage: "lightbulb.slash") }
+                    Button { vm.ejectFilmCoverNow() } label: { Label("Eject Film Cover", systemImage: "eject.circle") }
+                    Divider()
+                    Button { vm.showHelpSheet = true } label: { Label("Help Guide (⌘?)", systemImage: "questionmark.circle") }
+                } label: {
+                    Label("Tools", systemImage: "wrench.and.screwdriver")
+                }
+                .controlSize(.regular)
+                .disabled(vm.isConnecting || vm.isPrinting)
             }
-            .controlSize(.regular)
-            .help("Flash the printer's front LED once and auto-stop")
-            .disabled(vm.isConnecting || vm.isPrinting)
 
-            Button(action: { vm.stopLEDNow() }) {
-                Label("Stop LED", systemImage: "lightbulb.slash")
-            }
-            .controlSize(.regular)
-            .help("Immediately stop any continuous LED flashing on the printer")
-            .disabled(vm.isConnecting || vm.isPrinting)
+            Spacer(minLength: 12)
 
-            Button(action: { vm.ejectFilmCoverNow() }) {
-                Label("Eject Cover", systemImage: "eject.circle")
-            }
-            .controlSize(.regular)
-            .help("Eject the black protective plastic dark slide from a newly loaded film pack")
-            .disabled(vm.isConnecting || vm.isPrinting)
-
-            Button(action: { vm.showHelpSheet = true }) {
-                Label("Help", systemImage: "questionmark.circle")
-            }
-
-            .controlSize(.regular)
-            .help("Open User Guide & Printing Help (⌘?)")
-
-            Spacer()
-
-            // Live Film & Battery Badges
+            // Live Film & Battery Badges (Locked Layout - Never Squeezed)
             HStack(spacing: 10) {
                 HStack(spacing: 6) {
                     Image(systemName: "photo.stack")
                         .foregroundColor(.accentColor)
                     Text("Film: \(vm.isConnected ? "\(vm.status.filmRemaining)/10" : "—/10")")
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .lineLimit(1)
                 }
                 .padding(.horizontal, 9)
                 .padding(.vertical, 5)
@@ -1899,12 +1935,15 @@ struct InstaxMainView: View {
                             : "—"
                     )
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .lineLimit(1)
                 }
                 .padding(.horizontal, 9)
                 .padding(.vertical, 5)
                 .background(Color.secondary.opacity(0.12))
                 .cornerRadius(8)
             }
+            .fixedSize(horizontal: true, vertical: false)
+            .layoutPriority(10)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -1962,32 +2001,40 @@ struct InstaxMainView: View {
                 // Quick Action Toolbar directly beneath preview
                 HStack(spacing: 8) {
                     Button(action: { vm.openApplePhotosPicker() }) {
-                        Label("Apple Photos / iCloud...", systemImage: "photo.on.rectangle.angled")
+                        Label("Photos...", systemImage: "photo.on.rectangle.angled")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.indigo)
+                    .help("Browse Apple Photos / iCloud Library (⌘ Shift I)")
 
                     Button(action: { vm.openFilePicker(allowMultiple: true) }) {
-                        Label("Add Files...", systemImage: "folder.badge.plus")
+                        Label("Files...", systemImage: "folder.badge.plus")
                     }
+                    .help("Add photos from Finder (⌘O)")
 
                     Button(action: { vm.rotate90CounterClockwise() }) {
-                        Label("Rotate ↺", systemImage: "rotate.left")
+                        Label("↺ 90°", systemImage: "rotate.left")
                     }
+                    .help("Rotate 90° Counter-Clockwise")
 
                     Button(action: { vm.rotate90Clockwise() }) {
-                        Label("Rotate ↻", systemImage: "rotate.right")
+                        Label("↻ 90°", systemImage: "rotate.right")
                     }
+                    .help("Rotate 90° Clockwise")
 
                     Button(action: { vm.resetAdjustments() }) {
-                        Label("Center & Reset", systemImage: "arrow.counterclockwise")
+                        Label("Reset", systemImage: "arrow.counterclockwise")
                     }
+                    .help("Center photo and reset zoom and rotation")
 
                     Button(action: { vm.savePreviewToDisk() }) {
                         Label("Save JPEG...", systemImage: "square.and.arrow.down")
                     }
+                    .help("Save rendered preview to disk (⌘S)")
                 }
                 .controlSize(.regular)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
 
                 // Info pill beneath toolbar
                 HStack(spacing: 12) {
@@ -2034,8 +2081,10 @@ struct InstaxMainView: View {
     private var bulkQueueStrip: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                Label("Bulk Print Queue (\(vm.printQueue.count) Photos • \(vm.pendingQueueCount) Pending)", systemImage: "square.stack.3d.up.fill")
+                Label("Queue (\(vm.printQueue.count) Photos\(vm.pendingQueueCount > 0 ? " • \(vm.pendingQueueCount) Pending" : ""))", systemImage: "square.stack.3d.up.fill")
                     .font(.system(size: 12, weight: .bold))
+                    .lineLimit(1)
+                    .fixedSize()
 
                 Spacer()
 
@@ -2075,37 +2124,33 @@ struct InstaxMainView: View {
                 }
                 .controlSize(.small)
 
-                if let selID = vm.selectedQueueID {
-                    Button(action: { vm.duplicateQueueItem(selID) }) {
-                        Label("Duplicate", systemImage: "plus.square.on.square")
+                Menu {
+                    if let selID = vm.selectedQueueID {
+                        Button(action: { vm.duplicateQueueItem(selID) }) {
+                            Label("Duplicate Selected Photo", systemImage: "plus.square.on.square")
+                        }
                     }
-                    .controlSize(.small)
-                    .disabled(vm.isPrinting)
-                }
-
-                if vm.printQueue.count > 1 {
-                    Button("Apply to All") {
-                        vm.applyCurrentFramingToAllQueueItems()
+                    if vm.printQueue.count > 1 {
+                        Button("Apply Current Framing to All") {
+                            vm.applyCurrentFramingToAllQueueItems()
+                        }
                     }
-                    .controlSize(.small)
-                    .help("Apply current framing, adjustments and film profile to all queued photos")
-                }
-
-                if vm.printQueue.contains(where: { $0.status == .printed }) {
-                    Button("Clear Printed") {
-                        vm.clearPrintedFromQueue()
+                    if vm.printQueue.contains(where: { $0.status == .printed }) {
+                        Button("Clear Printed Photos") {
+                            vm.clearPrintedFromQueue()
+                        }
                     }
-                    .controlSize(.small)
-                    .disabled(vm.isPrinting)
-                }
-
-                if vm.printQueue.count > 1 {
-                    Button("Clear All") {
-                        vm.clearEntireQueue()
+                    if vm.printQueue.count > 1 {
+                        Divider()
+                        Button(role: .destructive, action: { vm.clearEntireQueue() }) {
+                            Label("Clear Entire Queue", systemImage: "trash")
+                        }
                     }
-                    .controlSize(.small)
-                    .disabled(vm.isPrinting)
+                } label: {
+                    Label("Queue Actions", systemImage: "ellipsis.circle")
                 }
+                .controlSize(.small)
+                .disabled(vm.isPrinting || vm.printQueue.isEmpty)
             }
             .padding(.horizontal, 14)
             .padding(.top, 8)
@@ -2181,9 +2226,10 @@ struct InstaxMainView: View {
                     }
                 }
                 .padding(.horizontal, 14)
-                .padding(.bottom, 8)
+                .padding(.bottom, 6)
             }
-            .frame(height: 122)
+            .frame(height: 126)
+            .padding(.bottom, 4)
         }
         .background(Color(NSColor.controlBackgroundColor))
     }
@@ -2195,12 +2241,12 @@ struct InstaxMainView: View {
             // Tab Selector
             Picker("Section", selection: $vm.selectedTab) {
                 ForEach(InspectorTab.allCases) { tab in
-                    Text(tab.rawValue).tag(tab)
+                    Text(tab.tabLabel).tag(tab)
                 }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 10)
             .padding(.top, 12)
             .padding(.bottom, 8)
 
@@ -2935,10 +2981,11 @@ struct InstaxMainView: View {
                         HStack {
                             Text("Style")
                                 .font(.caption)
-                                .frame(width: 60, alignment: .leading)
+                                .frame(width: 50, alignment: .leading)
                             Picker("", selection: $vm.qrCodeStyle) {
                                 ForEach(InstaxQRStyle.allCases) { st in
-                                    Text(st.title).tag(st)
+                                    Text(st.shortTitle).tag(st)
+                                        .help(st.title)
                                 }
                             }
                             .pickerStyle(.segmented)

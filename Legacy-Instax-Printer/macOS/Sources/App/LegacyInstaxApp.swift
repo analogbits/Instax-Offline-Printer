@@ -11,7 +11,7 @@ struct LegacyInstaxPrinterApp: App {
     var body: some Scene {
         WindowGroup("Legacy Instax Printer — Wi-Fi Direct Studio (SP-1 • SP-2 • SP-3)") {
             LegacyMainStudioView()
-                .frame(minWidth: 1180, minHeight: 750)
+                .frame(minWidth: 1220, idealWidth: 1300, maxWidth: .infinity, minHeight: 840, idealHeight: 900, maxHeight: .infinity)
         }
         .windowStyle(.titleBar)
     }
@@ -35,6 +35,16 @@ enum LegacyInspectorTab: String, CaseIterable, Identifiable {
     case qrAndText = "QR & Text"
 
     var id: String { rawValue }
+
+    var tabLabel: String {
+        switch self {
+        case .framing: return "Framing"
+        case .filters: return "Filters"
+        case .analogFX: return "Analog"
+        case .collage: return "Collage"
+        case .qrAndText: return "QR/Text"
+        }
+    }
 }
 
 final class LegacyStudioViewModel: ObservableObject {
@@ -193,7 +203,7 @@ struct LegacyMainStudioView: View {
                 Divider()
 
                 rightCreativeInspector
-                    .frame(width: 340)
+                    .frame(width: 390)
             }
 
             if vm.showProtocolConsole {
@@ -664,11 +674,11 @@ struct LegacyMainStudioView: View {
         VStack(alignment: .leading, spacing: 0) {
             Picker("", selection: $vm.selectedTab) {
                 ForEach(LegacyInspectorTab.allCases) { tab in
-                    Text(tab.rawValue).tag(tab)
+                    Text(tab.tabLabel).tag(tab)
                 }
             }
             .pickerStyle(.segmented)
-            .padding(12)
+            .padding(10)
 
             Divider()
 
