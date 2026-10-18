@@ -16,9 +16,28 @@ from PIL import Image, ImageTk, ImageOps, ImageEnhance
 
 # Import core engine
 try:
-    from instax_printer import InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx
+    from instax_printer import (
+        InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx,
+        STICKER_MAP, draw_decorative_frame, draw_sticker_overlay
+    )
 except ImportError:
-    from .instax_printer import InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx
+    from .instax_printer import (
+        InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx,
+        STICKER_MAP, draw_decorative_frame, draw_sticker_overlay
+    )
+
+FRAME_OPTIONS = [
+    ("none", "None (Standard Borderless)"),
+    ("classic_white", "Classic White Film Border"),
+    ("obsidian_black", "Obsidian Black Matte"),
+    ("rainbow_gradient", "Rainbow Spectrum Gradient"),
+    ("sunset_ombre", "Sunset Ombre (Rose/Orange/Indigo)"),
+    ("sprocket_35mm", "35mm Vintage Film Sprockets"),
+    ("gold_metallic", "Metallic Gold Foil"),
+    ("rose_gold", "Rose Gold Shimmer"),
+    ("pastel_pop", "Pastel Candy Geometric"),
+    ("postage_stamp", "Scalloped Postage Stamp"),
+]
 
 FILM_PRESET_OPTIONS = [
     ("default", "Default / Base (No Effects)"),
@@ -184,6 +203,16 @@ class InstaxDesktopApp(tk.Tk):
         self.vintage_date_color = tk.StringVar(value="amber")
         self.vintage_date_placement = tk.StringVar(value="bottomRight")
         self.leak_auto_seed = 12345
+
+        # Stickers & Decorative Frames State
+        self.frame_style = tk.StringVar(value="none")
+        self.sticker = tk.StringVar(value="none")
+        self.custom_sticker_path = tk.StringVar(value="")
+        self.custom_sticker_img: Optional[Image.Image] = None
+        self.sticker_position = tk.StringVar(value="topRight")
+        self.sticker_scale = tk.DoubleVar(value=0.25)
+        self.sticker_opacity = tk.DoubleVar(value=1.0)
+        self.sticker_rotation = tk.DoubleVar(value=0.0)
 
         # Film Preset Emulation State
         self.film_preset_var = tk.StringVar(value="Default / Base (No Effects)")
@@ -404,7 +433,79 @@ class InstaxDesktopApp(tk.Tk):
         ttk.Button(fx_btns, text="🎲 Surprise Me!", command=self.action_surprise_me_analog_fx).pack(side=tk.LEFT)
         ttk.Button(fx_btns, text="Reset FX", command=self.action_reset_analog_fx).pack(side=tk.RIGHT)
 
-        # Tab 4: Protocol Debug
+        # Tab 4: Stickers & Borders
+        tab_decor = ttk.Frame(sidebar, padding=12)
+        sidebar.add(tab_decor, text="Stickers & Borders")
+
+        ttk.Label(tab_decor, text="Decorative Film Frame:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(0, 2))
+        self.cb_frames = ttk.Combobox(
+            tab_decor,
+            values=[t for _, t in FRAME_OPTIONS],
+            state="readonly"
+        )
+        self.cb_frames.set(FRAME_OPTIONS[0][1])
+        def _on_frame_sel(e):
+            sel_idx = self.cb_frames.current()
+            if 0 <= sel_idx < len(FRAME_OPTIONS):
+                self.frame_style.set(FRAME_OPTIONS[sel_idx][0])
+                self.update_preview()
+        self.cb_frames.bind("<<ComboboxSelected>>", _on_frame_sel)
+        self.cb_frames.pack(fill=tk.X, pady=(0, 8))
+
+        ttk.Label(tab_decor, text="Emoji Sticker:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
+        self.sticker_list = [("none", "None (No Sticker)")] + [(k, f"{STICKER_MAP[k]}  {k.replace('_', ' ').title()}") for k in STICKER_MAP.keys()]
+        self.cb_stickers = ttk.Combobox(
+            tab_decor,
+            values=[t for _, t in self.sticker_list],
+            state="readonly"
+        )
+        self.cb_stickers.set("None (No Sticker)")
+        def _on_sticker_sel(e):
+            sel_idx = self.cb_stickers.current()
+            if 0 <= sel_idx < len(self.sticker_list):
+                self.sticker.set(self.sticker_list[sel_idx][0])
+                self.update_preview()
+        self.cb_stickers.bind("<<ComboboxSelected>>", _on_sticker_sel)
+        self.cb_stickers.pack(fill=tk.X, pady=(0, 6))
+
+        # Quick emoji sticker chips
+        f_quick = ttk.Frame(tab_decor)
+        f_quick.pack(fill=tk.X, pady=(0, 8))
+        quick_emojis = [("🎉", "party_popper"), ("🎂", "birthday_cake"), ("✨", "sparkles"), ("📸", "camera"), ("🌴", "palm_tree"), ("☀️", "sun"), ("❤️", "heart"), ("💖", "sparkle_heart"), ("🐾", "paw"), ("🕶️", "sunglasses")]
+        for em, k in quick_emojis:
+            ttk.Button(f_quick, text=em, width=3, command=lambda key=k: (self.sticker.set(key), self._sync_sticker_cb(key), self.update_preview())).pack(side=tk.LEFT, padx=1)
+
+        ttk.Label(tab_decor, text="Custom Image / Logo Overlay:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(6, 2))
+        f_custom = ttk.Frame(tab_decor)
+        f_custom.pack(fill=tk.X, pady=(0, 8))
+        self.btn_cust_label = ttk.Button(f_custom, text="Choose Image...", command=self.action_choose_custom_sticker)
+        self.btn_cust_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(f_custom, text="✕", width=3, command=self.action_clear_custom_sticker).pack(side=tk.LEFT, padx=(4, 0))
+
+        ttk.Label(tab_decor, text="Position:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
+        cb_pos = ttk.Combobox(
+            tab_decor,
+            textvariable=self.sticker_position,
+            values=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter"],
+            state="readonly"
+        )
+        cb_pos.bind("<<ComboboxSelected>>", lambda e: self.update_preview())
+        cb_pos.pack(fill=tk.X, pady=(0, 6))
+
+        ttk.Label(tab_decor, text="Scale Multiplier:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
+        ttk.Scale(tab_decor, from_=0.10, to=0.60, variable=self.sticker_scale, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        ttk.Label(tab_decor, text="Opacity:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
+        ttk.Scale(tab_decor, from_=0.10, to=1.0, variable=self.sticker_opacity, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        ttk.Label(tab_decor, text="Rotation Angle (°):", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
+        ttk.Scale(tab_decor, from_=-180.0, to=180.0, variable=self.sticker_rotation, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        f_decor_btns = ttk.Frame(tab_decor)
+        f_decor_btns.pack(fill=tk.X, pady=(12, 0))
+        ttk.Button(f_decor_btns, text="Reset Borders & Stickers", command=self.action_reset_decor).pack(side=tk.RIGHT)
+
+        # Tab 5: Protocol Debug
         tab_debug = ttk.Frame(sidebar, padding=8)
         sidebar.add(tab_debug, text="Debug Log")
 
@@ -687,7 +788,69 @@ class InstaxDesktopApp(tk.Tk):
             vintage_date_placement=self.vintage_date_placement.get(),
             seed=self.leak_auto_seed,
         )
+
+        # Apply Decorative Frame
+        if self.frame_style.get() != "none":
+            canvas = draw_decorative_frame(canvas, self.frame_style.get())
+
+        # Apply Stickers or Custom Image Overlay
+        if self.sticker.get() != "none" or self.custom_sticker_img is not None:
+            canvas = draw_sticker_overlay(
+                canvas,
+                sticker=self.sticker.get(),
+                sticker_image=self.custom_sticker_img,
+                position=self.sticker_position.get(),
+                scale=self.sticker_scale.get(),
+                opacity=self.sticker_opacity.get(),
+                rotation=self.sticker_rotation.get(),
+            )
+
         return canvas
+
+    def _sync_sticker_cb(self, key: str):
+        if hasattr(self, "cb_stickers") and hasattr(self, "sticker_list"):
+            for idx, (k, t) in enumerate(self.sticker_list):
+                if k == key:
+                    self.cb_stickers.current(idx)
+                    break
+
+    def action_choose_custom_sticker(self):
+        path = filedialog.askopenfilename(
+            title="Select Sticker Image or Logo",
+            filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.gif")]
+        )
+        if not path:
+            return
+        try:
+            raw = Image.open(path)
+            self.custom_sticker_img = ImageOps.exif_transpose(raw).convert("RGBA")
+            self.custom_sticker_path.set(path)
+            if hasattr(self, "btn_cust_label"):
+                self.btn_cust_label.config(text=os.path.basename(path)[:18])
+            self.update_preview()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load image: {e}")
+
+    def action_clear_custom_sticker(self):
+        self.custom_sticker_img = None
+        self.custom_sticker_path.set("")
+        if hasattr(self, "btn_cust_label"):
+            self.btn_cust_label.config(text="Choose Image...")
+        self.update_preview()
+
+    def action_reset_decor(self):
+        self.frame_style.set("none")
+        if hasattr(self, "cb_frames"):
+            self.cb_frames.current(0)
+        self.sticker.set("none")
+        if hasattr(self, "cb_stickers"):
+            self.cb_stickers.current(0)
+        self.action_clear_custom_sticker()
+        self.sticker_position.set("topRight")
+        self.sticker_scale.set(0.25)
+        self.sticker_opacity.set(1.0)
+        self.sticker_rotation.set(0.0)
+        self.update_preview()
 
     def update_preview(self):
         if not self.source_image:

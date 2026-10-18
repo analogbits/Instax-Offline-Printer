@@ -36,7 +36,23 @@ from legacy_instax_printer import (
     LegacyInstaxClient,
     VirtualInstaxShareServer,
     encode_planar_rgb,
+    STICKER_MAP,
+    draw_decorative_frame,
+    draw_sticker_overlay,
 )
+
+FRAME_OPTIONS = [
+    ("none", "None (Standard Borderless)"),
+    ("classic_white", "Classic White Film Border"),
+    ("obsidian_black", "Obsidian Black Matte"),
+    ("rainbow_gradient", "Rainbow Spectrum Gradient"),
+    ("sunset_ombre", "Sunset Ombre (Rose/Orange/Indigo)"),
+    ("sprocket_35mm", "35mm Vintage Film Sprockets"),
+    ("gold_metallic", "Metallic Gold Foil"),
+    ("rose_gold", "Rose Gold Shimmer"),
+    ("pastel_pop", "Pastel Candy Geometric"),
+    ("postage_stamp", "Scalloped Postage Stamp"),
+]
 
 FILM_PRESET_OPTIONS = [
     ("default", "Default / Base (No Effects)"),
@@ -420,6 +436,16 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.vintage_date_placement_var = tk.StringVar(value="bottomRight")
         self.leak_auto_seed = 12345
 
+        # Stickers & Decorative Frames State
+        self.frame_style_var = tk.StringVar(value="none")
+        self.sticker_var = tk.StringVar(value="none")
+        self.custom_sticker_path_var = tk.StringVar(value="")
+        self.custom_sticker_img: Optional[Image.Image] = None
+        self.sticker_pos_var = tk.StringVar(value="topRight")
+        self.sticker_scale_var = tk.DoubleVar(value=0.25)
+        self.sticker_opacity_var = tk.DoubleVar(value=1.0)
+        self.sticker_rot_var = tk.DoubleVar(value=0.0)
+
         # Film Preset Emulation State
         self.film_preset_var = tk.StringVar(value="Default / Base (No Effects)")
         self._is_applying_preset = False
@@ -528,10 +554,189 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         )
         tk.Label(left, text=guide, fg=self.fg_text, bg=self.bg_card, justify=tk.LEFT, font=("Segoe UI", 9)).pack(anchor="w", pady=6)
 
-        # Right Inspector (Pack right column FIRST so center can expand)
-        right = tk.Frame(body, bg=self.bg_card, width=320, padx=12, pady=10)
+        # Right Inspector Notebook (Pack right column FIRST so center can expand)
+        right = tk.Frame(body, bg=self.bg_card, width=330, padx=4, pady=4)
         right.pack(side=tk.RIGHT, fill=tk.Y)
         right.pack_propagate(False)
+
+        nb = ttk.Notebook(right)
+        nb.pack(fill=tk.BOTH, expand=True)
+
+        tab_filters = tk.Frame(nb, bg=self.bg_card, padx=8, pady=8)
+        tab_analog = tk.Frame(nb, bg=self.bg_card, padx=8, pady=8)
+        tab_decor = tk.Frame(nb, bg=self.bg_card, padx=8, pady=8)
+        tab_collage_qr = tk.Frame(nb, bg=self.bg_card, padx=8, pady=8)
+
+        nb.add(tab_filters, text="Filters")
+        nb.add(tab_analog, text="Analog FX")
+        nb.add(tab_decor, text="Stickers")
+        nb.add(tab_collage_qr, text="Collage/QR")
+
+        # Tab 1: Filters & Film
+        tk.Label(tab_filters, text="FILM PRESET EMULATION", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        cb_preset = ttk.Combobox(tab_filters, textvariable=self.film_preset_var, values=[t for _, t in FILM_PRESET_OPTIONS], state="readonly")
+        cb_preset.pack(fill=tk.X, pady=(2, 8))
+        cb_preset.bind("<<ComboboxSelected>>", self.on_film_preset_changed)
+
+        tk.Label(tab_filters, text="FRAMING & FIT MODE", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(4, 0))
+        ttk.Combobox(tab_filters, textvariable=self.fit_mode_var, values=["fill", "fit"], state="readonly").pack(fill=tk.X, pady=4)
+        self.fit_mode_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
+
+        tk.Label(tab_filters, text="IMAGE COLOR FILTER", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(4, 0))
+        ttk.Combobox(
+            tab_filters,
+            textvariable=self.filter_var,
+            values=["Normal", "Fujifilm Intelligence", "Monochrome", "Sepia", "Vintage Film", "Vivid Velvia"],
+            state="readonly",
+        ).pack(fill=tk.X, pady=4)
+        self.filter_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
+
+        # Tab 2: Analog Creative FX
+        tk.Label(tab_analog, text="Warmth Dial (-1.0..+1.0):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(tab_analog, from_=-1.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.warmth_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
+
+        tk.Label(tab_analog, text="Lens Vignette Falloff:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w", pady=(4, 0))
+        tk.Scale(tab_analog, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.vignette_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
+
+        tk.Label(tab_analog, text="Light Leak Type & Placement:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w", pady=(4, 0))
+        cb_leak = ttk.Combobox(tab_analog, textvariable=self.leak_type_var, values=["none", "burn", "sunburst", "sunset", "rainbow"], state="readonly")
+        cb_leak.pack(fill=tk.X, pady=2)
+        cb_leak.bind("<<ComboboxSelected>>", lambda _e: (self.mark_manual_adjustment(), self.refresh_preview()))
+        f_leak_p = tk.Frame(tab_analog, bg=self.bg_card)
+        f_leak_p.pack(fill=tk.X, pady=2)
+        cb_place = ttk.Combobox(f_leak_p, textvariable=self.leak_placement_var, values=["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"], state="readonly")
+        cb_place.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        tk.Button(f_leak_p, text="🎲", width=3, bg=self.bg_card, fg=self.fg_text, command=lambda: (self.roll_auto_leak(), self.mark_manual_adjustment())).pack(side=tk.LEFT, padx=(4, 0))
+        self.leak_placement_var.trace_add("write", lambda *_: (self.on_leak_placement_selected(), self.mark_manual_adjustment()))
+
+        tk.Label(tab_analog, text="Silver Halide Grain:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w", pady=(4, 0))
+        tk.Scale(tab_analog, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.film_grain_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
+
+        tk.Label(tab_analog, text="Analog Wear & Dust:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w", pady=(4, 0))
+        tk.Scale(tab_analog, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.analog_wear_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
+
+        tk.Checkbutton(tab_analog, text="LED Date Stamp", variable=self.vintage_date_var, bg=self.bg_card, fg=self.fg_text, selectcolor=self.bg_root, command=lambda: (self.mark_manual_adjustment(), self.refresh_preview())).pack(anchor="w", pady=(4, 0))
+        d_row = tk.Frame(tab_analog, bg=self.bg_card)
+        d_row.pack(fill=tk.X, pady=2)
+        tk.Entry(d_row, textvariable=self.vintage_date_text_var, width=12).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.vintage_date_text_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
+        ttk.Combobox(d_row, textvariable=self.vintage_date_color_var, values=["amber", "red", "green", "white"], width=7, state="readonly").pack(side=tk.LEFT, padx=2)
+        self.vintage_date_color_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
+
+        fx_row = tk.Frame(tab_analog, bg=self.bg_card)
+        fx_row.pack(fill=tk.X, pady=(8, 0))
+        tk.Button(fx_row, text="🎲 Surprise Me!", bg="#2563EB", fg="white", relief=tk.FLAT, command=self.surprise_me_analog_fx).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
+        tk.Button(fx_row, text="Reset FX", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.reset_analog_fx).pack(side=tk.LEFT)
+
+        # Tab 3: Stickers & Decorative Frames
+        tk.Label(tab_decor, text="Decorative Film Frame:", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(0, 2))
+        self.cb_frames = ttk.Combobox(tab_decor, values=[t for _, t in FRAME_OPTIONS], state="readonly")
+        self.cb_frames.set(FRAME_OPTIONS[0][1])
+        def _on_frame_sel(_e):
+            sel_idx = self.cb_frames.current()
+            if 0 <= sel_idx < len(FRAME_OPTIONS):
+                self.frame_style_var.set(FRAME_OPTIONS[sel_idx][0])
+                self.refresh_preview()
+        self.cb_frames.bind("<<ComboboxSelected>>", _on_frame_sel)
+        self.cb_frames.pack(fill=tk.X, pady=(0, 6))
+
+        tk.Label(tab_decor, text="Emoji Sticker Overlay:", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(4, 2))
+        self.sticker_list = [("none", "None (No Sticker)")] + [(k, f"{STICKER_MAP[k]}  {k.replace('_', ' ').title()}") for k in STICKER_MAP.keys()]
+        self.cb_stickers = ttk.Combobox(tab_decor, values=[t for _, t in self.sticker_list], state="readonly")
+        self.cb_stickers.set("None (No Sticker)")
+        def _on_sticker_sel(_e):
+            sel_idx = self.cb_stickers.current()
+            if 0 <= sel_idx < len(self.sticker_list):
+                self.sticker_var.set(self.sticker_list[sel_idx][0])
+                self.refresh_preview()
+        self.cb_stickers.bind("<<ComboboxSelected>>", _on_sticker_sel)
+        self.cb_stickers.pack(fill=tk.X, pady=(0, 4))
+
+        # Quick emoji sticker chips
+        f_quick = tk.Frame(tab_decor, bg=self.bg_card)
+        f_quick.pack(fill=tk.X, pady=(0, 6))
+        quick_emojis = [("🎉", "party_popper"), ("🎂", "birthday_cake"), ("✨", "sparkles"), ("📸", "camera"), ("🌴", "palm_tree"), ("☀️", "sun"), ("❤️", "heart"), ("💖", "sparkle_heart"), ("🐾", "paw"), ("🕶️", "sunglasses")]
+        for em, k in quick_emojis:
+            tk.Button(f_quick, text=em, width=2, bg=self.bg_card, fg=self.fg_text, relief=tk.FLAT, command=lambda key=k: (self.sticker_var.set(key), self._sync_sticker_cb(key), self.refresh_preview())).pack(side=tk.LEFT, padx=1)
+
+        tk.Label(tab_decor, text="Custom Image / Logo Overlay:", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(4, 2))
+        f_cust = tk.Frame(tab_decor, bg=self.bg_card)
+        f_cust.pack(fill=tk.X, pady=(0, 6))
+        self.btn_cust_label = tk.Button(f_cust, text="Choose Image...", bg="#2563EB", fg="white", relief=tk.FLAT, command=self.action_choose_custom_sticker)
+        self.btn_cust_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        tk.Button(f_cust, text="✕", width=3, bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.action_clear_custom_sticker).pack(side=tk.LEFT, padx=(4, 0))
+
+        tk.Label(tab_decor, text="Sticker Position:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        cb_pos = ttk.Combobox(tab_decor, textvariable=self.sticker_pos_var, values=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter"], state="readonly")
+        cb_pos.bind("<<ComboboxSelected>>", lambda _e: self.refresh_preview())
+        cb_pos.pack(fill=tk.X, pady=(0, 4))
+
+        tk.Label(tab_decor, text="Sticker Scale:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(tab_decor, from_=0.10, to=0.60, resolution=0.02, orient=tk.HORIZONTAL, variable=self.sticker_scale_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
+        tk.Label(tab_decor, text="Sticker Opacity:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(tab_decor, from_=0.10, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.sticker_opacity_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
+        tk.Label(tab_decor, text="Sticker Rotation (°):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(tab_decor, from_=-180.0, to=180.0, resolution=5.0, orient=tk.HORIZONTAL, variable=self.sticker_rot_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
+        f_rst = tk.Frame(tab_decor, bg=self.bg_card)
+        f_rst.pack(fill=tk.X, pady=(6, 0))
+        tk.Button(f_rst, text="Reset Borders & Stickers", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.action_reset_decor).pack(side=tk.RIGHT)
+
+        # Tab 4: Multi-Photo Collage & QR
+        tk.Label(tab_collage_qr, text="MULTI-PHOTO COLLAGE", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        ttk.Combobox(
+            tab_collage_qr,
+            textvariable=self.collage_layout_var,
+            values=["Single", "2-Up Vertical", "2-Up Horizontal", "3-Photo Grid", "4-Photo 2x2 Grid", "6-Photo Grid"],
+            state="readonly",
+        ).pack(fill=tk.X, pady=4)
+        self.collage_layout_var.trace_add("write", lambda *_: self.refresh_preview())
+
+        tk.Label(tab_collage_qr, text="Collage Border Spacing (px):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w", pady=(4, 0))
+        tk.Scale(
+            tab_collage_qr,
+            from_=0,
+            to=28,
+            orient=tk.HORIZONTAL,
+            variable=self.collage_spacing_var,
+            bg=self.bg_card,
+            fg=self.fg_text,
+            highlightthickness=0,
+            command=lambda _v: self.on_spacing_changed(),
+        ).pack(fill=tk.X)
+
+        c_btns = tk.Frame(tab_collage_qr, bg=self.bg_card)
+        c_btns.pack(fill=tk.X, pady=4)
+        tk.Button(c_btns, text="+ Add Photos", bg="#2563EB", fg="white", relief=tk.FLAT, command=self.add_collage_photos).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
+        tk.Button(c_btns, text="Clear Slots", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.clear_collage_photos).pack(side=tk.LEFT)
+
+        tk.Label(tab_collage_qr, text="QR CODE & CAPTION", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(10, 2))
+        ttk.Combobox(
+            tab_collage_qr,
+            textvariable=self.qr_type_var,
+            values=["Off", "Website URL", "Custom Text", "Phone Number", "Wi-Fi Access"],
+            state="readonly",
+        ).pack(fill=tk.X, pady=3)
+        self.qr_type_var.trace_add("write", lambda *_: self.refresh_preview())
+
+        tk.Entry(tab_collage_qr, textvariable=self.qr_text_var).pack(fill=tk.X, pady=3)
+        self.qr_text_var.trace_add("write", lambda *_: self.refresh_preview())
+
+        tk.Label(tab_collage_qr, text="Bottom Caption:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w", pady=(4, 0))
+        tk.Entry(tab_collage_qr, textvariable=self.caption_var).pack(fill=tk.X, pady=3)
+        self.caption_var.trace_add("write", lambda *_: self.refresh_preview())
+
+        tk.Checkbutton(
+            tab_collage_qr,
+            text="Include Date Stamp",
+            variable=self.date_stamp_var,
+            bg=self.bg_card,
+            fg=self.fg_text,
+            selectcolor=self.bg_root,
+            command=self.refresh_preview,
+        ).pack(anchor="w", pady=(2, 0))
 
         # Center Preview Canvas (Pack center LAST to fill remaining space)
         center = tk.Frame(body, bg=self.bg_root, padx=14)
@@ -565,118 +770,6 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             pady=7,
             command=lambda: self.start_print(force_dry_run=False),
         ).pack(side=tk.LEFT, padx=8)
-
-        tk.Label(right, text="FILM PRESET EMULATION", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w")
-        cb_preset = ttk.Combobox(right, textvariable=self.film_preset_var, values=[t for _, t in FILM_PRESET_OPTIONS], state="readonly")
-        cb_preset.pack(fill=tk.X, pady=(2, 6))
-        cb_preset.bind("<<ComboboxSelected>>", self.on_film_preset_changed)
-
-        tk.Label(right, text="FRAMING & FILTERS", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w")
-        ttk.Combobox(right, textvariable=self.fit_mode_var, values=["fill", "fit"], state="readonly").pack(fill=tk.X, pady=4)
-        self.fit_mode_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
-
-        ttk.Combobox(
-            right,
-            textvariable=self.filter_var,
-            values=["Normal", "Fujifilm Intelligence", "Monochrome", "Sepia", "Vintage Film", "Vivid Velvia"],
-            state="readonly",
-        ).pack(fill=tk.X, pady=4)
-        self.filter_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
-
-        tk.Label(right, text="ANALOG CREATIVE FX", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(10, 2))
-
-        # Warmth Scale
-        tk.Label(right, text="Warmth Dial (-1.0..+1.0):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
-        tk.Scale(right, from_=-1.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.warmth_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
-
-        # Vignette Scale
-        tk.Label(right, text="Lens Vignette Falloff:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
-        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.vignette_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
-
-        # Light Leak
-        cb_leak = ttk.Combobox(right, textvariable=self.leak_type_var, values=["none", "burn", "sunburst", "sunset", "rainbow"], state="readonly")
-        cb_leak.pack(fill=tk.X, pady=2)
-        cb_leak.bind("<<ComboboxSelected>>", lambda _e: (self.mark_manual_adjustment(), self.refresh_preview()))
-        f_leak_p = tk.Frame(right, bg=self.bg_card)
-        f_leak_p.pack(fill=tk.X, pady=2)
-        cb_place = ttk.Combobox(f_leak_p, textvariable=self.leak_placement_var, values=["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"], state="readonly")
-        cb_place.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        tk.Button(f_leak_p, text="🎲", width=3, bg=self.bg_card, fg=self.fg_text, command=lambda: (self.roll_auto_leak(), self.mark_manual_adjustment())).pack(side=tk.LEFT, padx=(4, 0))
-        self.leak_placement_var.trace_add("write", lambda *_: (self.on_leak_placement_selected(), self.mark_manual_adjustment()))
-
-        # Grain & Wear Scales
-        tk.Label(right, text="Silver Halide Grain:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
-        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.film_grain_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
-
-        tk.Label(right, text="Analog Wear & Dust:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
-        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.analog_wear_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: (self.mark_manual_adjustment(), self.refresh_preview())).pack(fill=tk.X)
-
-        # Date Stamp
-        tk.Checkbutton(right, text="LED Date Stamp", variable=self.vintage_date_var, bg=self.bg_card, fg=self.fg_text, selectcolor=self.bg_root, command=lambda: (self.mark_manual_adjustment(), self.refresh_preview())).pack(anchor="w", pady=(4, 0))
-        d_row = tk.Frame(right, bg=self.bg_card)
-        d_row.pack(fill=tk.X, pady=2)
-        tk.Entry(d_row, textvariable=self.vintage_date_text_var, width=12).pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.vintage_date_text_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
-        ttk.Combobox(d_row, textvariable=self.vintage_date_color_var, values=["amber", "red", "green", "white"], width=7, state="readonly").pack(side=tk.LEFT, padx=2)
-        self.vintage_date_color_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
-
-        fx_row = tk.Frame(right, bg=self.bg_card)
-        fx_row.pack(fill=tk.X, pady=4)
-        tk.Button(fx_row, text="🎲 Surprise Me!", bg="#2563EB", fg="white", relief=tk.FLAT, command=self.surprise_me_analog_fx).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
-        tk.Button(fx_row, text="Reset FX", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.reset_analog_fx).pack(side=tk.LEFT)
-
-        tk.Label(right, text="MULTI-PHOTO COLLAGE", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(10, 2))
-        ttk.Combobox(
-            right,
-            textvariable=self.collage_layout_var,
-            values=["Single", "2-Up Vertical", "2-Up Horizontal", "3-Photo Grid", "4-Photo 2x2 Grid", "6-Photo Grid"],
-            state="readonly",
-        ).pack(fill=tk.X, pady=4)
-        self.collage_layout_var.trace_add("write", lambda *_: self.refresh_preview())
-
-        tk.Label(right, text="Collage Border Spacing (px):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
-        tk.Scale(
-            right,
-            from_=0,
-            to=28,
-            orient=tk.HORIZONTAL,
-            variable=self.collage_spacing_var,
-            bg=self.bg_card,
-            fg=self.fg_text,
-            highlightthickness=0,
-            command=lambda _v: self.on_spacing_changed(),
-        ).pack(fill=tk.X)
-
-        c_btns = tk.Frame(right, bg=self.bg_card)
-        c_btns.pack(fill=tk.X, pady=4)
-        tk.Button(c_btns, text="+ Add Collage Photos", bg="#2563EB", fg="white", relief=tk.FLAT, command=self.add_collage_photos).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
-        tk.Button(c_btns, text="Clear Slots", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.clear_collage_photos).pack(side=tk.LEFT)
-
-        tk.Label(right, text="QR CODE & CAPTION", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(12, 2))
-        ttk.Combobox(
-            right,
-            textvariable=self.qr_type_var,
-            values=["Off", "Website URL", "Custom Text", "Phone Number", "Wi-Fi Access"],
-            state="readonly",
-        ).pack(fill=tk.X, pady=3)
-        self.qr_type_var.trace_add("write", lambda *_: self.refresh_preview())
-
-        tk.Entry(right, textvariable=self.qr_text_var).pack(fill=tk.X, pady=3)
-        self.qr_text_var.trace_add("write", lambda *_: self.refresh_preview())
-
-        tk.Label(right, text="Bottom Caption:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w", pady=(6, 0))
-        tk.Entry(right, textvariable=self.caption_var).pack(fill=tk.X, pady=3)
-        self.caption_var.trace_add("write", lambda *_: self.refresh_preview())
-
-        tk.Checkbutton(
-            right,
-            text="Include Date Stamp",
-            variable=self.date_stamp_var,
-            bg=self.bg_card,
-            fg=self.fg_text,
-            selectcolor=self.bg_root,
-            command=self.refresh_preview,
-        ).pack(anchor="w")
 
         # Bottom Status Bar
         status_bar = tk.Frame(self, bg=self.bg_top, padx=12, pady=6)
@@ -1014,6 +1107,22 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             seed=self.leak_auto_seed,
         )
 
+        # Apply Decorative Frame
+        if self.frame_style_var.get() != "none":
+            canvas = draw_decorative_frame(canvas, self.frame_style_var.get())
+
+        # Apply Stickers or Custom Image Overlay
+        if self.sticker_var.get() != "none" or self.custom_sticker_img is not None:
+            canvas = draw_sticker_overlay(
+                canvas,
+                sticker=self.sticker_var.get(),
+                sticker_image=self.custom_sticker_img,
+                position=self.sticker_pos_var.get(),
+                scale=self.sticker_scale_var.get(),
+                opacity=self.sticker_opacity_var.get(),
+                rotation=self.sticker_rot_var.get(),
+            )
+
         draw = ImageDraw.Draw(canvas)
         cap = self.caption_var.get().strip()
         if self.date_stamp_var.get():
@@ -1034,6 +1143,51 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.tk_preview = ImageTk.PhotoImage(disp)
         self.canvas_label.configure(image=self.tk_preview)
         self.canvas_label.image = self.tk_preview
+
+    def _sync_sticker_cb(self, key: str):
+        if hasattr(self, "cb_stickers") and hasattr(self, "sticker_list"):
+            for idx, (k, t) in enumerate(self.sticker_list):
+                if k == key:
+                    self.cb_stickers.current(idx)
+                    break
+
+    def action_choose_custom_sticker(self):
+        path = filedialog.askopenfilename(
+            title="Select Sticker Image or Logo",
+            filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.gif")]
+        )
+        if not path:
+            return
+        try:
+            raw = Image.open(path)
+            self.custom_sticker_img = ImageOps.exif_transpose(raw).convert("RGBA")
+            self.custom_sticker_path_var.set(path)
+            if hasattr(self, "btn_cust_label"):
+                self.btn_cust_label.config(text=os.path.basename(path)[:18])
+            self.refresh_preview()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load image: {e}")
+
+    def action_clear_custom_sticker(self):
+        self.custom_sticker_img = None
+        self.custom_sticker_path_var.set("")
+        if hasattr(self, "btn_cust_label"):
+            self.btn_cust_label.config(text="Choose Image...")
+        self.refresh_preview()
+
+    def action_reset_decor(self):
+        self.frame_style_var.set("none")
+        if hasattr(self, "cb_frames"):
+            self.cb_frames.current(0)
+        self.sticker_var.set("none")
+        if hasattr(self, "cb_stickers"):
+            self.cb_stickers.current(0)
+        self.action_clear_custom_sticker()
+        self.sticker_pos_var.set("topRight")
+        self.sticker_scale_var.set(0.25)
+        self.sticker_opacity_var.set(1.0)
+        self.sticker_rot_var.set(0.0)
+        self.refresh_preview()
 
     @staticmethod
     def _draw_matrix_qr_badge(canvas: Image.Image, text: str):

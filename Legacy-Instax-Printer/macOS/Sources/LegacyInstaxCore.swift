@@ -583,6 +583,15 @@ public struct LegacyPrintOptions {
     public var vintageDatePlacement: String = "bottomRight"
     public var analogSeed: Int = Int.random(in: 1...1_000_000)
 
+    // Decorative Film Borders & Stickers (100% Royalty-Free)
+    public var frameStyle: String = "none"
+    public var sticker: String = "none"
+    public var stickerImage: NSImage? = nil
+    public var stickerPosition: String = "bottomRight"
+    public var stickerScale: Double = 0.25
+    public var stickerOpacity: Double = 1.0
+    public var stickerRotation: Double = 0.0
+
     public init() {}
 
     public func encodedQRPayload() -> String? {
@@ -698,6 +707,12 @@ public enum LegacyImageProcessor {
         if options.showVintageDate {
             drawVintageDateStamp(ctx: ctx, rect: canvasRect, text: options.vintageDateText, colorName: options.vintageDateColor, placement: options.vintageDatePlacement)
         }
+
+        // Decorative Film Borders & Frames
+        drawDecorativeFrame(ctx: ctx, width: CGFloat(targetW), height: CGFloat(targetH), style: options.frameStyle)
+
+        // Sticker / Custom Image Overlay
+        drawStickerOverlay(ctx: ctx, width: CGFloat(targetW), height: CGFloat(targetH), options: options)
 
         let hasCaption = !options.captionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         if hasCaption || options.includeDateStamp {
@@ -1253,6 +1268,312 @@ public enum LegacyImageProcessor {
         ctx.textMatrix = .identity
         ctx.textPosition = CGPoint(x: stampX, y: stampY)
         CTLineDraw(ctLine, ctx)
+        ctx.restoreGState()
+    }
+
+    // MARK: - Decorative Frames & Stickers Engine
+
+    public static let stickerMap: [String: String] = [
+        "party_popper": "🎉",
+        "birthday_cake": "🎂",
+        "sparkles": "✨",
+        "cheers": "🥂",
+        "balloon": "🎈",
+        "gift": "🎁",
+        "camera": "📸",
+        "airplane": "✈️",
+        "palm_tree": "🌴",
+        "tent": "⛺️",
+        "mountain": "⛰️",
+        "sun": "☀️",
+        "wave": "🌊",
+        "heart": "❤️",
+        "sparkle_heart": "💖",
+        "two_hearts": "💕",
+        "love_letter": "💌",
+        "rose": "🌹",
+        "bouquet": "💐",
+        "paw": "🐾",
+        "puppy": "🐶",
+        "kitten": "🐱",
+        "cherry_blossom": "🌸",
+        "coffee": "☕️",
+        "four_leaf_clover": "🍀",
+        "cassette": "📼",
+        "sunglasses": "🕶️",
+        "peace": "✌️",
+        "lightning": "⚡️",
+        "music": "🎵",
+        "fire": "🔥"
+    ]
+
+    public static func drawDecorativeFrame(ctx: CGContext, width: CGFloat, height: CGFloat, style: String) {
+        guard !style.isEmpty && style != "none" else { return }
+        ctx.saveGState()
+
+        if style == "classic_white" {
+            let borderX = round(width * 0.05)
+            let borderTop = round(height * 0.05)
+            let borderBottom = round(height * 0.14)
+            ctx.setFillColor(red: 248/255.0, green: 250/255.0, blue: 252/255.0, alpha: 1.0)
+            ctx.fill([
+                CGRect(x: 0, y: height - borderTop, width: width, height: borderTop),
+                CGRect(x: 0, y: 0, width: borderX, height: height),
+                CGRect(x: width - borderX, y: 0, width: borderX, height: height),
+                CGRect(x: 0, y: 0, width: width, height: borderBottom)
+            ])
+            ctx.setStrokeColor(red: 0, green: 0, blue: 0, alpha: 0.12)
+            ctx.setLineWidth(1.5)
+            ctx.stroke(CGRect(x: borderX, y: borderBottom, width: width - 2 * borderX, height: height - borderTop - borderBottom))
+        } else if style == "obsidian_black" {
+            let borderX = round(width * 0.05)
+            let borderTop = round(height * 0.05)
+            let borderBottom = round(height * 0.14)
+            ctx.setFillColor(red: 17/255.0, green: 24/255.0, blue: 39/255.0, alpha: 1.0)
+            ctx.fill([
+                CGRect(x: 0, y: height - borderTop, width: width, height: borderTop),
+                CGRect(x: 0, y: 0, width: borderX, height: height),
+                CGRect(x: width - borderX, y: 0, width: borderX, height: height),
+                CGRect(x: 0, y: 0, width: width, height: borderBottom)
+            ])
+            ctx.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.15)
+            ctx.setLineWidth(1.0)
+            ctx.stroke(CGRect(x: borderX, y: borderBottom, width: width - 2 * borderX, height: height - borderTop - borderBottom))
+        } else if style == "rainbow_gradient" {
+            let bw = round(min(width, height) * 0.065)
+            let colors: [CGColor] = [
+                CGColor(srgbRed: 239/255.0, green: 68/255.0, blue: 68/255.0, alpha: 1.0),
+                CGColor(srgbRed: 249/255.0, green: 115/255.0, blue: 22/255.0, alpha: 1.0),
+                CGColor(srgbRed: 234/255.0, green: 179/255.0, blue: 8/255.0, alpha: 1.0),
+                CGColor(srgbRed: 34/255.0, green: 197/255.0, blue: 94/255.0, alpha: 1.0),
+                CGColor(srgbRed: 6/255.0, green: 182/255.0, blue: 212/255.0, alpha: 1.0),
+                CGColor(srgbRed: 139/255.0, green: 92/255.0, blue: 246/255.0, alpha: 1.0),
+                CGColor(srgbRed: 236/255.0, green: 72/255.0, blue: 153/255.0, alpha: 1.0)
+            ]
+            let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+            let locations: [CGFloat] = [0.0, 0.18, 0.36, 0.54, 0.72, 0.90, 1.0]
+            if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors as CFArray, locations: locations) {
+                ctx.saveGState()
+                ctx.addRects([
+                    CGRect(x: 0, y: height - bw, width: width, height: bw),
+                    CGRect(x: 0, y: 0, width: bw, height: height),
+                    CGRect(x: width - bw, y: 0, width: bw, height: height),
+                    CGRect(x: 0, y: 0, width: width, height: bw)
+                ])
+                ctx.clip()
+                ctx.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: width, y: height), options: [])
+                ctx.restoreGState()
+            }
+            ctx.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.35)
+            ctx.setLineWidth(1.5)
+            ctx.stroke(CGRect(x: bw, y: bw, width: width - 2 * bw, height: height - 2 * bw))
+        } else if style == "sunset_ombre" {
+            let bw = round(min(width, height) * 0.065)
+            let colors: [CGColor] = [
+                CGColor(srgbRed: 244/255.0, green: 63/255.0, blue: 94/255.0, alpha: 1.0),
+                CGColor(srgbRed: 251/255.0, green: 146/255.0, blue: 60/255.0, alpha: 1.0),
+                CGColor(srgbRed: 99/255.0, green: 102/255.0, blue: 241/255.0, alpha: 1.0)
+            ]
+            let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+            let locations: [CGFloat] = [0.0, 0.5, 1.0]
+            if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors as CFArray, locations: locations) {
+                ctx.saveGState()
+                ctx.addRects([
+                    CGRect(x: 0, y: height - bw, width: width, height: bw),
+                    CGRect(x: 0, y: 0, width: bw, height: height),
+                    CGRect(x: width - bw, y: 0, width: bw, height: height),
+                    CGRect(x: 0, y: 0, width: width, height: bw)
+                ])
+                ctx.clip()
+                ctx.drawLinearGradient(gradient, start: CGPoint(x: 0, y: height), end: CGPoint(x: 0, y: 0), options: [])
+                ctx.restoreGState()
+            }
+            ctx.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.35)
+            ctx.setLineWidth(1.5)
+            ctx.stroke(CGRect(x: bw, y: bw, width: width - 2 * bw, height: height - 2 * bw))
+        } else if style == "sprocket_35mm" {
+            let bw = round(min(width, height) * 0.08)
+            ctx.setFillColor(red: 10/255.0, green: 10/255.0, blue: 10/255.0, alpha: 1.0)
+            ctx.fill([
+                CGRect(x: 0, y: 0, width: bw, height: height),
+                CGRect(x: width - bw, y: 0, width: bw, height: height)
+            ])
+            let holeW = round(bw * 0.45)
+            let holeH = round(bw * 0.65)
+            let step = holeH + round(bw * 0.4)
+            let startY = round(bw * 0.3)
+            ctx.setFillColor(red: 229/255.0, green: 231/255.0, blue: 235/255.0, alpha: 1.0)
+            var y = startY
+            while y + holeH < height {
+                let leftPath = CGPath(roundedRect: CGRect(x: (bw - holeW) / 2.0, y: y, width: holeW, height: holeH), cornerWidth: 3, cornerHeight: 3, transform: nil)
+                let rightPath = CGPath(roundedRect: CGRect(x: width - bw + (bw - holeW) / 2.0, y: y, width: holeW, height: holeH), cornerWidth: 3, cornerHeight: 3, transform: nil)
+                ctx.addPath(leftPath)
+                ctx.addPath(rightPath)
+                ctx.fillPath()
+                y += step
+            }
+        } else if style == "gold_metallic" {
+            let bw = round(min(width, height) * 0.065)
+            let colors: [CGColor] = [
+                CGColor(srgbRed: 180/255.0, green: 83/255.0, blue: 9/255.0, alpha: 1.0),
+                CGColor(srgbRed: 254/255.0, green: 240/255.0, blue: 138/255.0, alpha: 1.0),
+                CGColor(srgbRed: 217/255.0, green: 119/255.0, blue: 6/255.0, alpha: 1.0),
+                CGColor(srgbRed: 254/255.0, green: 249/255.0, blue: 195/255.0, alpha: 1.0),
+                CGColor(srgbRed: 146/255.0, green: 64/255.0, blue: 14/255.0, alpha: 1.0)
+            ]
+            let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+            let locations: [CGFloat] = [0.0, 0.3, 0.6, 0.85, 1.0]
+            if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors as CFArray, locations: locations) {
+                ctx.saveGState()
+                ctx.addRects([
+                    CGRect(x: 0, y: height - bw, width: width, height: bw),
+                    CGRect(x: 0, y: 0, width: bw, height: height),
+                    CGRect(x: width - bw, y: 0, width: bw, height: height),
+                    CGRect(x: 0, y: 0, width: width, height: bw)
+                ])
+                ctx.clip()
+                ctx.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: width, y: height), options: [])
+                ctx.restoreGState()
+            }
+            ctx.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.45)
+            ctx.setLineWidth(1.5)
+            ctx.stroke(CGRect(x: bw, y: bw, width: width - 2 * bw, height: height - 2 * bw))
+        } else if style == "rose_gold" {
+            let bw = round(min(width, height) * 0.065)
+            let colors: [CGColor] = [
+                CGColor(srgbRed: 159/255.0, green: 18/255.0, blue: 57/255.0, alpha: 1.0),
+                CGColor(srgbRed: 251/255.0, green: 207/255.0, blue: 232/255.0, alpha: 1.0),
+                CGColor(srgbRed: 251/255.0, green: 113/255.0, blue: 133/255.0, alpha: 1.0),
+                CGColor(srgbRed: 252/255.0, green: 231/255.0, blue: 243/255.0, alpha: 1.0),
+                CGColor(srgbRed: 136/255.0, green: 19/255.0, blue: 55/255.0, alpha: 1.0)
+            ]
+            let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+            let locations: [CGFloat] = [0.0, 0.3, 0.65, 0.9, 1.0]
+            if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors as CFArray, locations: locations) {
+                ctx.saveGState()
+                ctx.addRects([
+                    CGRect(x: 0, y: height - bw, width: width, height: bw),
+                    CGRect(x: 0, y: 0, width: bw, height: height),
+                    CGRect(x: width - bw, y: 0, width: bw, height: height),
+                    CGRect(x: 0, y: 0, width: width, height: bw)
+                ])
+                ctx.clip()
+                ctx.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: width, y: height), options: [])
+                ctx.restoreGState()
+            }
+            ctx.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.45)
+            ctx.setLineWidth(1.5)
+            ctx.stroke(CGRect(x: bw, y: bw, width: width - 2 * bw, height: height - 2 * bw))
+        } else if style == "pastel_pop" {
+            let bw = round(min(width, height) * 0.065)
+            ctx.setFillColor(red: 186/255.0, green: 230/255.0, blue: 253/255.0, alpha: 1.0)
+            ctx.fill(CGRect(x: 0, y: height - bw, width: width, height: bw))
+            ctx.setFillColor(red: 251/255.0, green: 207/255.0, blue: 232/255.0, alpha: 1.0)
+            ctx.fill(CGRect(x: 0, y: 0, width: bw, height: height))
+            ctx.setFillColor(red: 187/255.0, green: 247/255.0, blue: 208/255.0, alpha: 1.0)
+            ctx.fill(CGRect(x: width - bw, y: 0, width: bw, height: height))
+            ctx.setFillColor(red: 254/255.0, green: 240/255.0, blue: 138/255.0, alpha: 1.0)
+            ctx.fill(CGRect(x: 0, y: 0, width: width, height: bw))
+            ctx.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.55)
+            ctx.setLineWidth(1.5)
+            ctx.stroke(CGRect(x: bw, y: bw, width: width - 2 * bw, height: height - 2 * bw))
+        } else if style == "postage_stamp" {
+            let bw = round(min(width, height) * 0.05)
+            ctx.setFillColor(red: 254/255.0, green: 254/255.0, blue: 254/255.0, alpha: 1.0)
+            ctx.fill([
+                CGRect(x: 0, y: height - bw, width: width, height: bw),
+                CGRect(x: 0, y: 0, width: bw, height: height),
+                CGRect(x: width - bw, y: 0, width: bw, height: height),
+                CGRect(x: 0, y: 0, width: width, height: bw)
+            ])
+            let r = round(bw * 0.45)
+            let d = r * 2.8
+            ctx.setFillColor(red: 30/255.0, green: 30/255.0, blue: 30/255.0, alpha: 1.0)
+            var x = d / 2.0
+            while x < width {
+                ctx.fillEllipse(in: CGRect(x: x - r, y: -r, width: 2 * r, height: 2 * r))
+                ctx.fillEllipse(in: CGRect(x: x - r, y: height - r, width: 2 * r, height: 2 * r))
+                x += d
+            }
+            var y = d / 2.0
+            while y < height {
+                ctx.fillEllipse(in: CGRect(x: -r, y: y - r, width: 2 * r, height: 2 * r))
+                ctx.fillEllipse(in: CGRect(x: width - r, y: y - r, width: 2 * r, height: 2 * r))
+                y += d
+            }
+        }
+
+        ctx.restoreGState()
+    }
+
+    public static func drawStickerOverlay(ctx: CGContext, width: CGFloat, height: CGFloat, options: LegacyPrintOptions) {
+        let hasCustom = (options.stickerImage != nil)
+        let hasEmoji = (options.sticker != "none" && stickerMap[options.sticker] != nil)
+        guard hasCustom || hasEmoji else { return }
+
+        let targetDim = min(width, height) * CGFloat(options.stickerScale)
+        let margin = round(min(width, height) * 0.06)
+
+        var cx: CGFloat = width - margin - targetDim / 2.0
+        var cy: CGFloat = margin + targetDim / 2.0
+
+        switch options.stickerPosition {
+        case "topLeft":
+            cx = margin + targetDim / 2.0
+            cy = height - margin - targetDim / 2.0
+        case "topRight":
+            cx = width - margin - targetDim / 2.0
+            cy = height - margin - targetDim / 2.0
+        case "bottomLeft":
+            cx = margin + targetDim / 2.0
+            cy = margin + targetDim / 2.0
+        case "bottomRight":
+            cx = width - margin - targetDim / 2.0
+            cy = margin + targetDim / 2.0
+        case "center":
+            cx = width / 2.0
+            cy = height / 2.0
+        case "topCenter":
+            cx = width / 2.0
+            cy = height - margin - targetDim / 2.0
+        case "bottomCenter":
+            cx = width / 2.0
+            cy = margin + targetDim / 2.0
+        default:
+            break
+        }
+
+        ctx.saveGState()
+        ctx.setAlpha(CGFloat(max(0.05, min(1.0, options.stickerOpacity))))
+        ctx.translateBy(x: cx, y: cy)
+        if options.stickerRotation != 0 {
+            ctx.rotate(by: CGFloat(options.stickerRotation * .pi / 180.0))
+        }
+
+        if let custom = options.stickerImage, let cg = custom.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+            let aspect = CGFloat(cg.width) / CGFloat(cg.height)
+            var sw = targetDim
+            var sh = targetDim
+            if aspect > 1.0 {
+                sh = targetDim / aspect
+            } else {
+                sw = targetDim * aspect
+            }
+            ctx.draw(cg, in: CGRect(x: -sw / 2.0, y: -sh / 2.0, width: sw, height: sh))
+        } else if let emoji = stickerMap[options.sticker] {
+            let fontSize = targetDim * 0.85
+            let font = CTFontCreateWithName("AppleColorEmoji" as CFString, fontSize, nil)
+            let attrs: [NSAttributedString.Key: Any] = [
+                NSAttributedString.Key(kCTFontAttributeName as String): font
+            ]
+            let attrStr = NSAttributedString(string: emoji, attributes: attrs)
+            let line = CTLineCreateWithAttributedString(attrStr)
+            let bounds = CTLineGetBoundsWithOptions(line, [])
+            ctx.textMatrix = .identity
+            ctx.textPosition = CGPoint(x: -bounds.width / 2.0, y: -bounds.height / 2.0 - bounds.origin.y)
+            CTLineDraw(line, ctx)
+        }
+
         ctx.restoreGState()
     }
 

@@ -163,6 +163,7 @@ enum InspectorTab: String, CaseIterable, Identifiable {
     case color = "Color & Filters"
     case analogFX = "Analog FX"
     case collage = "Collage"
+    case decorate = "Stickers & Borders"
     case qrOverlay = "QR & Text"
 
     var id: String { rawValue }
@@ -173,6 +174,7 @@ enum InspectorTab: String, CaseIterable, Identifiable {
         case .color: return "slider.horizontal.3"
         case .analogFX: return "camera.filters"
         case .collage: return "square.grid.2x2"
+        case .decorate: return "sparkles"
         case .qrOverlay: return "qrcode"
         }
     }
@@ -183,6 +185,7 @@ enum InspectorTab: String, CaseIterable, Identifiable {
         case .color: return "Filters"
         case .analogFX: return "Analog"
         case .collage: return "Collage"
+        case .decorate: return "Stickers"
         case .qrOverlay: return "QR/Text"
         }
     }
@@ -419,6 +422,16 @@ final class InstaxAppViewModel: ObservableObject {
     @Published var qrCodePosition: InstaxQRPosition = .bottomRight { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var qrCodeSize: InstaxQRSize = .medium { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var qrCodeStyle: InstaxQRStyle = .frosted { didSet { if !isLoadingSelection { updatePreview() } } }
+
+    // Decorative Film Borders & Stickers (100% Royalty-Free)
+    @Published var frameStyle: String = "none" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var sticker: String = "none" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var customStickerImage: NSImage? = nil { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var customStickerFilename: String = ""
+    @Published var stickerPosition: String = "bottomRight" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var stickerScale: Double = 0.25 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var stickerOpacity: Double = 1.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var stickerRotation: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
 
     // Bulk Print Queue State
     @Published var printQueue: [QueuedPhotoItem] = []
@@ -704,6 +717,13 @@ final class InstaxAppViewModel: ObservableObject {
         opts.vintageDateText = vintageDateText
         opts.vintageDateColor = vintageDateColor
         opts.vintageDatePlacement = vintageDatePlacement
+        opts.frameStyle = frameStyle
+        opts.sticker = sticker
+        opts.stickerImage = customStickerImage
+        opts.stickerPosition = stickerPosition
+        opts.stickerScale = stickerScale
+        opts.stickerOpacity = stickerOpacity
+        opts.stickerRotation = stickerRotation
         return opts
     }
 
@@ -2348,6 +2368,8 @@ struct InstaxMainView: View {
                         analogFXTabContent
                     case .collage:
                         collageTabContent
+                    case .decorate:
+                        decorateTabContent
                     case .qrOverlay:
                         qrAndTextTabContent
                     }
@@ -3012,6 +3034,200 @@ struct InstaxMainView: View {
         }
         .buttonStyle(.plain)
         .disabled(!canCreate)
+    }
+
+    // MARK: - Stickers & Decorative Frames Tab Content
+
+    private var decorateTabContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // 1. Decorative Film Border / Frame Group
+            GroupBox(label: Label("Decorative Film Frame", systemImage: "photo.artframe")) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Picker("Frame Style", selection: $vm.frameStyle) {
+                        Text("None (Full Bleed)").tag("none")
+                        Text("⚪ Classic White Film Frame").tag("classic_white")
+                        Text("⚫ Obsidian Black Film Frame").tag("obsidian_black")
+                        Text("🌈 Rainbow Spectrum Gradient").tag("rainbow_gradient")
+                        Text("🌅 Sunset Ombre Fade").tag("sunset_ombre")
+                        Text("🎞️ 35mm Vintage Film Sprockets").tag("sprocket_35mm")
+                        Text("🪙 Metallic Gold Foil").tag("gold_metallic")
+                        Text("✨ Rose Gold Foil").tag("rose_gold")
+                        Text("🍬 Pastel Candy Geometric").tag("pastel_pop")
+                        Text("✉️ Scalloped Postage Stamp").tag("postage_stamp")
+                    }
+                    .pickerStyle(.menu)
+
+                    Text("Renders an edge embellishment around your exposure before physical film ejection.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(6)
+            }
+
+            // 2. Sticker Embellishment Group
+            GroupBox(label: Label("Sticker Embellishment", systemImage: "face.smiling")) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Picker("Sticker", selection: $vm.sticker) {
+                        Text("None (No Sticker)").tag("none")
+                        Divider()
+                        Group {
+                            Text("🎉 Party Popper").tag("party_popper")
+                            Text("🎂 Birthday Cake").tag("birthday_cake")
+                            Text("✨ Magic Sparkles").tag("sparkles")
+                            Text("🥂 Cheers Champagne").tag("cheers")
+                            Text("🎈 Party Balloon").tag("balloon")
+                            Text("🎁 Gift Box").tag("gift")
+                        }
+                        Divider()
+                        Group {
+                            Text("📸 Vintage Camera").tag("camera")
+                            Text("✈️ Jet Airplane").tag("airplane")
+                            Text("🌴 Tropical Palm").tag("palm_tree")
+                            Text("⛺️ Camp Tent").tag("tent")
+                            Text("⛰️ Mountain Peak").tag("mountain")
+                            Text("☀️ Radiant Sun").tag("sun")
+                            Text("🌊 Ocean Wave").tag("wave")
+                        }
+                        Divider()
+                        Group {
+                            Text("❤️ Classic Red Heart").tag("heart")
+                            Text("💖 Sparkling Heart").tag("sparkle_heart")
+                            Text("💕 Two Hearts").tag("two_hearts")
+                            Text("💌 Love Letter").tag("love_letter")
+                            Text("🌹 Red Rose").tag("rose")
+                            Text("💐 Flower Bouquet").tag("bouquet")
+                        }
+                        Divider()
+                        Group {
+                            Text("🐾 Paw Prints").tag("paw")
+                            Text("🐶 Cute Doggo").tag("puppy")
+                            Text("🐱 Sweet Kitty").tag("kitten")
+                            Text("🌸 Cherry Blossom").tag("cherry_blossom")
+                            Text("☕️ Warm Coffee").tag("coffee")
+                            Text("🍀 Lucky Clover").tag("four_leaf_clover")
+                        }
+                        Divider()
+                        Group {
+                            Text("📼 Mixtape Cassette").tag("cassette")
+                            Text("🕶️ Cool Sunglasses").tag("sunglasses")
+                            Text("✌️ Peace Sign").tag("peace")
+                            Text("⚡️ Lightning Bolt").tag("lightning")
+                            Text("🎵 Musical Melody").tag("music")
+                            Text("🔥 Lit / Fire").tag("fire")
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    // Quick Sticker Palette
+                    HStack(spacing: 6) {
+                        Button("✨") { vm.sticker = "sparkles" }
+                        Button("❤️") { vm.sticker = "heart" }
+                        Button("📸") { vm.sticker = "camera" }
+                        Button("🎉") { vm.sticker = "party_popper" }
+                        Button("🌴") { vm.sticker = "palm_tree" }
+                        Button("🌸") { vm.sticker = "cherry_blossom" }
+                        Button("☕️") { vm.sticker = "coffee" }
+                        Button("🕶️") { vm.sticker = "sunglasses" }
+                        Spacer()
+                        if vm.sticker != "none" {
+                            Button("Clear") { vm.sticker = "none" }
+                                .controlSize(.small)
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+                .padding(6)
+            }
+
+            // 3. Custom Image Overlay ("Other Images")
+            GroupBox(label: Label("Custom Image Overlay / Logo", systemImage: "photo.badge.plus")) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Button("Choose PNG / Image...") {
+                            let panel = NSOpenPanel()
+                            panel.allowedContentTypes = [.image, .png, .jpeg]
+                            panel.allowsMultipleSelection = false
+                            if panel.runModal() == .OK, let url = panel.url {
+                                if let img = NSImage(contentsOf: url) {
+                                    vm.customStickerImage = img
+                                    vm.customStickerFilename = url.lastPathComponent
+                                }
+                            }
+                        }
+                        .controlSize(.small)
+
+                        if vm.customStickerImage != nil {
+                            Button("Remove") {
+                                vm.customStickerImage = nil
+                                vm.customStickerFilename = ""
+                            }
+                            .controlSize(.small)
+                            .foregroundColor(.red)
+                        }
+                    }
+
+                    if !vm.customStickerFilename.isEmpty {
+                        Text("Active: \(vm.customStickerFilename)")
+                            .font(.caption2)
+                            .foregroundColor(.accentColor)
+                    } else {
+                        Text("Stamp custom logos, signatures, watermarks or doodles onto your print.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(6)
+            }
+
+            // 4. Transform & Layout (Position, Size, Opacity, Rotation)
+            GroupBox(label: Label("Sticker Transform & Placement", systemImage: "arrow.up.and.down.and.arrow.left.and.right")) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Picker("Position", selection: $vm.stickerPosition) {
+                        Text("Bottom-Right Corner").tag("bottomRight")
+                        Text("Bottom-Left Corner").tag("bottomLeft")
+                        Text("Top-Right Corner").tag("topRight")
+                        Text("Top-Left Corner").tag("topLeft")
+                        Text("Center").tag("center")
+                        Text("Bottom-Center").tag("bottomCenter")
+                        Text("Top-Center").tag("topCenter")
+                    }
+                    .pickerStyle(.menu)
+
+                    HStack {
+                        Text("Size: \(Int(vm.stickerScale * 100))%")
+                            .font(.caption)
+                        Slider(value: $vm.stickerScale, in: 0.10...0.60, step: 0.05)
+                    }
+
+                    HStack {
+                        Text("Opacity: \(Int(vm.stickerOpacity * 100))%")
+                            .font(.caption)
+                        Slider(value: $vm.stickerOpacity, in: 0.10...1.0, step: 0.05)
+                    }
+
+                    HStack {
+                        Text("Rotation: \(Int(vm.stickerRotation))°")
+                            .font(.caption)
+                        Slider(value: $vm.stickerRotation, in: -45.0...45.0, step: 5.0)
+                    }
+
+                    Button("Reset Stickers & Borders") {
+                        vm.frameStyle = "none"
+                        vm.sticker = "none"
+                        vm.customStickerImage = nil
+                        vm.customStickerFilename = ""
+                        vm.stickerPosition = "bottomRight"
+                        vm.stickerScale = 0.25
+                        vm.stickerOpacity = 1.0
+                        vm.stickerRotation = 0.0
+                    }
+                    .controlSize(.small)
+                }
+                .padding(6)
+            }
+        }
     }
 
     private var qrAndTextTabContent: some View {

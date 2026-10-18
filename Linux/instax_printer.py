@@ -856,6 +856,254 @@ def apply_analog_fx(
     return canvas
 
 
+STICKER_MAP = {
+    "party_popper": "🎉",
+    "birthday_cake": "🎂",
+    "sparkles": "✨",
+    "cheers": "🥂",
+    "balloon": "🎈",
+    "gift": "🎁",
+    "camera": "📸",
+    "airplane": "✈️",
+    "palm_tree": "🌴",
+    "tent": "⛺️",
+    "mountain": "⛰️",
+    "sun": "☀️",
+    "wave": "🌊",
+    "heart": "❤️",
+    "sparkle_heart": "💖",
+    "two_hearts": "💕",
+    "love_letter": "💌",
+    "rose": "🌹",
+    "bouquet": "💐",
+    "paw": "🐾",
+    "puppy": "🐶",
+    "kitten": "🐱",
+    "cherry_blossom": "🌸",
+    "coffee": "☕️",
+    "four_leaf_clover": "🍀",
+    "cassette": "📼",
+    "sunglasses": "🕶️",
+    "peace": "✌️",
+    "lightning": "⚡️",
+    "music": "🎵",
+    "fire": "🔥"
+}
+
+
+def draw_decorative_frame(canvas: Image.Image, style: str) -> Image.Image:
+    if not style or style == "none":
+        return canvas
+    w, h = canvas.size
+    draw = ImageDraw.Draw(canvas)
+
+    if style == "classic_white":
+        bx = int(w * 0.05)
+        bt = int(h * 0.05)
+        bb = int(h * 0.14)
+        draw.rectangle([0, 0, w, bt], fill=(248, 250, 252))
+        draw.rectangle([0, 0, bx, h], fill=(248, 250, 252))
+        draw.rectangle([w - bx, 0, w, h], fill=(248, 250, 252))
+        draw.rectangle([0, h - bb, w, h], fill=(248, 250, 252))
+        draw.rectangle([bx, bt, w - bx, h - bb], outline=(200, 205, 215), width=1)
+    elif style == "obsidian_black":
+        bx = int(w * 0.05)
+        bt = int(h * 0.05)
+        bb = int(h * 0.14)
+        draw.rectangle([0, 0, w, bt], fill=(17, 24, 39))
+        draw.rectangle([0, 0, bx, h], fill=(17, 24, 39))
+        draw.rectangle([w - bx, 0, w, h], fill=(17, 24, 39))
+        draw.rectangle([0, h - bb, w, h], fill=(17, 24, 39))
+        draw.rectangle([bx, bt, w - bx, h - bb], outline=(55, 65, 81), width=1)
+    elif style == "rainbow_gradient":
+        bw = int(min(w, h) * 0.065)
+        colors = [
+            (239, 68, 68),
+            (249, 115, 22),
+            (234, 179, 8),
+            (34, 197, 94),
+            (6, 182, 212),
+            (139, 92, 246),
+            (236, 72, 153),
+        ]
+        n = len(colors)
+        step_x = w // n
+        for idx, col in enumerate(colors):
+            x0 = idx * step_x
+            x1 = w if idx == n - 1 else (idx + 1) * step_x
+            draw.rectangle([x0, 0, x1, bw], fill=col)
+            draw.rectangle([x0, h - bw, x1, h], fill=col)
+        step_y = h // n
+        for idx, col in enumerate(colors):
+            y0 = idx * step_y
+            y1 = h if idx == n - 1 else (idx + 1) * step_y
+            draw.rectangle([0, y0, bw, y1], fill=col)
+            draw.rectangle([w - bw, y0, w, y1], fill=col)
+        draw.rectangle([bw, bw, w - bw, h - bw], outline=(255, 255, 255), width=1)
+    elif style == "sunset_ombre":
+        bw = int(min(w, h) * 0.065)
+        top_col = (244, 63, 94)
+        mid_col = (251, 146, 60)
+        bot_col = (99, 102, 241)
+        for y in range(h):
+            t = y / max(1, h)
+            if t < 0.5:
+                sub_t = t / 0.5
+                c = tuple(int(top_col[i] + sub_t * (mid_col[i] - top_col[i])) for i in range(3))
+            else:
+                sub_t = (t - 0.5) / 0.5
+                c = tuple(int(mid_col[i] + sub_t * (bot_col[i] - mid_col[i])) for i in range(3))
+            draw.line([(0, y), (bw, y)], fill=c)
+            draw.line([(w - bw, y), (w, y)], fill=c)
+        draw.rectangle([0, 0, w, bw], fill=top_col)
+        draw.rectangle([0, h - bw, w, h], fill=bot_col)
+        draw.rectangle([bw, bw, w - bw, h - bw], outline=(255, 255, 255), width=1)
+    elif style == "sprocket_35mm":
+        bw = int(min(w, h) * 0.08)
+        draw.rectangle([0, 0, bw, h], fill=(10, 10, 10))
+        draw.rectangle([w - bw, 0, w, h], fill=(10, 10, 10))
+        hole_w = int(bw * 0.45)
+        hole_h = int(bw * 0.65)
+        step = hole_h + int(bw * 0.4)
+        y = int(bw * 0.3)
+        while y + hole_h < h:
+            x_l = (bw - hole_w) // 2
+            draw.rectangle([x_l, y, x_l + hole_w, y + hole_h], fill=(229, 231, 235))
+            x_r = w - bw + (bw - hole_w) // 2
+            draw.rectangle([x_r, y, x_r + hole_w, y + hole_h], fill=(229, 231, 235))
+            y += step
+    elif style == "gold_metallic":
+        bw = int(min(w, h) * 0.065)
+        draw.rectangle([0, 0, w, bw], fill=(217, 119, 6))
+        draw.rectangle([0, 0, bw, h], fill=(180, 83, 9))
+        draw.rectangle([w - bw, 0, w, h], fill=(254, 240, 138))
+        draw.rectangle([0, h - bw, w, h], fill=(146, 64, 14))
+        draw.rectangle([bw, bw, w - bw, h - bw], outline=(255, 255, 255), width=1)
+    elif style == "rose_gold":
+        bw = int(min(w, h) * 0.065)
+        draw.rectangle([0, 0, w, bw], fill=(251, 113, 133))
+        draw.rectangle([0, 0, bw, h], fill=(159, 18, 57))
+        draw.rectangle([w - bw, 0, w, h], fill=(251, 207, 232))
+        draw.rectangle([0, h - bw, w, h], fill=(136, 19, 55))
+        draw.rectangle([bw, bw, w - bw, h - bw], outline=(255, 255, 255), width=1)
+    elif style == "pastel_pop":
+        bw = int(min(w, h) * 0.065)
+        draw.rectangle([0, 0, w, bw], fill=(186, 230, 253))
+        draw.rectangle([0, 0, bw, h], fill=(251, 207, 232))
+        draw.rectangle([w - bw, 0, w, h], fill=(187, 247, 208))
+        draw.rectangle([0, h - bw, w, h], fill=(254, 240, 138))
+        draw.rectangle([bw, bw, w - bw, h - bw], outline=(255, 255, 255), width=1)
+    elif style == "postage_stamp":
+        bw = int(min(w, h) * 0.05)
+        draw.rectangle([0, 0, w, bw], fill=(254, 254, 254))
+        draw.rectangle([0, 0, bw, h], fill=(254, 254, 254))
+        draw.rectangle([w - bw, 0, w, h], fill=(254, 254, 254))
+        draw.rectangle([0, h - bw, w, h], fill=(254, 254, 254))
+        r = int(bw * 0.45)
+        d = int(r * 2.8)
+        x = d // 2
+        while x < w:
+            draw.ellipse([x - r, -r, x + r, r], fill=(30, 30, 30))
+            draw.ellipse([x - r, h - r, x + r, h + r], fill=(30, 30, 30))
+            x += d
+        y = d // 2
+        while y < h:
+            draw.ellipse([-r, y - r, r, y + r], fill=(30, 30, 30))
+            draw.ellipse([w - r, y - r, w + r, y + r], fill=(30, 30, 30))
+            y += d
+
+    return canvas
+
+
+def draw_sticker_overlay(
+    canvas: Image.Image,
+    sticker: str = "none",
+    sticker_image: Optional[Image.Image] = None,
+    position: str = "bottomRight",
+    scale: float = 0.25,
+    opacity: float = 1.0,
+    rotation: float = 0.0,
+) -> Image.Image:
+    has_custom = sticker_image is not None
+    has_emoji = sticker in STICKER_MAP
+    if not has_custom and not has_emoji:
+        return canvas
+
+    w, h = canvas.size
+    target_dim = max(16, int(min(w, h) * scale))
+    margin = int(min(w, h) * 0.06)
+
+    cx = w - margin - target_dim // 2
+    cy = h - margin - target_dim // 2
+
+    if position == "topLeft":
+        cx = margin + target_dim // 2
+        cy = margin + target_dim // 2
+    elif position == "topRight":
+        cx = w - margin - target_dim // 2
+        cy = margin + target_dim // 2
+    elif position == "bottomLeft":
+        cx = margin + target_dim // 2
+        cy = h - margin - target_dim // 2
+    elif position == "bottomRight":
+        cx = w - margin - target_dim // 2
+        cy = h - margin - target_dim // 2
+    elif position == "center":
+        cx = w // 2
+        cy = h // 2
+    elif position == "topCenter":
+        cx = w // 2
+        cy = margin + target_dim // 2
+    elif position == "bottomCenter":
+        cx = w // 2
+        cy = h - margin - target_dim // 2
+
+    if has_custom:
+        img_rgba = sticker_image.convert("RGBA")
+        aspect = img_rgba.width / max(1, img_rgba.height)
+        if aspect > 1.0:
+            sw = target_dim
+            sh = max(1, int(target_dim / aspect))
+        else:
+            sh = target_dim
+            sw = max(1, int(target_dim * aspect))
+        sticker_elem = img_rgba.resize((sw, sh), Image.LANCZOS)
+    else:
+        emoji_char = STICKER_MAP[sticker]
+        sticker_elem = Image.new("RGBA", (target_dim, target_dim), (0, 0, 0, 0))
+        d_elem = ImageDraw.Draw(sticker_elem)
+        font = None
+        for font_candidate in [
+            "/System/Library/Fonts/Apple Color Emoji.ttc",
+            "C:\\Windows\\Fonts\\seguiemj.ttf",
+            "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf",
+            "/Library/Fonts/Apple Color Emoji.ttc",
+        ]:
+            if os.path.isfile(font_candidate):
+                try:
+                    font = ImageFont.truetype(font_candidate, int(target_dim * 0.75))
+                    break
+                except Exception:
+                    pass
+        if font is None:
+            font = ImageFont.load_default()
+        d_elem.text((target_dim // 2, target_dim // 2), emoji_char, font=font, anchor="mm", fill=(255, 255, 255, 255))
+
+    if opacity < 1.0:
+        r, g, b, a = sticker_elem.split()
+        a = a.point(lambda v: int(v * max(0.05, min(1.0, opacity))))
+        sticker_elem = Image.merge("RGBA", (r, g, b, a))
+
+    if rotation != 0.0:
+        sticker_elem = sticker_elem.rotate(-rotation, expand=True, resample=Image.BICUBIC)
+
+    paste_x = cx - sticker_elem.width // 2
+    paste_y = cy - sticker_elem.height // 2
+    canvas_rgba = canvas.convert("RGBA")
+    canvas_rgba.alpha_composite(sticker_elem, (paste_x, paste_y))
+    return canvas_rgba.convert("RGB")
+
+
 def render_image(
     src_path: str,
     target_width: int = 800,
@@ -880,6 +1128,13 @@ def render_image(
     vintage_date_text: str = "",
     vintage_date_color: str = "amber",
     vintage_date_placement: str = "bottomRight",
+    frame_style: str = "none",
+    sticker: str = "none",
+    sticker_image: Optional[Image.Image] = None,
+    sticker_pos: str = "topRight",
+    sticker_scale: float = 1.0,
+    sticker_opacity: float = 1.0,
+    sticker_rot: float = 0.0,
 ) -> bytes:
     with Image.open(src_path) as raw:
         img = ImageOps.exif_transpose(raw).convert("RGB")
@@ -902,6 +1157,18 @@ def render_image(
         vintage_date_color=vintage_date_color,
         vintage_date_placement=vintage_date_placement,
     )
+    if frame_style and frame_style != "none":
+        canvas = draw_decorative_frame(canvas, frame_style)
+    if (sticker and sticker != "none") or sticker_image is not None:
+        canvas = draw_sticker_overlay(
+            canvas,
+            sticker=sticker,
+            sticker_image=sticker_image,
+            position=sticker_pos,
+            scale=sticker_scale,
+            opacity=sticker_opacity,
+            rotation=sticker_rot,
+        )
     _draw_qr_and_caption(canvas, qr_text=qr_text, caption_text=caption_text)
     return _compress_pil_to_jpeg(canvas, max_bytes=max_bytes)
 
@@ -928,6 +1195,13 @@ def render_collage(
     vintage_date_text: str = "",
     vintage_date_color: str = "amber",
     vintage_date_placement: str = "bottomRight",
+    frame_style: str = "none",
+    sticker: str = "none",
+    sticker_image: Optional[Image.Image] = None,
+    sticker_pos: str = "topRight",
+    sticker_scale: float = 1.0,
+    sticker_opacity: float = 1.0,
+    sticker_rot: float = 0.0,
 ) -> bytes:
     canvas = Image.new("RGB", (target_width, target_height), bg_color)
     W, H = float(target_width), float(target_height)
@@ -999,6 +1273,19 @@ def render_collage(
         vintage_date_color=vintage_date_color,
         vintage_date_placement=vintage_date_placement,
     )
+
+    if frame_style and frame_style != "none":
+        canvas = draw_decorative_frame(canvas, frame_style)
+    if (sticker and sticker != "none") or sticker_image is not None:
+        canvas = draw_sticker_overlay(
+            canvas,
+            sticker=sticker,
+            sticker_image=sticker_image,
+            position=sticker_pos,
+            scale=sticker_scale,
+            opacity=sticker_opacity,
+            rotation=sticker_rot,
+        )
 
     _draw_qr_and_caption(canvas, qr_text=qr_text, caption_text=caption_text)
     return _compress_pil_to_jpeg(canvas, max_bytes=max_bytes)
@@ -1079,6 +1366,13 @@ async def main_cli():
         p.add_argument("--date", default="", help="Vintage LED date stamp text, e.g. \"'98 10 24\"")
         p.add_argument("--date-color", choices=["amber", "red", "green", "white"], default="amber")
         p.add_argument("--date-placement", choices=["bottomRight", "bottomLeft", "topRight", "topLeft"], default="bottomRight")
+        p.add_argument("--frame-style", choices=["none", "classic_white", "obsidian_black", "rainbow_gradient", "sunset_ombre", "sprocket_35mm", "metallic_gold", "rose_gold", "candy_pastel", "postage_stamp"], default="none", help="Decorative film frame style")
+        p.add_argument("--sticker", choices=["none"] + list(STICKER_MAP.keys()), default="none", help="Sticker emoji overlay")
+        p.add_argument("--sticker-image", default="", help="Path to custom image/logo overlay PNG/JPG")
+        p.add_argument("--sticker-pos", choices=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter"], default="topRight")
+        p.add_argument("--sticker-scale", type=float, default=1.0, help="Sticker scale multiplier (0.2 to 2.5)")
+        p.add_argument("--sticker-opacity", type=float, default=1.0, help="Sticker opacity (0.1 to 1.0)")
+        p.add_argument("--sticker-rot", type=float, default=0.0, help="Sticker rotation angle in degrees")
 
     args = parser.parse_args()
 
@@ -1098,6 +1392,26 @@ async def main_cli():
         "vintage_date_color": args.date_color if args.date_color != "amber" else preset_data.get("date_color", "amber"),
         "vintage_date_placement": getattr(args, "date_placement", "bottomRight"),
     }
+
+    sticker_img_obj = None
+    if getattr(args, "sticker_image", None):
+        try:
+            sticker_img_obj = Image.open(args.sticker_image)
+        except Exception as e:
+            print(f"Warning: could not open sticker image '{args.sticker_image}': {e}", file=sys.stderr)
+
+    decorate_kwargs = {
+        "frame_style": getattr(args, "frame_style", "none"),
+        "sticker": getattr(args, "sticker", "none"),
+        "sticker_image": sticker_img_obj,
+        "sticker_pos": getattr(args, "sticker_pos", "topRight"),
+        "sticker_scale": getattr(args, "sticker_scale", 1.0),
+        "sticker_opacity": getattr(args, "sticker_opacity", 1.0),
+        "sticker_rot": getattr(args, "sticker_rot", 0.0),
+    }
+
+    render_kwargs = {**analog_kwargs, **decorate_kwargs}
+
     if hasattr(args, "mode") and "print_mode" in preset_data and args.mode == "rich":
         args.mode = preset_data["print_mode"]
 
@@ -1115,14 +1429,14 @@ async def main_cli():
                 args.images, layout=args.collage, spacing=args.collage_spacing,
                 target_width=w, target_height=h, fit_mode=args.fit, bg_color=bg,
                 qr_text=args.qr, caption_text=args.caption, max_bytes=max_b,
-                **analog_kwargs
+                **render_kwargs
             )
         else:
             data = render_image(
                 args.images[0], target_width=w, target_height=h,
                 fit_mode=args.fit, bg_color=bg, qr_text=args.qr,
                 caption_text=args.caption, max_bytes=max_b,
-                **analog_kwargs
+                **render_kwargs
             )
         with open(args.output, "wb") as f:
             f.write(data)
@@ -1185,7 +1499,7 @@ async def main_cli():
                     args.images, layout=args.collage, spacing=args.collage_spacing,
                     target_width=w, target_height=h, fit_mode=args.fit, bg_color=bg,
                     qr_text=args.qr, caption_text=args.caption, max_bytes=max_b,
-                    **analog_kwargs
+                    **render_kwargs
                 )
                 jobs = [("Collage", jpeg)]
             else:
@@ -1194,7 +1508,7 @@ async def main_cli():
                     jpeg = render_image(
                         p, target_width=w, target_height=h, fit_mode=args.fit,
                         bg_color=bg, qr_text=args.qr, caption_text=args.caption, max_bytes=max_b,
-                        **analog_kwargs
+                        **render_kwargs
                     )
                     jobs.append((p, jpeg))
 

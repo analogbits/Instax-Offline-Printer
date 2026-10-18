@@ -172,6 +172,31 @@ while i < args.count {
     case "--collage-spacing":
         i += 1
         if i < args.count, let sp = Double(args[i]) { collageSpacing = CGFloat(sp) }
+    case "--frame-style":
+        i += 1
+        if i < args.count { imgOptions.frameStyle = args[i] }
+    case "--sticker":
+        i += 1
+        if i < args.count { imgOptions.sticker = args[i] }
+    case "--sticker-image":
+        i += 1
+        if i < args.count {
+            if let customImg = NSImage(contentsOfFile: args[i]) {
+                imgOptions.stickerImage = customImg
+            }
+        }
+    case "--sticker-pos":
+        i += 1
+        if i < args.count { imgOptions.stickerPosition = args[i] }
+    case "--sticker-scale":
+        i += 1
+        if i < args.count, let sc = Double(args[i]) { imgOptions.stickerScale = sc }
+    case "--sticker-opacity":
+        i += 1
+        if i < args.count, let op = Double(args[i]) { imgOptions.stickerOpacity = op }
+    case "--sticker-rot", "--sticker-rotation":
+        i += 1
+        if i < args.count, let rot = Double(args[i]) { imgOptions.stickerRotation = rot }
     default:
         if !arg.hasPrefix("-") {
             inputImagePaths.append(arg)

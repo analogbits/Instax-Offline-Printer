@@ -32,6 +32,7 @@ enum LegacyInspectorTab: String, CaseIterable, Identifiable {
     case filters = "Filters"
     case analogFX = "Analog FX"
     case collage = "Collage"
+    case decorate = "Stickers & Borders"
     case qrAndText = "QR & Text"
 
     var id: String { rawValue }
@@ -42,6 +43,7 @@ enum LegacyInspectorTab: String, CaseIterable, Identifiable {
         case .filters: return "Filters"
         case .analogFX: return "Analog"
         case .collage: return "Collage"
+        case .decorate: return "Stickers"
         case .qrAndText: return "QR/Text"
         }
     }
@@ -746,6 +748,8 @@ struct LegacyMainStudioView: View {
                         analogFXTabView
                     case .collage:
                         collageTabView
+                    case .decorate:
+                        decorateTabView
                     case .qrAndText:
                         qrAndTextTabView
                     }
@@ -1258,6 +1262,220 @@ struct LegacyMainStudioView: View {
                     .background(RoundedRectangle(cornerRadius: 6).fill(Color(NSColor.controlBackgroundColor)))
                 }
             }
+        }
+    }
+
+    // MARK: - Stickers & Decorative Frames Tab View
+
+    private var decorateTabView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("DECORATIVE FILM FRAMES & BORDERS")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.secondary)
+
+            Picker("Frame Style", selection: Binding(
+                get: { vm.options.frameStyle },
+                set: { vm.options.frameStyle = $0; vm.refreshPreview() }
+            )) {
+                Text("None (Full Bleed)").tag("none")
+                Text("⚪ Classic White Film Frame").tag("classic_white")
+                Text("⚫ Obsidian Black Film Frame").tag("obsidian_black")
+                Text("🌈 Rainbow Spectrum Gradient").tag("rainbow_gradient")
+                Text("🌅 Sunset Ombre Fade").tag("sunset_ombre")
+                Text("🎞️ 35mm Vintage Film Sprockets").tag("sprocket_35mm")
+                Text("🪙 Metallic Gold Foil").tag("gold_metallic")
+                Text("✨ Rose Gold Foil").tag("rose_gold")
+                Text("🍬 Pastel Candy Geometric").tag("pastel_pop")
+                Text("✉️ Scalloped Postage Stamp").tag("postage_stamp")
+            }
+            .pickerStyle(.menu)
+
+            Divider()
+
+            Text("STICKER EMBELLISHMENTS")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.secondary)
+
+            Picker("Sticker", selection: Binding(
+                get: { vm.options.sticker },
+                set: { vm.options.sticker = $0; vm.refreshPreview() }
+            )) {
+                Text("None (No Sticker)").tag("none")
+                Divider()
+                Group {
+                    Text("🎉 Party Popper").tag("party_popper")
+                    Text("🎂 Birthday Cake").tag("birthday_cake")
+                    Text("✨ Magic Sparkles").tag("sparkles")
+                    Text("🥂 Cheers Champagne").tag("cheers")
+                    Text("🎈 Party Balloon").tag("balloon")
+                    Text("🎁 Gift Box").tag("gift")
+                }
+                Divider()
+                Group {
+                    Text("📸 Vintage Camera").tag("camera")
+                    Text("✈️ Jet Airplane").tag("airplane")
+                    Text("🌴 Tropical Palm").tag("palm_tree")
+                    Text("⛺️ Camp Tent").tag("tent")
+                    Text("⛰️ Mountain Peak").tag("mountain")
+                    Text("☀️ Radiant Sun").tag("sun")
+                    Text("🌊 Ocean Wave").tag("wave")
+                }
+                Divider()
+                Group {
+                    Text("❤️ Classic Red Heart").tag("heart")
+                    Text("💖 Sparkling Heart").tag("sparkle_heart")
+                    Text("💕 Two Hearts").tag("two_hearts")
+                    Text("💌 Love Letter").tag("love_letter")
+                    Text("🌹 Red Rose").tag("rose")
+                    Text("💐 Flower Bouquet").tag("bouquet")
+                }
+                Divider()
+                Group {
+                    Text("🐾 Paw Prints").tag("paw")
+                    Text("🐶 Cute Doggo").tag("puppy")
+                    Text("🐱 Sweet Kitty").tag("kitten")
+                    Text("🌸 Cherry Blossom").tag("cherry_blossom")
+                    Text("☕️ Warm Coffee").tag("coffee")
+                    Text("🍀 Lucky Clover").tag("four_leaf_clover")
+                }
+                Divider()
+                Group {
+                    Text("📼 Mixtape Cassette").tag("cassette")
+                    Text("🕶️ Cool Sunglasses").tag("sunglasses")
+                    Text("✌️ Peace Sign").tag("peace")
+                    Text("⚡️ Lightning Bolt").tag("lightning")
+                    Text("🎵 Musical Melody").tag("music")
+                    Text("🔥 Lit / Fire").tag("fire")
+                }
+            }
+            .pickerStyle(.menu)
+
+            // Quick Sticker Buttons
+            HStack(spacing: 5) {
+                Button("✨") { vm.options.sticker = "sparkles"; vm.refreshPreview() }
+                Button("❤️") { vm.options.sticker = "heart"; vm.refreshPreview() }
+                Button("📸") { vm.options.sticker = "camera"; vm.refreshPreview() }
+                Button("🎉") { vm.options.sticker = "party_popper"; vm.refreshPreview() }
+                Button("🌴") { vm.options.sticker = "palm_tree"; vm.refreshPreview() }
+                Button("🌸") { vm.options.sticker = "cherry_blossom"; vm.refreshPreview() }
+                Button("☕️") { vm.options.sticker = "coffee"; vm.refreshPreview() }
+                Button("🕶️") { vm.options.sticker = "sunglasses"; vm.refreshPreview() }
+                Spacer()
+                if vm.options.sticker != "none" {
+                    Button("Clear") { vm.options.sticker = "none"; vm.refreshPreview() }
+                        .controlSize(.small)
+                        .foregroundColor(.red)
+                }
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+
+            Divider()
+
+            Text("CUSTOM IMAGE OVERLAY / LOGO")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.secondary)
+
+            HStack {
+                Button("Choose PNG / Image...") {
+                    let panel = NSOpenPanel()
+                    panel.allowedContentTypes = [.image, .png, .jpeg]
+                    panel.allowsMultipleSelection = false
+                    if panel.runModal() == .OK, let url = panel.url {
+                        if let img = NSImage(contentsOf: url) {
+                            vm.options.stickerImage = img
+                            vm.refreshPreview()
+                        }
+                    }
+                }
+                .controlSize(.small)
+
+                if vm.options.stickerImage != nil {
+                    Button("Remove") {
+                        vm.options.stickerImage = nil
+                        vm.refreshPreview()
+                    }
+                    .controlSize(.small)
+                    .foregroundColor(.red)
+                }
+            }
+
+            Divider()
+
+            Text("STICKER TRANSFORM & POSITION")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.secondary)
+
+            Picker("Position", selection: Binding(
+                get: { vm.options.stickerPosition },
+                set: { vm.options.stickerPosition = $0; vm.refreshPreview() }
+            )) {
+                Text("Bottom-Right Corner").tag("bottomRight")
+                Text("Bottom-Left Corner").tag("bottomLeft")
+                Text("Top-Right Corner").tag("topRight")
+                Text("Top-Left Corner").tag("topLeft")
+                Text("Center").tag("center")
+                Text("Bottom-Center").tag("bottomCenter")
+                Text("Top-Center").tag("topCenter")
+            }
+            .pickerStyle(.menu)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Size")
+                        .font(.caption)
+                    Spacer()
+                    Text("\(Int(vm.options.stickerScale * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.stickerScale },
+                    set: { vm.options.stickerScale = $0; vm.refreshPreview() }
+                ), in: 0.10...0.60, step: 0.05)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Opacity")
+                        .font(.caption)
+                    Spacer()
+                    Text("\(Int(vm.options.stickerOpacity * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.stickerOpacity },
+                    set: { vm.options.stickerOpacity = $0; vm.refreshPreview() }
+                ), in: 0.10...1.0, step: 0.05)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Rotation")
+                        .font(.caption)
+                    Spacer()
+                    Text("\(Int(vm.options.stickerRotation))°")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.stickerRotation },
+                    set: { vm.options.stickerRotation = $0; vm.refreshPreview() }
+                ), in: -45.0...45.0, step: 5.0)
+            }
+
+            Button("Reset Stickers & Borders") {
+                vm.options.frameStyle = "none"
+                vm.options.sticker = "none"
+                vm.options.stickerImage = nil
+                vm.options.stickerPosition = "bottomRight"
+                vm.options.stickerScale = 0.25
+                vm.options.stickerOpacity = 1.0
+                vm.options.stickerRotation = 0.0
+                vm.refreshPreview()
+            }
+            .controlSize(.small)
         }
     }
 

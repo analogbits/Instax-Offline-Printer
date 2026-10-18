@@ -204,6 +204,7 @@
   /* Right: Inspector Tabs & Controls */
   .tabs-nav {
     display: flex;
+    flex-wrap: wrap;
     gap: 4px;
     background: #15151a;
     padding: 3px;
@@ -211,13 +212,16 @@
     margin-bottom: 12px;
   }
   .tab-btn {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 55px;
     background: transparent;
     color: var(--muted);
     font-size: 11px;
     padding: 6px 4px;
     border-radius: 4px;
     border: none;
+    white-space: nowrap;
+    text-align: center;
   }
   .tab-btn.active {
     background: var(--accent);
@@ -404,6 +408,7 @@
         <button class="tab-btn" id="tabFilterBtn" onclick="showTab('filter')">Filters</button>
         <button class="tab-btn" id="tabAnalogBtn" onclick="showTab('analog')">Analog FX</button>
         <button class="tab-btn" id="tabCollageBtn" onclick="showTab('collage')">Collage</button>
+        <button class="tab-btn" id="tabDecorateBtn" onclick="showTab('decorate')">✨ Stickers &amp; Frames</button>
         <button class="tab-btn" id="tabQRBtn" onclick="showTab('qr')">QR &amp; Text</button>
       </div>
 
@@ -636,6 +641,135 @@
         <button class="secondary" style="width:100%; justify-content:center;" onclick="actionClearCollage()">Clear Slots</button>
       </div>
 
+      <!-- Tab: Stickers & Frames -->
+      <div id="tabDecorateContent" style="display:none;">
+        <!-- 1. Decorative Film Border / Frame -->
+        <div class="control-group">
+          <label><span style="font-weight: 600; color: #a78bfa;">🖼️ Decorative Film Frame</span></label>
+          <select id="frameStyleSelect" onchange="renderCanvas()">
+            <option value="none" selected>None (Full Bleed Exposure)</option>
+            <option value="classic_white">⚪ Classic White Film Frame</option>
+            <option value="obsidian_black">⚫ Obsidian Black Film Frame</option>
+            <option value="rainbow_gradient">🌈 Rainbow Spectrum Gradient</option>
+            <option value="sunset_ombre">🌅 Sunset Ombre Fade</option>
+            <option value="sprocket_35mm">🎞️ 35mm Vintage Film Sprockets</option>
+            <option value="gold_metallic">🪙 Metallic Gold Foil</option>
+            <option value="rose_gold">✨ Rose Gold Foil</option>
+            <option value="pastel_pop">🍬 Pastel Candy Geometric</option>
+            <option value="postage_stamp">✉️ Scalloped Postage Stamp</option>
+          </select>
+        </div>
+
+        <!-- 2. Stickers & Embellishments -->
+        <div class="control-group" style="margin-top: 14px;">
+          <label><span style="font-weight: 600; color: #a78bfa;">🎨 Sticker Embellishment</span></label>
+          <select id="stickerSelect" onchange="onStickerSelectChange()">
+            <option value="none" selected>None (No Sticker)</option>
+            <optgroup label="── 🎉 Party &amp; Celebration ──">
+              <option value="party_popper">🎉 Party Popper</option>
+              <option value="birthday_cake">🎂 Birthday Cake</option>
+              <option value="sparkles">✨ Magic Sparkles</option>
+              <option value="cheers">🥂 Cheers Champagne</option>
+              <option value="balloon">🎈 Party Balloon</option>
+              <option value="gift">🎁 Gift Box</option>
+            </optgroup>
+            <optgroup label="── 🌴 Travel &amp; Adventure ──">
+              <option value="camera">📸 Vintage Camera</option>
+              <option value="airplane">✈️ Jet Airplane</option>
+              <option value="palm_tree">🌴 Tropical Palm</option>
+              <option value="tent">⛺️ Camp Tent</option>
+              <option value="mountain">⛰️ Mountain Peak</option>
+              <option value="sun">☀️ Radiant Sun</option>
+              <option value="wave">🌊 Ocean Wave</option>
+            </optgroup>
+            <optgroup label="── ❤️ Love &amp; Romance ──">
+              <option value="heart">❤️ Classic Red Heart</option>
+              <option value="sparkle_heart">💖 Sparkling Heart</option>
+              <option value="two_hearts">💕 Two Hearts</option>
+              <option value="love_letter">💌 Love Letter</option>
+              <option value="rose">🌹 Red Rose</option>
+              <option value="bouquet">💐 Flower Bouquet</option>
+            </optgroup>
+            <optgroup label="── 🐾 Cute &amp; Nature ──">
+              <option value="paw">🐾 Paw Prints</option>
+              <option value="puppy">🐶 Cute Doggo</option>
+              <option value="kitten">🐱 Sweet Kitty</option>
+              <option value="cherry_blossom">🌸 Cherry Blossom</option>
+              <option value="coffee">☕️ Warm Coffee</option>
+              <option value="four_leaf_clover">🍀 Lucky Clover</option>
+            </optgroup>
+            <optgroup label="── 📼 Retro &amp; Vibe ──">
+              <option value="cassette">📼 Mixtape Cassette</option>
+              <option value="sunglasses">🕶️ Cool Sunglasses</option>
+              <option value="peace">✌️ Peace Sign</option>
+              <option value="lightning">⚡️ Lightning Bolt</option>
+              <option value="music">🎵 Musical Melody</option>
+              <option value="fire">🔥 Lit / Fire</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Quick Sticker Palette -->
+        <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 12px;">
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('sparkles')">✨</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('heart')">❤️</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('camera')">📸</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('party_popper')">🎉</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('palm_tree')">🌴</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('cherry_blossom')">🌸</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('coffee')">☕️</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 15px;" onclick="setQuickSticker('sunglasses')">🕶️</button>
+          <button type="button" class="secondary" style="padding: 4px 7px; font-size: 11px;" onclick="setQuickSticker('none')">✕ Clear</button>
+        </div>
+
+        <!-- Custom Image Overlay ("Other Images") -->
+        <div style="background: rgba(167, 139, 250, 0.08); border: 1px dashed rgba(167, 139, 250, 0.35); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+          <div style="font-size: 12px; font-weight: 600; color: #c4b5fd; margin-bottom: 6px;">🖼️ Custom Overlay Image / Logo</div>
+          <input type="file" id="customStickerInput" accept="image/*" style="display: none;" onchange="onCustomStickerSelected(event)">
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="secondary" style="flex: 1; padding: 6px 10px; font-size: 12px;" onclick="document.getElementById('customStickerInput').click()">📁 Choose Image / PNG...</button>
+            <button type="button" id="btnRemoveCustomSticker" class="secondary" style="display: none; padding: 6px 10px; font-size: 12px; color: #f87171;" onclick="clearCustomSticker()">✕ Clear</button>
+          </div>
+          <div id="customStickerNameLabel" style="font-size: 11px; color: #9ca3af; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+        </div>
+
+        <!-- Sticker Position -->
+        <div class="control-group">
+          <label><span>Sticker Position</span></label>
+          <select id="stickerPosSelect" onchange="renderCanvas()">
+            <option value="bottomRight" selected>Bottom-Right Corner</option>
+            <option value="bottomLeft">Bottom-Left Corner</option>
+            <option value="topRight">Top-Right Corner</option>
+            <option value="topLeft">Top-Left Corner</option>
+            <option value="center">Center</option>
+            <option value="bottomCenter">Bottom-Center</option>
+            <option value="topCenter">Top-Center</option>
+          </select>
+        </div>
+
+        <!-- Sticker Size -->
+        <div class="control-group">
+          <label><span>Sticker Size</span><span id="valStickerScale">25%</span></label>
+          <input type="range" id="sliderStickerScale" min="0.10" max="0.60" step="0.05" value="0.25" oninput="renderCanvas()">
+        </div>
+
+        <!-- Sticker Opacity -->
+        <div class="control-group">
+          <label><span>Sticker Opacity</span><span id="valStickerOpacity">100%</span></label>
+          <input type="range" id="sliderStickerOpacity" min="0.10" max="1.0" step="0.05" value="1.0" oninput="renderCanvas()">
+        </div>
+
+        <!-- Sticker Rotation -->
+        <div class="control-group">
+          <label><span>Sticker Rotation</span><span id="valStickerRotation">0°</span></label>
+          <input type="range" id="sliderStickerRotation" min="-45" max="45" step="5" value="0" oninput="renderCanvas()">
+        </div>
+
+        <div style="margin-top: 8px;">
+          <button type="button" class="secondary" style="width: 100%; padding: 6px; font-size: 11px;" onclick="resetDecorations()">↺ Reset Stickers &amp; Borders</button>
+        </div>
+      </div>
+
       <!-- Tab 4: QR & Text -->
       <div id="tabQRContent" style="display:none;">
         <div class="control-group">
@@ -790,7 +924,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   }
 
   function showTab(name) {
-    ['framing', 'filter', 'analog', 'collage', 'qr'].forEach(t => {
+    ['framing', 'filter', 'analog', 'collage', 'decorate', 'qr'].forEach(t => {
       const contentId = (t === 'qr') ? 'tabQRContent' : `tab${capitalize(t)}Content`;
       const btnId = (t === 'qr') ? 'tabQRBtn' : `tab${capitalize(t)}Btn`;
       const contentEl = document.getElementById(contentId);
@@ -1867,6 +2001,324 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     targetCtx.restore();
   }
 
+  // -------------------------------------------------------------
+  // Decorative Film Frames & Stickers Engine
+  // -------------------------------------------------------------
+  const STICKER_MAP = {
+    party_popper: '🎉',
+    birthday_cake: '🎂',
+    sparkles: '✨',
+    cheers: '🥂',
+    balloon: '🎈',
+    gift: '🎁',
+    camera: '📸',
+    airplane: '✈️',
+    palm_tree: '🌴',
+    tent: '⛺️',
+    mountain: '⛰️',
+    sun: '☀️',
+    wave: '🌊',
+    heart: '❤️',
+    sparkle_heart: '💖',
+    two_hearts: '💕',
+    love_letter: '💌',
+    rose: '🌹',
+    bouquet: '💐',
+    paw: '🐾',
+    puppy: '🐶',
+    kitten: '🐱',
+    cherry_blossom: '🌸',
+    coffee: '☕️',
+    four_leaf_clover: '🍀',
+    cassette: '📼',
+    sunglasses: '🕶️',
+    peace: '✌️',
+    lightning: '⚡️',
+    music: '🎵',
+    fire: '🔥'
+  };
+
+  let customStickerImage = null;
+
+  function onCustomStickerSelected(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        customStickerImage = img;
+        const label = document.getElementById('customStickerNameLabel');
+        if (label) label.textContent = `Attached: ${file.name}`;
+        const btnRemove = document.getElementById('btnRemoveCustomSticker');
+        if (btnRemove) btnRemove.style.display = 'inline-block';
+        renderCanvas();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearCustomSticker() {
+    customStickerImage = null;
+    const input = document.getElementById('customStickerInput');
+    if (input) input.value = '';
+    const label = document.getElementById('customStickerNameLabel');
+    if (label) label.textContent = '';
+    const btnRemove = document.getElementById('btnRemoveCustomSticker');
+    if (btnRemove) btnRemove.style.display = 'none';
+    renderCanvas();
+  }
+
+  function setQuickSticker(stickerKey) {
+    const sel = document.getElementById('stickerSelect');
+    if (sel) sel.value = stickerKey;
+    renderCanvas();
+  }
+
+  function onStickerSelectChange() {
+    renderCanvas();
+  }
+
+  function resetDecorations() {
+    const frameSel = document.getElementById('frameStyleSelect');
+    if (frameSel) frameSel.value = 'none';
+    const stickSel = document.getElementById('stickerSelect');
+    if (stickSel) stickSel.value = 'none';
+    const posSel = document.getElementById('stickerPosSelect');
+    if (posSel) posSel.value = 'bottomRight';
+    const scaleSlider = document.getElementById('sliderStickerScale');
+    if (scaleSlider) scaleSlider.value = '0.25';
+    const opSlider = document.getElementById('sliderStickerOpacity');
+    if (opSlider) opSlider.value = '1.0';
+    const rotSlider = document.getElementById('sliderStickerRotation');
+    if (rotSlider) rotSlider.value = '0';
+    clearCustomSticker();
+    renderCanvas();
+  }
+
+  function drawDecorativeFrame(targetCtx, w, h, style) {
+    if (!style || style === 'none') return;
+    targetCtx.save();
+
+    if (style === 'classic_white') {
+      const borderX = Math.round(w * 0.05);
+      const borderTop = Math.round(h * 0.05);
+      const borderBottom = Math.round(h * 0.14);
+      targetCtx.fillStyle = '#f8fafc';
+      targetCtx.fillRect(0, 0, w, borderTop);
+      targetCtx.fillRect(0, 0, borderX, h);
+      targetCtx.fillRect(w - borderX, 0, borderX, h);
+      targetCtx.fillRect(0, h - borderBottom, w, borderBottom);
+      targetCtx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.strokeRect(borderX, borderTop, w - 2 * borderX, h - borderTop - borderBottom);
+    } else if (style === 'obsidian_black') {
+      const borderX = Math.round(w * 0.05);
+      const borderTop = Math.round(h * 0.05);
+      const borderBottom = Math.round(h * 0.14);
+      targetCtx.fillStyle = '#111827';
+      targetCtx.fillRect(0, 0, w, borderTop);
+      targetCtx.fillRect(0, 0, borderX, h);
+      targetCtx.fillRect(w - borderX, 0, borderX, h);
+      targetCtx.fillRect(0, h - borderBottom, w, borderBottom);
+      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      targetCtx.lineWidth = 1;
+      targetCtx.strokeRect(borderX, borderTop, w - 2 * borderX, h - borderTop - borderBottom);
+    } else if (style === 'rainbow_gradient') {
+      const bw = Math.round(Math.min(w, h) * 0.065);
+      const grad = targetCtx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, '#ef4444');
+      grad.addColorStop(0.18, '#f97316');
+      grad.addColorStop(0.36, '#eab308');
+      grad.addColorStop(0.54, '#22c55e');
+      grad.addColorStop(0.72, '#06b6d4');
+      grad.addColorStop(0.90, '#8b5cf6');
+      grad.addColorStop(1, '#ec4899');
+      targetCtx.fillStyle = grad;
+      targetCtx.fillRect(0, 0, w, bw);
+      targetCtx.fillRect(0, 0, bw, h);
+      targetCtx.fillRect(w - bw, 0, bw, h);
+      targetCtx.fillRect(0, h - bw, w, bw);
+      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.strokeRect(bw, bw, w - 2 * bw, h - 2 * bw);
+    } else if (style === 'sunset_ombre') {
+      const bw = Math.round(Math.min(w, h) * 0.065);
+      const grad = targetCtx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, '#f43f5e');
+      grad.addColorStop(0.5, '#fb923c');
+      grad.addColorStop(1, '#6366f1');
+      targetCtx.fillStyle = grad;
+      targetCtx.fillRect(0, 0, w, bw);
+      targetCtx.fillRect(0, 0, bw, h);
+      targetCtx.fillRect(w - bw, 0, bw, h);
+      targetCtx.fillRect(0, h - bw, w, bw);
+      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.strokeRect(bw, bw, w - 2 * bw, h - 2 * bw);
+    } else if (style === 'sprocket_35mm') {
+      const bw = Math.round(Math.min(w, h) * 0.08);
+      targetCtx.fillStyle = '#0a0a0a';
+      targetCtx.fillRect(0, 0, bw, h);
+      targetCtx.fillRect(w - bw, 0, bw, h);
+      const holeW = Math.round(bw * 0.45);
+      const holeH = Math.round(bw * 0.65);
+      const step = holeH + Math.round(bw * 0.4);
+      const startY = Math.round(bw * 0.3);
+      targetCtx.fillStyle = '#e5e7eb';
+      for (let y = startY; y + holeH < h; y += step) {
+        if (targetCtx.roundRect) {
+          targetCtx.beginPath(); targetCtx.roundRect((bw - holeW) / 2, y, holeW, holeH, 3); targetCtx.fill();
+          targetCtx.beginPath(); targetCtx.roundRect(w - bw + (bw - holeW) / 2, y, holeW, holeH, 3); targetCtx.fill();
+        } else {
+          targetCtx.fillRect((bw - holeW) / 2, y, holeW, holeH);
+          targetCtx.fillRect(w - bw + (bw - holeW) / 2, y, holeW, holeH);
+        }
+      }
+    } else if (style === 'gold_metallic') {
+      const bw = Math.round(Math.min(w, h) * 0.065);
+      const grad = targetCtx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, '#b45309');
+      grad.addColorStop(0.3, '#fef08a');
+      grad.addColorStop(0.6, '#d97706');
+      grad.addColorStop(0.85, '#fef9c3');
+      grad.addColorStop(1, '#92400e');
+      targetCtx.fillStyle = grad;
+      targetCtx.fillRect(0, 0, w, bw);
+      targetCtx.fillRect(0, 0, bw, h);
+      targetCtx.fillRect(w - bw, 0, bw, h);
+      targetCtx.fillRect(0, h - bw, w, bw);
+      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.strokeRect(bw, bw, w - 2 * bw, h - 2 * bw);
+    } else if (style === 'rose_gold') {
+      const bw = Math.round(Math.min(w, h) * 0.065);
+      const grad = targetCtx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, '#9f1239');
+      grad.addColorStop(0.3, '#fbcfe8');
+      grad.addColorStop(0.65, '#fb7185');
+      grad.addColorStop(0.9, '#fce7f3');
+      grad.addColorStop(1, '#881337');
+      targetCtx.fillStyle = grad;
+      targetCtx.fillRect(0, 0, w, bw);
+      targetCtx.fillRect(0, 0, bw, h);
+      targetCtx.fillRect(w - bw, 0, bw, h);
+      targetCtx.fillRect(0, h - bw, w, bw);
+      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.strokeRect(bw, bw, w - 2 * bw, h - 2 * bw);
+    } else if (style === 'pastel_pop') {
+      const bw = Math.round(Math.min(w, h) * 0.065);
+      targetCtx.fillStyle = '#bae6fd';
+      targetCtx.fillRect(0, 0, w, bw);
+      targetCtx.fillStyle = '#fbcfe8';
+      targetCtx.fillRect(0, 0, bw, h);
+      targetCtx.fillStyle = '#bbf7d0';
+      targetCtx.fillRect(w - bw, 0, bw, h);
+      targetCtx.fillStyle = '#fef08a';
+      targetCtx.fillRect(0, h - bw, w, bw);
+      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.strokeRect(bw, bw, w - 2 * bw, h - 2 * bw);
+    } else if (style === 'postage_stamp') {
+      const bw = Math.round(Math.min(w, h) * 0.05);
+      targetCtx.fillStyle = '#fefefe';
+      targetCtx.fillRect(0, 0, w, bw);
+      targetCtx.fillRect(0, 0, bw, h);
+      targetCtx.fillRect(w - bw, 0, bw, h);
+      targetCtx.fillRect(0, h - bw, w, bw);
+      targetCtx.fillStyle = '#1e1e1e';
+      const r = Math.round(bw * 0.45);
+      const d = r * 2.8;
+      for (let x = d / 2; x < w; x += d) {
+        targetCtx.beginPath(); targetCtx.arc(x, 0, r, 0, Math.PI); targetCtx.fill();
+        targetCtx.beginPath(); targetCtx.arc(x, h, r, Math.PI, 0); targetCtx.fill();
+      }
+      for (let y = d / 2; y < h; y += d) {
+        targetCtx.beginPath(); targetCtx.arc(0, y, r, -Math.PI / 2, Math.PI / 2); targetCtx.fill();
+        targetCtx.beginPath(); targetCtx.arc(w, y, r, Math.PI / 2, 3 * Math.PI / 2); targetCtx.fill();
+      }
+    }
+    targetCtx.restore();
+  }
+
+  function drawStickerOverlay(targetCtx, w, h) {
+    const stickerType = document.getElementById('stickerSelect')?.value || 'none';
+    const hasCustomImg = !!customStickerImage;
+    if (stickerType === 'none' && !hasCustomImg) return;
+
+    const pos = document.getElementById('stickerPosSelect')?.value || 'bottomRight';
+    const scale = parseFloat(document.getElementById('sliderStickerScale')?.value || 0.25);
+    const opacity = parseFloat(document.getElementById('sliderStickerOpacity')?.value || 1.0);
+    const rotationDeg = parseFloat(document.getElementById('sliderStickerRotation')?.value || 0.0);
+
+    const targetDim = Math.min(w, h) * scale;
+    const margin = Math.round(Math.min(w, h) * 0.06);
+
+    let cx = w - margin - targetDim / 2;
+    let cy = h - margin - targetDim / 2;
+
+    switch (pos) {
+      case 'topLeft':
+        cx = margin + targetDim / 2;
+        cy = margin + targetDim / 2;
+        break;
+      case 'topRight':
+        cx = w - margin - targetDim / 2;
+        cy = margin + targetDim / 2;
+        break;
+      case 'bottomLeft':
+        cx = margin + targetDim / 2;
+        cy = h - margin - targetDim / 2;
+        break;
+      case 'bottomRight':
+        cx = w - margin - targetDim / 2;
+        cy = h - margin - targetDim / 2;
+        break;
+      case 'center':
+        cx = w / 2;
+        cy = h / 2;
+        break;
+      case 'topCenter':
+        cx = w / 2;
+        cy = margin + targetDim / 2;
+        break;
+      case 'bottomCenter':
+        cx = w / 2;
+        cy = h - margin - targetDim / 2;
+        break;
+    }
+
+    targetCtx.save();
+    targetCtx.globalAlpha = Math.max(0.05, Math.min(1.0, opacity));
+    targetCtx.translate(cx, cy);
+    if (rotationDeg !== 0) {
+      targetCtx.rotate((rotationDeg * Math.PI) / 180);
+    }
+
+    if (hasCustomImg) {
+      const aspect = customStickerImage.naturalWidth / customStickerImage.naturalHeight;
+      let sw = targetDim;
+      let sh = targetDim;
+      if (aspect > 1) {
+        sh = targetDim / aspect;
+      } else {
+        sw = targetDim * aspect;
+      }
+      targetCtx.drawImage(customStickerImage, -sw / 2, -sh / 2, sw, sh);
+    } else if (STICKER_MAP[stickerType]) {
+      const emoji = STICKER_MAP[stickerType];
+      const fontSize = Math.round(targetDim * 0.85);
+      targetCtx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(emoji, 0, 0);
+    }
+
+    targetCtx.restore();
+  }
+
   function renderCanvas() {
     const m = document.getElementById('modelSelect').value;
     const spec = MODELS[m];
@@ -1918,6 +2370,22 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     if (valGrainEl) valGrainEl.textContent = `${Math.round(filmGrain * 100)}%`;
     const valWearEl = document.getElementById('valAnalogWear');
     if (valWearEl) valWearEl.textContent = `${Math.round(analogWear * 100)}%`;
+
+    const valStickerScaleEl = document.getElementById('valStickerScale');
+    if (valStickerScaleEl) {
+      const scale = parseFloat(document.getElementById('sliderStickerScale')?.value || 0.25);
+      valStickerScaleEl.textContent = `${Math.round(scale * 100)}%`;
+    }
+    const valStickerOpacityEl = document.getElementById('valStickerOpacity');
+    if (valStickerOpacityEl) {
+      const op = parseFloat(document.getElementById('sliderStickerOpacity')?.value || 1.0);
+      valStickerOpacityEl.textContent = `${Math.round(op * 100)}%`;
+    }
+    const valStickerRotEl = document.getElementById('valStickerRotation');
+    if (valStickerRotEl) {
+      const rot = parseFloat(document.getElementById('sliderStickerRotation')?.value || 0.0);
+      valStickerRotEl.textContent = `${rot > 0 ? '+' : ''}${Math.round(rot)}°`;
+    }
 
     // Canvas background
     ctx.fillStyle = (fit === 'fit') ? bgColor : '#ffffff';
@@ -2000,6 +2468,13 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     if (showDateStamp) {
       drawVintageDateStamp(ctx, 0, 0, canvas.width, canvas.height, dateText, dateColor, datePlacement);
     }
+
+    // Decorative Film Border / Frame
+    const frameStyle = document.getElementById('frameStyleSelect')?.value || 'none';
+    drawDecorativeFrame(ctx, canvas.width, canvas.height, frameStyle);
+
+    // Sticker or Custom Image Overlay
+    drawStickerOverlay(ctx, canvas.width, canvas.height);
 
     // Bottom caption & date
     const cap = document.getElementById('captionText').value.trim();
