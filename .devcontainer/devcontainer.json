@@ -10,7 +10,7 @@
   "portsAttributes": {
     "6080": {
       "label": "🖥️ Linux & Windows Web Desktop (noVNC)",
-      "onAutoForward": "openBrowser"
+      "onAutoForward": "openPreview"
     },
     "8089": {
       "label": "🎞️ Legacy Instax Wi-Fi Bridge",
