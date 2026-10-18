@@ -265,6 +265,7 @@
       <div class="toolbar">
         <input type="file" id="fileInput" accept="image/*" style="display: none;">
         <button class="secondary" onclick="document.getElementById('fileInput').click()">📁 Add Photo...</button>
+        <button class="secondary" onclick="actionTestCard()" title="Generate instant test card to preview filters and framing">✨ Test Card</button>
         <button class="secondary" onclick="actionRotate(-90)">↺ Rotate 90°</button>
         <button class="secondary" onclick="actionRotate(90)">Rotate 90° ↻</button>
         <button class="secondary" onclick="actionReset()">Reset Framing</button>
@@ -524,6 +525,10 @@ function actionRotate(deg) {
 
 function actionReset() {
   currentRotation = 0;
+  if (loadedImage) {
+    delete loadedImage._filteredCanvas;
+    delete loadedImage._filteredCacheKey;
+  }
   document.getElementById('sliderZoom').value = 1.0;
   document.getElementById('sliderPanX').value = 0.0;
   document.getElementById('sliderPanY').value = 0.0;
@@ -532,6 +537,40 @@ function actionReset() {
   document.getElementById('sliderSat').value = 1.0;
   document.getElementById('filterPresetSelect').value = "none";
   renderCanvas();
+}
+
+function actionTestCard() {
+  const off = document.createElement('canvas');
+  off.width = canvas.width;
+  off.height = canvas.height;
+  const gctx = off.getContext('2d');
+  const grad = gctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  grad.addColorStop(0, '#1e3a5f');
+  grad.addColorStop(0.55, '#d96b43');
+  grad.addColorStop(1, '#f4c96b');
+  gctx.fillStyle = grad;
+  gctx.fillRect(0, 0, canvas.width, canvas.height);
+  gctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  gctx.lineWidth = 4;
+  gctx.beginPath();
+  gctx.arc(canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.32, 0, Math.PI * 2);
+  gctx.stroke();
+  gctx.fillStyle = '#fff';
+  gctx.textAlign = 'center';
+  gctx.font = 'bold 36px sans-serif';
+  const m = document.getElementById('modelSelect').value;
+  gctx.fillText(`INSTAX ${m.toUpperCase()} TEST CARD`, canvas.width / 2, canvas.height / 2 - 10);
+  gctx.font = '18px monospace';
+  gctx.fillText(`${canvas.width} × ${canvas.height} px • Web Bluetooth`, canvas.width / 2, canvas.height / 2 + 25);
+  const img = new Image();
+  img.onload = () => {
+    loadedImage = img;
+    renderCanvas();
+    if (writeChar || bridgeActive || bridgeConnected) {
+      document.getElementById('btnPrint').disabled = false;
+    }
+  };
+  img.src = off.toDataURL('image/jpeg', 0.92);
 }
 
 // Canvas Drag-to-Pan (Mouse + iPhone/iPad Touch)
@@ -602,6 +641,182 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
+// Universal Cross-Browser Canvas Filter Engine (Hardware-Accelerated + Software Pixel Fallback for iOS/Bluefy/WebKit)
+let _supportsNativeFilter = null;
+function checkNativeFilterSupport() {
+  if (_supportsNativeFilter !== null) return _supportsNativeFilter;
+  try {
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || 
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isBluefy = /Bluefy/i.test(navigator.userAgent) || (typeof window !== 'undefined' && window.bluefy !== undefined);
+
+    // Bluefy / WKWebView on iOS notoriously ignores CanvasRenderingContext2D filter compositing
+    if (isBluefy || isIOS) {
+      _supportsNativeFilter = false;
+      return false;
+    }
+
+    const c = document.createElement('canvas');
+    c.width = 4;
+    c.height = 4;
+    const tCtx = c.getContext('2d');
+    if (!tCtx || typeof tCtx.filter === 'undefined') {
+      _supportsNativeFilter = false;
+      return false;
+    }
+    tCtx.fillStyle = '#000000';
+    tCtx.fillRect(0, 0, 4, 4);
+    tCtx.filter = 'invert(100%)';
+    tCtx.drawImage(c, 0, 0);
+    const p = tCtx.getImageData(0, 0, 1, 1).data;
+    // Native filter must actually invert pixels (0 -> ~255)
+    _supportsNativeFilter = (p[0] > 180);
+  } catch (e) {
+    _supportsNativeFilter = false;
+  }
+  return _supportsNativeFilter;
+}
+
+function applySoftwareFilters(pixels, opts) {
+  const data = pixels.data;
+  const len = data.length;
+
+  let totalBright = 1.0 + (opts.bright || 0.0);
+  let totalContrast = (opts.contrast !== undefined) ? opts.contrast : 1.0;
+  let totalSat = (opts.sat !== undefined) ? opts.sat : 1.0;
+  let sepiaK = 0.0;
+  let isMono = false;
+  let coolShift = false;
+
+  // Film Mode Emulation
+  if (opts.printMode === 'rich') {
+    totalSat *= 1.18;
+    totalContrast *= 1.08;
+  } else if (opts.printMode === 'natural') {
+    sepiaK = Math.max(sepiaK, 0.10);
+    totalContrast *= 0.98;
+    totalBright *= 1.02;
+  }
+
+  // Artistic Filter Presets
+  const f = opts.filter || 'none';
+  if (f === 'mono') {
+    isMono = true;
+    totalContrast *= 1.15;
+  } else if (f === 'sepia') {
+    sepiaK = Math.max(sepiaK, 0.80);
+    totalContrast *= 1.05;
+  } else if (f === 'vintage') {
+    sepiaK = Math.max(sepiaK, 0.35);
+    totalContrast *= 0.90;
+    totalBright *= 1.05;
+    totalSat *= 0.85;
+  } else if (f === 'cool') {
+    coolShift = true;
+    totalSat *= 0.75;
+    totalContrast *= 0.95;
+  } else if (f === 'vivid') {
+    totalSat *= 1.50;
+    totalContrast *= 1.15;
+  } else if (f === 'fuji') {
+    totalContrast *= 1.10;
+    totalSat *= 1.20;
+    totalBright *= 1.02;
+  } else if (f === 'warm') {
+    sepiaK = Math.max(sepiaK, 0.30);
+    totalSat *= 1.20;
+  }
+
+  const isNoop = (Math.abs(totalBright - 1.0) < 0.005) &&
+                 (Math.abs(totalContrast - 1.0) < 0.005) &&
+                 (Math.abs(totalSat - 1.0) < 0.005) &&
+                 (sepiaK === 0.0) && !isMono && !coolShift;
+  if (isNoop) return;
+
+  // Precomputed 256-entry lookup table for Brightness + Contrast (Uint8ClampedArray clamps automatically)
+  const lut = new Uint8ClampedArray(256);
+  for (let i = 0; i < 256; i++) {
+    lut[i] = (i * totalBright - 128) * totalContrast + 128;
+  }
+
+  const doSepia = sepiaK > 0.001;
+
+  for (let i = 0; i < len; i += 4) {
+    let r = lut[data[i]];
+    let g = lut[data[i + 1]];
+    let b = lut[data[i + 2]];
+
+    if (isMono) {
+      let gray = (r * 54 + g * 183 + b * 19) >> 8;
+      r = g = b = gray;
+    } else {
+      if (coolShift) {
+        r = r * 0.92;
+        g = g * 0.96 + 4;
+        b = b * 1.10 + 15;
+      }
+
+      if (doSepia) {
+        let sr = 0.393 * r + 0.769 * g + 0.189 * b;
+        let sg = 0.349 * r + 0.686 * g + 0.168 * b;
+        let sb = 0.272 * r + 0.534 * g + 0.131 * b;
+        r = r + (sr - r) * sepiaK;
+        g = g + (sg - g) * sepiaK;
+        b = b + (sb - b) * sepiaK;
+      }
+
+      if (Math.abs(totalSat - 1.0) > 0.01) {
+        let gray = (r * 54 + g * 183 + b * 19) >> 8;
+        r = gray + (r - gray) * totalSat;
+        g = gray + (g - gray) * totalSat;
+        b = gray + (b - gray) * totalSat;
+      }
+    }
+
+    data[i]     = r;
+    data[i + 1] = g;
+    data[i + 2] = b;
+  }
+}
+
+function getFilteredSource(img, opts) {
+  if (checkNativeFilterSupport()) return img;
+
+  const key = `${opts.printMode || ''}_${opts.filter || ''}_${(opts.bright || 0).toFixed(2)}_${(opts.contrast !== undefined ? opts.contrast : 1).toFixed(2)}_${(opts.sat !== undefined ? opts.sat : 1).toFixed(2)}`;
+  if (img._filteredCanvas && img._filteredCacheKey === key) {
+    return img._filteredCanvas;
+  }
+
+  if (!img._filteredCanvas) {
+    img._filteredCanvas = document.createElement('canvas');
+  }
+
+  let w = img.naturalWidth || img.width;
+  let h = img.naturalHeight || img.height;
+  const maxDim = 1800;
+  if (w > maxDim || h > maxDim) {
+    if (w > h) {
+      h = Math.round((h * maxDim) / w);
+      w = maxDim;
+    } else {
+      w = Math.round((w * maxDim) / h);
+      h = maxDim;
+    }
+  }
+
+  img._filteredCanvas.width = w;
+  img._filteredCanvas.height = h;
+  const offCtx = img._filteredCanvas.getContext('2d', { willReadFrequently: true });
+  offCtx.drawImage(img, 0, 0, w, h);
+
+  const imgData = offCtx.getImageData(0, 0, w, h);
+  applySoftwareFilters(imgData, opts);
+  offCtx.putImageData(imgData, 0, 0);
+
+  img._filteredCacheKey = key;
+  return img._filteredCanvas;
+}
+
 // Canvas Rendering Pipeline (Framing + Film Mode + Artistic Filters)
 function renderCanvas() {
   const zoom = parseFloat(document.getElementById('sliderZoom').value);
@@ -662,15 +877,24 @@ function renderCanvas() {
 
   // 3. User Adjustments
   filterStr += `brightness(${(1.0 + bright) * 100}%) contrast(${contrast * 100}%) saturate(${sat * 100}%)`;
-  ctx.filter = filterStr.trim();
+
+  const useNative = checkNativeFilterSupport();
+  const sourceImg = useNative ? loadedImage : getFilteredSource(loadedImage, { printMode, filter, bright, contrast, sat });
+  if (useNative) {
+    ctx.filter = filterStr.trim();
+  } else {
+    ctx.filter = 'none';
+  }
 
   // Draw image
   ctx.save();
   ctx.translate(canvas.width / 2, canvas.height / 2);
   ctx.rotate((currentRotation * Math.PI) / 180);
 
-  const imgW = (currentRotation % 180 === 0) ? loadedImage.naturalWidth : loadedImage.naturalHeight;
-  const imgH = (currentRotation % 180 === 0) ? loadedImage.naturalHeight : loadedImage.naturalWidth;
+  const naturalW = sourceImg.naturalWidth || sourceImg.width;
+  const naturalH = sourceImg.naturalHeight || sourceImg.height;
+  const imgW = (currentRotation % 180 === 0) ? naturalW : naturalH;
+  const imgH = (currentRotation % 180 === 0) ? naturalH : naturalW;
   const canvasAspect = canvas.width / canvas.height;
   const imgAspect = imgW / imgH;
 
@@ -699,7 +923,7 @@ function renderCanvas() {
   const offsetX = panX * (canvas.width / 2);
   const offsetY = panY * (canvas.height / 2);
 
-  ctx.drawImage(loadedImage, -drawW / 2 + offsetX, -drawH / 2 + offsetY, drawW, drawH);
+  ctx.drawImage(sourceImg, -drawW / 2 + offsetX, -drawH / 2 + offsetY, drawW, drawH);
   ctx.restore();
   ctx.filter = 'none'; // reset
 
