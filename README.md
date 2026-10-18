@@ -3,7 +3,7 @@
 
 [![Try BLE Web App Online](https://img.shields.io/badge/BLE_Web_App-Mini_%7C_SQUARE_%7C_WIDE-3b82f6?style=for-the-badge&logo=googlechrome&logoColor=white)](https://analogbits.github.io/Instax-Offline-Printer/)
 [![Try Legacy Wi-Fi Web App](https://img.shields.io/badge/Legacy_Web_App-SHARE_SP--1_%7C_SP--2_%7C_SP--3-10b981?style=for-the-badge&logo=wifi&logoColor=white)](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)
-[![Download Offline Suite](https://img.shields.io/badge/Download-Offline_Suite_(.zip)-22c55e?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/analogbits/Instax-Offline-Printer/releases/latest)
+[![Download Universal Offline Suite](https://img.shields.io/badge/Download-Universal_Offline_Suite_(.zip)-22c55e?style=for-the-badge&logo=github&logoColor=white)](https://github.com/analogbits/Instax-Offline-Printer/releases/latest)
 [![Software Documentation & Runbook](https://img.shields.io/badge/Documentation-Comprehensive_Runbook-8b5cf6?style=for-the-badge&logo=readthedocs&logoColor=white)](DOCUMENTATION.md)
 [![Code Walkthrough](https://img.shields.io/badge/Code_Walkthrough-Annotated_Guide-06b6d4?style=for-the-badge&logo=github&logoColor=white)](CODE_WALKTHROUGH.md)
 
