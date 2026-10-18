@@ -30,6 +30,7 @@ final class LegacyAppDelegate: NSObject, NSApplicationDelegate {
 enum LegacyInspectorTab: String, CaseIterable, Identifiable {
     case framing = "Framing"
     case filters = "Filters"
+    case analogFX = "Analog FX"
     case collage = "Collage"
     case qrAndText = "QR & Text"
 
@@ -71,6 +72,39 @@ final class LegacyStudioViewModel: ObservableObject {
             previewImage = result.nsImage
             renderedCGImage = result.cgImage
         }
+    }
+
+    func resetAnalogFX() {
+        options.warmth = 0.0
+        options.vignette = 0.0
+        options.lightLeak = "none"
+        options.leakPlacement = "auto"
+        options.leakIntensity = 0.70
+        options.filmGrain = 0.0
+        options.analogWear = 0.0
+        options.showVintageDate = false
+        options.vintageDateText = ""
+        options.vintageDateColor = "amber"
+        options.vintageDatePlacement = "bottomRight"
+        refreshPreview()
+    }
+
+    func surpriseMeAnalogFX() {
+        options.warmth = Double(Int.random(in: -30...60)) / 100.0
+        options.vignette = Double(Int.random(in: 25...75)) / 100.0
+        let leaks = ["none", "burn", "sunburst", "sunset", "rainbow"]
+        options.lightLeak = leaks.randomElement() ?? "burn"
+        let placements = ["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"]
+        options.leakPlacement = placements.randomElement() ?? "auto"
+        options.leakIntensity = Double(Int.random(in: 45...90)) / 100.0
+        options.filmGrain = Double(Int.random(in: 15...55)) / 100.0
+        options.analogWear = Double(Int.random(in: 10...45)) / 100.0
+        options.showVintageDate = true
+        let colors = ["amber", "red", "green", "white"]
+        options.vintageDateColor = colors.randomElement() ?? "amber"
+        let datePlacements = ["bottomRight", "bottomLeft", "topRight", "topLeft"]
+        options.vintageDatePlacement = datePlacements.randomElement() ?? "bottomRight"
+        refreshPreview()
     }
 
     static func makeSampleTestCard(for model: LegacyPrinterModel) -> NSImage {
@@ -645,6 +679,8 @@ struct LegacyMainStudioView: View {
                         framingTabView
                     case .filters:
                         filtersTabView
+                    case .analogFX:
+                        analogFXTabView
                     case .collage:
                         collageTabView
                     case .qrAndText:
@@ -811,6 +847,184 @@ struct LegacyMainStudioView: View {
                 vm.refreshPreview()
             }
             .controlSize(.small)
+        }
+    }
+
+    private var analogFXTabView: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("ANALOG CREATIVE FX")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.secondary)
+
+            // Warmth
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Analog Warmth Dial")
+                    Spacer()
+                    Text(
+                        vm.options.warmth > 0 ? String(format: "+%.2f (Amber)", vm.options.warmth) :
+                        vm.options.warmth < 0 ? String(format: "%.2f (Cool)", vm.options.warmth) : "0.00 (Neutral)"
+                    )
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.warmth },
+                    set: { vm.options.warmth = $0; vm.refreshPreview() }
+                ), in: -1.0...1.0)
+            }
+
+            // Vignette
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Lens Vignette Falloff")
+                    Spacer()
+                    Text("\(Int(vm.options.vignette * 100))%")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.vignette },
+                    set: { vm.options.vignette = $0; vm.refreshPreview() }
+                ), in: 0.0...1.0)
+            }
+
+            Divider()
+
+            // Light Leaks
+            Text("ANALOG LIGHT LEAKS")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.secondary)
+
+            Picker("Leak Type", selection: Binding(
+                get: { vm.options.lightLeak },
+                set: { vm.options.lightLeak = $0; vm.refreshPreview() }
+            )) {
+                Text("None").tag("none")
+                Text("🔥 Film Burn (Golden Red)").tag("burn")
+                Text("☀️ Sunburst Flare (Amber)").tag("sunburst")
+                Text("🌅 Sunset Glow (Magenta)").tag("sunset")
+                Text("🌈 Rainbow Prism").tag("rainbow")
+            }
+
+            if vm.options.lightLeak != "none" {
+                Picker("Placement", selection: Binding(
+                    get: { vm.options.leakPlacement },
+                    set: { vm.options.leakPlacement = $0; vm.refreshPreview() }
+                )) {
+                    Text("🎲 Auto (Organic)").tag("auto")
+                    Text("Left Edge").tag("left")
+                    Text("Right Edge").tag("right")
+                    Text("Top Right Corner").tag("topRight")
+                    Text("Top Left Corner").tag("topLeft")
+                    Text("Bottom Left Streak").tag("bottomLeft")
+                    Text("Bottom Right Corner").tag("bottomRight")
+                    Text("Diagonal Across").tag("diagonal")
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Leak Intensity")
+                        Spacer()
+                        Text("\(Int(vm.options.leakIntensity * 100))%")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Slider(value: Binding(
+                        get: { vm.options.leakIntensity },
+                        set: { vm.options.leakIntensity = $0; vm.refreshPreview() }
+                    ), in: 0.1...1.0)
+                }
+            }
+
+            Divider()
+
+            // Grain & Wear
+            Text("HALIDE GRAIN & WEAR")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.secondary)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Silver Halide Grain")
+                    Spacer()
+                    Text("\(Int(vm.options.filmGrain * 100))%")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.filmGrain },
+                    set: { vm.options.filmGrain = $0; vm.refreshPreview() }
+                ), in: 0.0...1.0)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Scratches, Dust & Wear")
+                    Spacer()
+                    Text("\(Int(vm.options.analogWear * 100))%")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: Binding(
+                    get: { vm.options.analogWear },
+                    set: { vm.options.analogWear = $0; vm.refreshPreview() }
+                ), in: 0.0...1.0)
+            }
+
+            Divider()
+
+            // Vintage LED Date Stamp
+            Text("VINTAGE LED DATE STAMP")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.secondary)
+
+            Toggle("Enable LED Date Stamp", isOn: Binding(
+                get: { vm.options.showVintageDate },
+                set: { vm.options.showVintageDate = $0; vm.refreshPreview() }
+            ))
+
+            if vm.options.showVintageDate {
+                TextField("Date Text (Empty = Today ''YY MM DD)", text: Binding(
+                    get: { vm.options.vintageDateText },
+                    set: { vm.options.vintageDateText = $0; vm.refreshPreview() }
+                ))
+                .textFieldStyle(.roundedBorder)
+
+                Picker("LED Color", selection: Binding(
+                    get: { vm.options.vintageDateColor },
+                    set: { vm.options.vintageDateColor = $0; vm.refreshPreview() }
+                )) {
+                    Text("🟠 Amber Gold").tag("amber")
+                    Text("🔴 Retro Red").tag("red")
+                    Text("🟢 Matrix Green").tag("green")
+                    Text("⚪ Cool White").tag("white")
+                }
+
+                Picker("Placement", selection: Binding(
+                    get: { vm.options.vintageDatePlacement },
+                    set: { vm.options.vintageDatePlacement = $0; vm.refreshPreview() }
+                )) {
+                    Text("Bottom Right").tag("bottomRight")
+                    Text("Bottom Left").tag("bottomLeft")
+                    Text("Top Right").tag("topRight")
+                    Text("Top Left").tag("topLeft")
+                }
+            }
+
+            HStack {
+                Button("🎲 Surprise Me!") {
+                    vm.surpriseMeAnalogFX()
+                }
+                .controlSize(.small)
+
+                Spacer()
+
+                Button("Reset Analog FX") {
+                    vm.resetAnalogFX()
+                }
+                .controlSize(.small)
+            }
         }
     }
 

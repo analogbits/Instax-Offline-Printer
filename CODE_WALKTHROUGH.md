@@ -1,6 +1,6 @@
 # 🔬 Instax Offline Printer Suite — Code Walkthrough & Developer Reference Manual
 **Annotated Source Code Explainer, Protocol Math & Algorithmic Deep-Dive**  
-*Document Version: 1.6.2 • Standard: Literate / Elucidative Code Specification • Target Release: v1.6.2*
+*Document Version: 1.7.0 • Standard: Literate / Elucidative Code Specification • Target Release: v1.7.0*
 
 ---
 
@@ -12,6 +12,7 @@
    - 2.3 [Packet Parsing & Asynchronous Response Stream](#23-packet-parsing--asynchronous-response-stream)
    - 2.4 [Image Chunking & 0-Film Dry-Run Transmission Loop](#24-image-chunking--0-film-dry-run-transmission-loop)
    - 2.5 [CLI Syntax & Command Reference](#25-cli-syntax--command-reference)
+   - 2.6 [Pure-PIL Analog Creative FX Pipeline](#26-pure-pil-analog-creative-fx-pipeline)
 3. [`legacy_instax_printer.py` — Wi-Fi Direct Engine Deep-Dive](#3-legacy_instax_printerpy--wi-fi-direct-engine-deep-dive)
    - 3.1 [TCP Port 8080 Protocol Architecture](#31-tcp-port-8080-protocol-architecture)
    - 3.2 [Binary Header, PIN Authentication & XOR Checksum](#32-binary-header-pin-authentication--xor-checksum)
@@ -26,10 +27,12 @@
    - 5.1 [HTML5 Canvas 2D Transform & Letterbox Engine](#51-html5-canvas-2d-transform--letterbox-engine)
    - 5.2 [Software Color Science & Film Simulation Curves](#52-software-color-science--film-simulation-curves)
    - 5.3 [Embedded 100% Offline Reed-Solomon QR Generator](#53-embedded-100-offline-reed-solomon-qr-generator)
-   - 5.4 [Web Bluetooth API (`navigator.bluetooth`) Engine](#54-web-bluetooth-api-navigatorbluetooth-engine)
+   - 5.4 [Analog Creative FX & Film Emulation Engine (HTML5 Canvas)](#54-analog-creative-fx--film-emulation-engine-ported-from-polaroidengine)
+   - 5.5 [Web Bluetooth API (`navigator.bluetooth`) Engine](#55-web-bluetooth-api-navigatorbluetooth-engine)
 6. [`test_suite.py` & `test_gui.py` — Automated Verification](#6-test_suitepy--test_guipy--automated-verification)
    - 6.1 [Protocol Integrity & Planar Encoding Verification (`test_suite.py`)](#61-protocol-integrity--planar-encoding-verification-test_suitepy)
    - 6.2 [Interactive Robot GUI Automation (`test_gui.py`)](#62-interactive-robot-gui-automation-test_guipy)
+7. [macOS Native Swift CoreGraphics Analog FX Engine](#7-macos-native-swift-coregraphics-analog-fx-engine)
 
 ---
 
@@ -236,7 +239,44 @@ python3 instax_printer.py print img1.jpg img2.jpg img3.jpg img4.jpg --model squa
 
 # Launch local Wi-Fi Bluetooth Bridge server for iPhone Safari
 python3 instax_printer.py serve --port 8765
+
+# Print with Analog Creative FX (warmth, light leaks, film grain, LED date stamp)
+python3 instax_printer.py print photo.jpg --model wide --warmth 0.35 --vignette 0.4 --light-leak burn --grain 0.25 --date "'98 10 24"
 ```
+
+---
+
+### 2.6 Pure-PIL Analog Creative FX Pipeline
+
+The cross-platform Python desktop engine (`instax_printer.py`) implements a zero-dependency Pillow/PIL pipeline with mathematical equivalence to the Web Studio's HTML5 Canvas compositing:
+
+```python
+def apply_analog_fx(
+    canvas: Image.Image,
+    warmth: float = 0.0,
+    vignette: float = 0.0,
+    light_leak: str = "none",
+    leak_placement: str = "auto",
+    leak_intensity: float = 0.70,
+    film_grain: float = 0.0,
+    analog_wear: float = 0.0,
+    show_vintage_date: bool = False,
+    vintage_date_text: str = "",
+    vintage_date_color: str = "amber",
+    vintage_date_placement: str = "bottomRight",
+) -> Image.Image:
+    # 1. Warmth color shift using PIL Image.blend
+    # 2. Radial lens vignette falloff with ImageChops.multiply
+    # 3. Light leak gradient synthesis (burn, sunburst, sunset, rainbow) via ImageChops.screen
+    # 4. Procedural silver halide grain via ImageChops.overlay
+    # 5. Deterministic wear, dust motes & scratches with seeded LCG PRNG
+    # 6. Vintage LED glow date stamp with multi-pass diffused stroke rendering
+```
+
+#### Mathematical & Algorithmic Notes:
+1. **Light Leak Screen Blending**: `ImageChops.screen(A, B)` implements $1 - (1 - A)(1 - B)$, ensuring that optical intrusions illuminate shadows and midtones organically without clipping highlights.
+2. **Deterministic Seed Stability**: The pseudo-random generator uses an exact linear congruential generator seed ($S_{n+1} = (1103515245 \cdot S_n + 12345) \pmod{2^{31}}$) so that dust motes and scratches remain locked in place as the user adjusts intensity sliders.
+3. **Diffused LED Glow**: Simulates photographic light blooming in darkroom emulsions by rendering concentric outer offsets ($dx, dy \in [-2..2]$) at reduced alpha before printing the crisp core digital numerals.
 
 ---
 
@@ -705,6 +745,44 @@ async function connectBluetooth() {
     # Simulate 0-Film Dry Run click
     app.action_dry_run()
 ```
+
+---
+
+## 7. macOS Native Swift CoreGraphics Analog FX Engine
+
+In the macOS native Swift desktop applications (`InstaxSquareCore.swift` and `LegacyInstaxCore.swift`), Analog Creative FX are implemented natively using Apple's high-performance `CoreGraphics` and `Accelerate` frameworks:
+
+```swift
+// Lens Vignette via CoreGraphics Radial Shading
+static func drawLensVignette(in ctx: CGContext, rect: CGRect, intensity: Double) {
+    guard intensity > 0.01 else { return }
+    let colors = [
+        NSColor(white: 0.0, alpha: 0.0).cgColor,
+        NSColor(white: 0.0, alpha: CGFloat(intensity * 0.85)).cgColor
+    ] as CFArray
+    let colorSpace = CGColorSpaceCreateDeviceRGB()
+    guard let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0.0, 1.0]) else { return }
+    let center = CGPoint(x: rect.midX, y: rect.midY)
+    let radius = hypot(rect.width, rect.height) / 2.0
+    ctx.drawRadialGradient(gradient, startCenter: center, startRadius: radius * 0.2,
+                           endCenter: center, endRadius: radius, options: .drawsAfterEndLocation)
+}
+
+// Optical Light Leaks via Screen Blend Mode
+static func drawLightLeakEffect(in ctx: CGContext, rect: CGRect, type: String, placement: String, intensity: Double, seed: Int) {
+    guard type != "none" && intensity > 0.01 else { return }
+    ctx.saveGState()
+    ctx.setBlendMode(.screen)
+    ctx.setAlpha(CGFloat(intensity))
+    // Render multi-stop axial or radial gradients matching the chosen leak palette (burn, sunburst, sunset, rainbow)
+    ctx.restoreGState()
+}
+```
+
+#### macOS Architectural Highlights:
+1. **Hardware-Accelerated Compositing**: CoreGraphics renders directly on macOS Quartz compositor with metal backends, ensuring instantaneous 60 FPS previews even when scrubbing sliders.
+2. **Strict Paper Boundary Letterboxing**: When letterboxing rectangular images on square or wide film, all analog effects, wear, grain, and leaks are clipped strictly to the active photo rect (`ctx.clip(to: drawRect)`), keeping pristine white or black film borders completely untouched.
+3. **Typography & Glow Simulation**: Date stamps utilize `CTFont` / `NSFont.monospacedDigitSystemFont` with `ctx.setShadow(offset: .zero, blur: 6.0, color: glowColor)` for authentic 1990s LED display reproduction.
 
 ---
 

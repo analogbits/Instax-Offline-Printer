@@ -1,6 +1,6 @@
 # 📘 Instax Offline Printer Suite — Comprehensive Software Documentation & Runbook
 **Universal 100% Offline Printing for macOS, Windows, Linux, Web, and iOS**  
-*Document Version: 1.6.2 • Standard: ISO/IEC/IEEE 26511 Software Documentation Specification • Repository Release: v1.6.2*
+*Document Version: 1.7.0 • Standard: ISO/IEC/IEEE 26511 Software Documentation Specification • Repository Release: v1.7.0*
 
 > 🔬 **Developer Notice**: For line-by-line annotated source code breakdowns, reverse-engineered protocol math, and function-level explanations, see the companion document:  
 > 👉 **[Code Walkthrough & Developer Reference Manual (`CODE_WALKTHROUGH.md`)](CODE_WALKTHROUGH.md)**
@@ -362,14 +362,27 @@ python3 instax_printer.py [COMMAND] [OPTIONS] [IMAGE_PATH]
 print        # Print photo to physical printer
 status       # Query printer battery level and film count
 serve        # Launch Local Wi-Fi Bluetooth Bridge server
+preview      # Render local JPEG preview without printer hardware
 
-# Flags:
+# Image Framing & Geometry Flags:
 --model      # 'square' (default), 'wide', or 'mini'
 --fit        # 'crop' (fill), 'fit' (letterbox border), or 'stretch'
 --rotate     # Rotation angle: 0, 90, 180, or 270 degrees
 --dry-run    # 0-Film Dry Run verification mode (tests data flow without printing)
 --port       # Port for bridge server (default: 8765)
 --host       # Host binding for bridge server (default: 0.0.0.0)
+
+# Analog Creative FX Flags (Zero External Dependencies):
+--warmth           # Temperature shift from -1.0 (Cool Blue) to +1.0 (Golden Amber)
+--vignette         # Lens optical edge shadow falloff (0.0 to 1.0)
+--light-leak       # Leak type: 'none', 'burn', 'sunburst', 'sunset', 'rainbow'
+--leak-placement   # 'auto', 'left', 'right', 'topRight', 'topLeft', 'bottomLeft', 'bottomRight', 'diagonal'
+--leak-intensity   # Leak blending opacity (0.0 to 1.0, default: 0.70)
+--grain            # Silver halide procedural crystal grain (0.0 to 1.0)
+--wear             # Deterministic dust, fibers, and emulsion roller wear (0.0 to 1.0)
+--date             # Retro 90s LED date stamp string (e.g. "'98 10 24")
+--date-color       # LED color: 'amber', 'red', 'green', or 'white'
+--date-placement   # Corner position: 'bottomRight', 'bottomLeft', 'topRight', 'topLeft'
 ```
 
 #### Legacy Wi-Fi Direct CLI (`legacy_instax_printer.py`)

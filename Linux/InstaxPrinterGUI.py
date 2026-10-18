@@ -16,9 +16,9 @@ from PIL import Image, ImageTk, ImageOps, ImageEnhance
 
 # Import core engine
 try:
-    from instax_printer import InstaxBLE, render_image, DEFAULT_DEVICE_NAME
+    from instax_printer import InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx
 except ImportError:
-    from .instax_printer import InstaxBLE, render_image, DEFAULT_DEVICE_NAME
+    from .instax_printer import InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx
 
 class InstaxDesktopApp(tk.Tk):
     def __init__(self):
@@ -72,6 +72,19 @@ class InstaxDesktopApp(tk.Tk):
         self.contrast = tk.DoubleVar(value=1.0)
         self.saturation = tk.DoubleVar(value=1.0)
         self.filter_preset = tk.StringVar(value="none")
+
+        # Analog Creative FX State (Ported from PolaroidEngine)
+        self.warmth = tk.DoubleVar(value=0.0)
+        self.vignette = tk.DoubleVar(value=0.0)
+        self.light_leak = tk.StringVar(value="none")
+        self.leak_placement = tk.StringVar(value="auto")
+        self.leak_intensity = tk.DoubleVar(value=0.70)
+        self.film_grain = tk.DoubleVar(value=0.0)
+        self.analog_wear = tk.DoubleVar(value=0.0)
+        self.show_vintage_date = tk.BooleanVar(value=False)
+        self.vintage_date_text = tk.StringVar(value="")
+        self.vintage_date_color = tk.StringVar(value="amber")
+        self.vintage_date_placement = tk.StringVar(value="bottomRight")
 
         # Drag tracking
         self.drag_start_x = 0
@@ -230,7 +243,52 @@ class InstaxDesktopApp(tk.Tk):
         ttk.Label(tab_color, text="Saturation:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(8, 2))
         ttk.Scale(tab_color, from_=0.0, to=2.0, variable=self.saturation, command=lambda e: self.update_preview()).pack(fill=tk.X)
 
-        # Tab 3: Protocol Debug
+        # Tab 3: Analog FX
+        tab_analog = ttk.Frame(sidebar, padding=12)
+        sidebar.add(tab_analog, text="Analog FX")
+
+        ttk.Label(tab_analog, text="Warmth Dial (-1.0 to +1.0):", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(0, 2))
+        ttk.Scale(tab_analog, from_=-1.0, to=1.0, variable=self.warmth, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        ttk.Label(tab_analog, text="Lens Vignette Falloff:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(8, 2))
+        ttk.Scale(tab_analog, from_=0.0, to=1.0, variable=self.vignette, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        ttk.Label(tab_analog, text="Light Leak Type:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(8, 2))
+        cb_leak = ttk.Combobox(tab_analog, textvariable=self.light_leak, values=["none", "burn", "sunburst", "sunset", "rainbow"], state="readonly")
+        cb_leak.bind("<<ComboboxSelected>>", lambda e: self.update_preview())
+        cb_leak.pack(fill=tk.X)
+
+        ttk.Label(tab_analog, text="Leak Placement:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(6, 2))
+        cb_place = ttk.Combobox(tab_analog, textvariable=self.leak_placement, values=["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"], state="readonly")
+        cb_place.bind("<<ComboboxSelected>>", lambda e: self.update_preview())
+        cb_place.pack(fill=tk.X)
+
+        ttk.Label(tab_analog, text="Leak Intensity:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(6, 2))
+        ttk.Scale(tab_analog, from_=0.1, to=1.0, variable=self.leak_intensity, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        ttk.Label(tab_analog, text="Silver Halide Grain:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(8, 2))
+        ttk.Scale(tab_analog, from_=0.0, to=1.0, variable=self.film_grain, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        ttk.Label(tab_analog, text="Analog Wear & Dust:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(8, 2))
+        ttk.Scale(tab_analog, from_=0.0, to=1.0, variable=self.analog_wear, command=lambda e: self.update_preview()).pack(fill=tk.X)
+
+        ttk.Checkbutton(tab_analog, text="Glowing LED Date Stamp", variable=self.show_vintage_date, command=self.update_preview).pack(anchor=tk.W, pady=(10, 4))
+        date_sub = ttk.Frame(tab_analog)
+        date_sub.pack(fill=tk.X)
+        ttk.Label(date_sub, text="Text:").pack(side=tk.LEFT)
+        e_date = ttk.Entry(date_sub, textvariable=self.vintage_date_text, width=12)
+        e_date.bind("<KeyRelease>", lambda e: self.update_preview())
+        e_date.pack(side=tk.LEFT, padx=4)
+        cb_date_c = ttk.Combobox(date_sub, textvariable=self.vintage_date_color, values=["amber", "red", "green", "white"], width=7, state="readonly")
+        cb_date_c.bind("<<ComboboxSelected>>", lambda e: self.update_preview())
+        cb_date_c.pack(side=tk.LEFT, padx=2)
+
+        fx_btns = ttk.Frame(tab_analog)
+        fx_btns.pack(fill=tk.X, pady=(12, 0))
+        ttk.Button(fx_btns, text="🎲 Surprise Me!", command=self.action_surprise_me_analog_fx).pack(side=tk.LEFT)
+        ttk.Button(fx_btns, text="Reset FX", command=self.action_reset_analog_fx).pack(side=tk.RIGHT)
+
+        # Tab 4: Protocol Debug
         tab_debug = ttk.Frame(sidebar, padding=8)
         sidebar.add(tab_debug, text="Debug Log")
 
@@ -316,20 +374,39 @@ class InstaxDesktopApp(tk.Tk):
         self.filter_preset.set("none")
         self.update_preview()
 
-    def update_preview(self):
-        if not self.source_image:
-            return
+    def action_reset_analog_fx(self):
+        self.warmth.set(0.0)
+        self.vignette.set(0.0)
+        self.light_leak.set("none")
+        self.leak_placement.set("auto")
+        self.leak_intensity.set(0.70)
+        self.film_grain.set(0.0)
+        self.analog_wear.set(0.0)
+        self.show_vintage_date.set(False)
+        self.vintage_date_text.set("")
+        self.vintage_date_color.set("amber")
+        self.vintage_date_placement.set("bottomRight")
+        self.update_preview()
 
-        cfg = self.model_configs.get(self.selected_model.get(), self.model_configs["SQUARE"])
-        target_w = cfg["width"]
-        target_h = cfg["height"]
+    def action_surprise_me_analog_fx(self):
+        import random
+        self.warmth.set(round(random.uniform(-0.3, 0.6), 2))
+        self.vignette.set(round(random.uniform(0.25, 0.75), 2))
+        self.light_leak.set(random.choice(["none", "burn", "sunburst", "sunset", "rainbow"]))
+        self.leak_placement.set(random.choice(["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"]))
+        self.leak_intensity.set(round(random.uniform(0.45, 0.90), 2))
+        self.film_grain.set(round(random.uniform(0.15, 0.55), 2))
+        self.analog_wear.set(round(random.uniform(0.10, 0.45), 2))
+        self.show_vintage_date.set(True)
+        self.vintage_date_color.set(random.choice(["amber", "red", "green", "white"]))
+        self.vintage_date_placement.set(random.choice(["bottomRight", "bottomLeft", "topRight", "topLeft"]))
+        self.update_preview()
 
-        # Render PIL image
-        img = self.source_image.copy()
+    def _render_full_canvas(self, source_img: Image.Image, target_w: int, target_h: int) -> Image.Image:
+        img = source_img.copy()
         if self.rotation.get() != 0:
             img = img.rotate(-self.rotation.get(), expand=True, resample=Image.BICUBIC)
 
-        # Filters
         if self.filter_preset.get() == "monochrome":
             img = ImageOps.grayscale(img).convert("RGB")
         elif self.filter_preset.get() == "sepia":
@@ -349,7 +426,6 @@ class InstaxDesktopApp(tk.Tk):
             enh = ImageEnhance.Color(img)
             img = enh.enhance(self.saturation.get())
 
-        # Fit Mode
         mode = self.fit_mode.get()
         hex_c = self.bg_color.lstrip("#")
         bg_rgb = tuple(int(hex_c[i:i+2], 16) for i in (0, 2, 4))
@@ -383,6 +459,34 @@ class InstaxDesktopApp(tk.Tk):
         x = (target_w - w) // 2 + int(self.pan_x.get() * (target_w / 2))
         y = (target_h - h) // 2 + int(self.pan_y.get() * (target_h / 2))
         canvas.paste(sc, (x, y))
+
+        # Apply Analog Creative FX (PolaroidEngine)
+        canvas = apply_analog_fx(
+            canvas,
+            photo_box=(x, y, w, h) if mode == "fit" else (0, 0, target_w, target_h),
+            warmth=self.warmth.get(),
+            vignette=self.vignette.get(),
+            light_leak=self.light_leak.get(),
+            leak_placement=self.leak_placement.get(),
+            leak_intensity=self.leak_intensity.get(),
+            film_grain=self.film_grain.get(),
+            analog_wear=self.analog_wear.get(),
+            show_vintage_date=self.show_vintage_date.get(),
+            vintage_date_text=self.vintage_date_text.get(),
+            vintage_date_color=self.vintage_date_color.get(),
+            vintage_date_placement=self.vintage_date_placement.get(),
+        )
+        return canvas
+
+    def update_preview(self):
+        if not self.source_image:
+            return
+
+        cfg = self.model_configs.get(self.selected_model.get(), self.model_configs["SQUARE"])
+        target_w = cfg["width"]
+        target_h = cfg["height"]
+
+        canvas = self._render_full_canvas(self.source_image, target_w, target_h)
 
         # Scale down to canvas preview
         cw = cfg["preview_w"]
@@ -575,13 +679,10 @@ class InstaxDesktopApp(tk.Tk):
                 for n, itm in enumerate(items):
                     self.after(0, lambda n=n: self.lbl_status.config(text=f"Printing {n+1}/{len(items)}: '{itm['name']}'..."))
 
-                    # Generate JPEG
-                    # Render using current settings
-                    img = itm["image"]
+                    # Render using full pipeline including Analog FX
+                    rendered_canvas = self._render_full_canvas(itm["image"], target_w=w, target_h=h)
                     buf = io.BytesIO()
-                    # Resizing
-                    resized = img.resize((w, h), Image.LANCZOS)
-                    resized.save(buf, format="JPEG", quality=90, progressive=False)
+                    rendered_canvas.save(buf, format="JPEG", quality=90, progressive=False)
                     jpeg_bytes = buf.getvalue()
 
                     def progress(stage, pct):

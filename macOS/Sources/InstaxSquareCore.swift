@@ -337,6 +337,19 @@ public struct InstaxImageOptions {
         set { qrCodeStyle = newValue }
     }
 
+    // Analog Creative FX (Ported from PolaroidEngine)
+    public var warmth: Double = 0.0          // [-1.0, 1.0] Cool Blue to Golden Amber
+    public var vignette: Double = 0.0        // [0.0, 1.0] Radial lens falloff
+    public var lightLeak: String = "none"    // "none", "burn", "sunburst", "sunset", "rainbow"
+    public var leakPlacement: String = "auto" // "auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"
+    public var leakIntensity: Double = 0.70  // [0.1, 1.0]
+    public var filmGrain: Double = 0.0       // [0.0, 1.0] Silver halide crystal noise
+    public var analogWear: Double = 0.0      // [0.0, 1.0] Dust, hair fibers, scratches & roller spread
+    public var showVintageDate: Bool = false
+    public var vintageDateText: String = ""  // Custom or auto "'YY MM DD"
+    public var vintageDateColor: String = "amber" // "amber", "red", "green", "white"
+    public var vintageDatePlacement: String = "bottomRight" // "bottomRight", "bottomLeft", "topRight", "topLeft"
+
     public init() {}
 }
 
@@ -655,6 +668,17 @@ public enum InstaxImageRenderer {
 
         ctx.draw(processedCG, in: drawRect)
 
+        // Analog Creative FX Pipeline (Ported from PolaroidEngine)
+        let fxRect: CGRect = (options.fitMode == .fit) ? drawRect : CGRect(x: 0, y: 0, width: dstW, height: dstH)
+        applyAnalogWarmth(ctx: ctx, rect: fxRect, warmth: options.warmth)
+        drawLensVignette(ctx: ctx, rect: fxRect, intensity: options.vignette)
+        drawLightLeakEffect(ctx: ctx, rect: fxRect, type: options.lightLeak, placement: options.leakPlacement, intensity: options.leakIntensity)
+        drawTactileFilmGrain(ctx: ctx, rect: fxRect, intensity: options.filmGrain)
+        drawAnalogWear(ctx: ctx, rect: fxRect, intensity: options.analogWear)
+        if options.showVintageDate {
+            drawVintageDateStamp(ctx: ctx, rect: fxRect, text: options.vintageDateText, colorName: options.vintageDateColor, placement: options.vintageDatePlacement)
+        }
+
         // Draw optional caption or date stamp on bottom using CoreText (headless-safe)
         if !options.captionText.isEmpty || options.showDateStamp {
             let stampText: String
@@ -750,6 +774,324 @@ public enum InstaxImageRenderer {
         let outImg = NSImage(size: NSSize(width: targetWidth, height: targetHeight))
         outImg.addRepresentation(rep)
         return outImg
+    }
+
+    // MARK: - Analog Creative FX Methods
+
+    public static func applyAnalogWarmth(ctx: CGContext, rect: CGRect, warmth: Double) {
+        guard abs(warmth) >= 0.01 else { return }
+        ctx.saveGState()
+        ctx.clip(to: rect)
+        ctx.setBlendMode(.softLight)
+        if warmth > 0 {
+            let alpha = min(1.0, warmth * 0.65)
+            ctx.setFillColor(red: 1.0, green: 175.0 / 255.0, blue: 45.0 / 255.0, alpha: CGFloat(alpha))
+            ctx.fill(rect)
+        } else {
+            let alpha = min(1.0, (-warmth) * 0.65)
+            ctx.setFillColor(red: 45.0 / 255.0, green: 135.0 / 255.0, blue: 1.0, alpha: CGFloat(alpha))
+            ctx.fill(rect)
+        }
+        if warmth > 0.4 {
+            ctx.setBlendMode(.multiply)
+            let alpha = (warmth - 0.4) * 0.30
+            ctx.setFillColor(red: 1.0, green: 240.0 / 255.0, blue: 210.0 / 255.0, alpha: CGFloat(alpha))
+            ctx.fill(rect)
+        }
+        ctx.restoreGState()
+    }
+
+    public static func drawLensVignette(ctx: CGContext, rect: CGRect, intensity: Double) {
+        guard intensity > 0.01 else { return }
+        ctx.saveGState()
+        ctx.clip(to: rect)
+        let cx = rect.midX
+        let cy = rect.midY
+        let maxR = hypot(rect.width, rect.height) / 2.0
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        let colors: [CGColor] = [
+            CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 0),
+            CGColor(srgbRed: 0, green: 0, blue: 0, alpha: CGFloat(intensity * 0.30)),
+            CGColor(srgbRed: 0, green: 0, blue: 0, alpha: CGFloat(intensity * 0.90))
+        ]
+        let locations: [CGFloat] = [0.0, 0.65, 1.0]
+        if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors as CFArray, locations: locations) {
+            ctx.drawRadialGradient(gradient, startCenter: CGPoint(x: cx, y: cy), startRadius: maxR * 0.32, endCenter: CGPoint(x: cx, y: cy), endRadius: maxR, options: [.drawsAfterEndLocation])
+        }
+        ctx.restoreGState()
+    }
+
+    public static func drawLightLeakEffect(ctx: CGContext, rect: CGRect, type: String, placement: String, intensity: Double, seed: Int = 12345) {
+        guard type != "none" && intensity > 0.01 else { return }
+        ctx.saveGState()
+        ctx.clip(to: rect)
+        ctx.setBlendMode(.screen)
+        ctx.setAlpha(CGFloat(min(1.0, intensity)))
+
+        var p = placement
+        if p.isEmpty || p == "auto" {
+            if type == "burn" {
+                p = (seed % 2 == 0) ? "left" : "right"
+            } else if type == "sunburst" {
+                p = (seed % 2 == 0) ? "topRight" : "topLeft"
+            } else if type == "sunset" {
+                p = "bottomLeft"
+            } else if type == "rainbow" {
+                p = (seed % 2 == 0) ? "right" : "diagonal"
+            } else {
+                p = "left"
+            }
+        }
+
+        let c1: CGColor
+        let c2: CGColor
+        let c3: CGColor
+        if type == "sunburst" {
+            c1 = CGColor(srgbRed: 1.0, green: 250.0 / 255.0, blue: 215.0 / 255.0, alpha: 1.0)
+            c2 = CGColor(srgbRed: 1.0, green: 175.0 / 255.0, blue: 45.0 / 255.0, alpha: 0.75)
+            c3 = CGColor(srgbRed: 240.0 / 255.0, green: 70.0 / 255.0, blue: 38.0 / 255.0, alpha: 0.30)
+        } else if type == "sunset" {
+            c1 = CGColor(srgbRed: 1.0, green: 115.0 / 255.0, blue: 45.0 / 255.0, alpha: 0.95)
+            c2 = CGColor(srgbRed: 1.0, green: 190.0 / 255.0, blue: 75.0 / 255.0, alpha: 0.60)
+            c3 = CGColor(srgbRed: 190.0 / 255.0, green: 38.0 / 255.0, blue: 115.0 / 255.0, alpha: 0.25)
+        } else {
+            c1 = CGColor(srgbRed: 1.0, green: 45.0 / 255.0, blue: 15.0 / 255.0, alpha: 0.95)
+            c2 = CGColor(srgbRed: 1.0, green: 140.0 / 255.0, blue: 30.0 / 255.0, alpha: 0.65)
+            c3 = CGColor(srgbRed: 205.0 / 255.0, green: 20.0 / 255.0, blue: 90.0 / 255.0, alpha: 0.25)
+        }
+
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        let leakColors: [CGColor] = [c1, c2, c3, CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 0)]
+        let leakLocations: [CGFloat] = [0.0, 0.35, 0.70, 1.0]
+
+        if let grad = CGGradient(colorsSpace: colorSpace, colors: leakColors as CFArray, locations: leakLocations) {
+            let x = rect.origin.x
+            let y = rect.origin.y
+            let w = rect.width
+            let h = rect.height
+
+            switch p {
+            case "left":
+                ctx.drawLinearGradient(grad, start: CGPoint(x: x, y: y + h * 0.5), end: CGPoint(x: x + w * 0.45, y: y + h * 0.5), options: [])
+            case "right":
+                ctx.drawLinearGradient(grad, start: CGPoint(x: x + w, y: y + h * 0.5), end: CGPoint(x: x + w - w * 0.45, y: y + h * 0.5), options: [])
+            case "topRight":
+                let center = CGPoint(x: x + w, y: rect.maxY)
+                ctx.drawRadialGradient(grad, startCenter: center, startRadius: 0, endCenter: center, endRadius: w * 0.85, options: [])
+            case "topLeft":
+                let center = CGPoint(x: x, y: rect.maxY)
+                ctx.drawRadialGradient(grad, startCenter: center, startRadius: 0, endCenter: center, endRadius: w * 0.85, options: [])
+            case "bottomLeft":
+                ctx.drawLinearGradient(grad, start: CGPoint(x: x, y: rect.minY), end: CGPoint(x: x + w * 0.5 + 60, y: rect.minY + h * 0.5 + 60), options: [])
+            case "bottomRight":
+                let center = CGPoint(x: x + w, y: rect.minY)
+                ctx.drawRadialGradient(grad, startCenter: center, startRadius: 0, endCenter: center, endRadius: w * 0.85, options: [])
+            case "diagonal":
+                ctx.drawLinearGradient(grad, start: CGPoint(x: x, y: rect.maxY), end: CGPoint(x: x + w, y: rect.minY), options: [])
+            default:
+                ctx.drawLinearGradient(grad, start: CGPoint(x: x, y: y + h * 0.5), end: CGPoint(x: x + w * 0.45, y: y + h * 0.5), options: [])
+            }
+        }
+
+        if type == "rainbow" {
+            let rainbowColors: [CGColor] = [
+                CGColor(srgbRed: 1.0, green: 64.0 / 255.0, blue: 64.0 / 255.0, alpha: 0.65),
+                CGColor(srgbRed: 1.0, green: 153.0 / 255.0, blue: 38.0 / 255.0, alpha: 0.65),
+                CGColor(srgbRed: 1.0, green: 230.0 / 255.0, blue: 51.0 / 255.0, alpha: 0.65),
+                CGColor(srgbRed: 64.0 / 255.0, green: 217.0 / 255.0, blue: 115.0 / 255.0, alpha: 0.65),
+                CGColor(srgbRed: 51.0 / 255.0, green: 153.0 / 255.0, blue: 242.0 / 255.0, alpha: 0.65),
+                CGColor(srgbRed: 166.0 / 255.0, green: 77.0 / 255.0, blue: 217.0 / 255.0, alpha: 0.65)
+            ]
+            let stripeW = rect.width * 0.08
+            for i in 0..<6 {
+                ctx.setFillColor(rainbowColors[i])
+                let stripeRect = CGRect(x: rect.origin.x + rect.width - CGFloat(6 - i) * stripeW, y: rect.origin.y, width: stripeW * 1.4, height: rect.height)
+                ctx.fill(stripeRect)
+            }
+        }
+
+        ctx.restoreGState()
+    }
+
+    public static func drawTactileFilmGrain(ctx: CGContext, rect: CGRect, intensity: Double, seed: Int = 12345) {
+        guard intensity > 0.01 else { return }
+        let gw = min(320, max(64, Int(rect.width / 2.2)))
+        let gh = min(320, max(64, Int(rect.height / 2.2)))
+
+        var s = seed
+        var pixelData = [UInt8](repeating: 0, count: gw * gh * 4)
+        for i in stride(from: 0, to: pixelData.count, by: 4) {
+            s = (s &* 9301 &+ 49297) % 233280
+            let val = UInt8((s * 256) / 233280)
+            pixelData[i] = val
+            pixelData[i + 1] = val
+            pixelData[i + 2] = val
+            pixelData[i + 3] = 255
+        }
+
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        guard let provider = CGDataProvider(data: Data(pixelData) as CFData),
+              let grainCG = CGImage(
+                width: gw,
+                height: gh,
+                bitsPerComponent: 8,
+                bitsPerPixel: 32,
+                bytesPerRow: gw * 4,
+                space: colorSpace,
+                bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                provider: provider,
+                decode: nil,
+                shouldInterpolate: false,
+                intent: .defaultIntent
+              ) else { return }
+
+        ctx.saveGState()
+        ctx.clip(to: rect)
+        ctx.setBlendMode(.overlay)
+        ctx.setAlpha(CGFloat(min(1.0, intensity * 0.85)))
+        ctx.interpolationQuality = .none
+        ctx.draw(grainCG, in: rect)
+        ctx.restoreGState()
+    }
+
+    public static func drawAnalogWear(ctx: CGContext, rect: CGRect, intensity: Double, seed: Int = 54321) {
+        guard intensity > 0.01 else { return }
+        ctx.saveGState()
+        ctx.clip(to: rect)
+
+        var s = seed
+        func rng() -> Double {
+            s = (s &* 9301 &+ 49297) % 233280
+            return Double(s) / 233280.0
+        }
+
+        let dustCount = 10 + Int(intensity * 32.0)
+        for _ in 0..<dustCount {
+            let rx = rect.origin.x + CGFloat(rng()) * rect.width
+            let ry = rect.origin.y + CGFloat(rng()) * rect.height
+            let isWhite = rng() < 0.33
+            let alpha = (0.20 + rng() * 0.40) * min(1.0, intensity * 1.2)
+
+            let strokeColor = isWhite ? CGColor(srgbRed: 242/255, green: 242/255, blue: 245/255, alpha: CGFloat(alpha))
+                                      : CGColor(srgbRed: 38/255, green: 30/255, blue: 25/255, alpha: CGFloat(alpha * 0.85))
+
+            let type = Int(rng() * 3)
+            if type == 0 {
+                let len = CGFloat(5.0 + rng() * 14.0)
+                let angle = CGFloat(rng() * 2.0 * .pi)
+                let curve = CGFloat(-4.0 + rng() * 8.0)
+
+                ctx.setLineWidth(CGFloat(0.8 + rng() * 0.6))
+                ctx.setLineCap(.round)
+                ctx.setStrokeColor(strokeColor)
+
+                let path = CGMutablePath()
+                path.move(to: CGPoint(x: rx, y: ry))
+                let ctrlX = rx + cos(angle) * (len * 0.5) + sin(angle) * curve
+                let ctrlY = ry + sin(angle) * (len * 0.5) - cos(angle) * curve
+                let endX = rx + cos(angle) * len
+                let endY = ry + sin(angle) * len
+                path.addQuadCurve(to: CGPoint(x: endX, y: endY), control: CGPoint(x: ctrlX, y: ctrlY))
+                ctx.addPath(path)
+                ctx.strokePath()
+            } else if type == 1 {
+                let len = CGFloat(8.0 + rng() * 26.0)
+                let angle = CGFloat(rng() * .pi)
+                ctx.setLineWidth(0.7)
+                ctx.setStrokeColor(strokeColor)
+                ctx.strokeLineSegments(between: [
+                    CGPoint(x: rx, y: ry),
+                    CGPoint(x: rx + cos(angle) * len, y: ry + sin(angle) * len)
+                ])
+            } else {
+                let r = CGFloat(0.8 + rng() * 1.5)
+                ctx.setFillColor(strokeColor)
+                ctx.fillEllipse(in: CGRect(x: rx - r, y: ry - r, width: r * 2, height: r * 2))
+            }
+        }
+
+        if intensity > 0.12 {
+            ctx.setBlendMode(.screen)
+            let podAtBottom = Int(rng() * 2) == 0
+            let gradH = rect.height * CGFloat(0.08 + intensity * 0.12)
+            let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+            let c1 = CGColor(srgbRed: 1.0, green: 191/255, blue: 115/255, alpha: CGFloat(0.26 * intensity))
+            let c2 = CGColor(srgbRed: 230/255, green: 153/255, blue: 76/255, alpha: CGFloat(0.10 * intensity))
+            let c3 = CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 0)
+
+            if let grad = CGGradient(colorsSpace: colorSpace, colors: [c1, c2, c3] as CFArray, locations: [0.0, 0.4, 1.0]) {
+                if podAtBottom {
+                    ctx.drawLinearGradient(grad, start: CGPoint(x: rect.origin.x, y: rect.minY), end: CGPoint(x: rect.origin.x, y: rect.minY + gradH), options: [])
+                } else {
+                    ctx.drawLinearGradient(grad, start: CGPoint(x: rect.origin.x, y: rect.maxY), end: CGPoint(x: rect.origin.x, y: rect.maxY - gradH), options: [])
+                }
+            }
+        }
+
+        ctx.restoreGState()
+    }
+
+    public static func drawVintageDateStamp(ctx: CGContext, rect: CGRect, text: String, colorName: String, placement: String) {
+        var stamp = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if stamp.isEmpty {
+            let df = DateFormatter()
+            df.dateFormat = "''yy MM dd"
+            stamp = df.string(from: Date())
+        }
+
+        let textColor: CGColor
+        let glowColor: CGColor
+        if colorName == "red" {
+            textColor = CGColor(srgbRed: 1.0, green: 37/255, blue: 37/255, alpha: 1.0)
+            glowColor = CGColor(srgbRed: 1.0, green: 37/255, blue: 37/255, alpha: 0.75)
+        } else if colorName == "green" {
+            textColor = CGColor(srgbRed: 0.0, green: 230/255, blue: 118/255, alpha: 1.0)
+            glowColor = CGColor(srgbRed: 0.0, green: 230/255, blue: 118/255, alpha: 0.75)
+        } else if colorName == "white" {
+            textColor = CGColor(srgbRed: 245/255, green: 245/255, blue: 247/255, alpha: 1.0)
+            glowColor = CGColor(srgbRed: 245/255, green: 245/255, blue: 247/255, alpha: 0.75)
+        } else {
+            textColor = CGColor(srgbRed: 1.0, green: 140/255, blue: 0.0, alpha: 1.0)
+            glowColor = CGColor(srgbRed: 1.0, green: 140/255, blue: 0.0, alpha: 0.75)
+        }
+
+        let fontSize = max(14.0, rect.width * 0.042)
+        let ctFont = CTFontCreateWithName("Courier-Bold" as CFString, fontSize, nil)
+        let attrs: [NSAttributedString.Key: Any] = [
+            NSAttributedString.Key(kCTFontAttributeName as String): ctFont,
+            NSAttributedString.Key(kCTForegroundColorAttributeName as String): textColor
+        ]
+        let attrStr = NSAttributedString(string: stamp, attributes: attrs)
+        let ctLine = CTLineCreateWithAttributedString(attrStr)
+        let lineBounds = CTLineGetBoundsWithOptions(ctLine, [])
+
+        let padX = rect.width * 0.04
+        let padY = rect.height * 0.04
+
+        var stampX: CGFloat
+        var stampY: CGFloat
+
+        switch placement {
+        case "bottomLeft":
+            stampX = rect.minX + padX
+            stampY = rect.minY + padY
+        case "topRight":
+            stampX = rect.maxX - lineBounds.width - padX
+            stampY = rect.maxY - padY - fontSize
+        case "topLeft":
+            stampX = rect.minX + padX
+            stampY = rect.maxY - padY - fontSize
+        default:
+            stampX = rect.maxX - lineBounds.width - padX
+            stampY = rect.minY + padY
+        }
+
+        ctx.saveGState()
+        ctx.setShadow(offset: .zero, blur: 6.0, color: glowColor)
+        ctx.textMatrix = .identity
+        ctx.textPosition = CGPoint(x: stampX, y: stampY)
+        CTLineDraw(ctLine, ctx)
+        ctx.restoreGState()
     }
 
     /// Generate a crisp vector QR code using macOS CoreImage CIQRCodeGenerator.

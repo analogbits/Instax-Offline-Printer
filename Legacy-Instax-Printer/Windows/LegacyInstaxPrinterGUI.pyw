@@ -22,10 +22,12 @@ import sys
 import threading
 import time
 import tkinter as tk
+import math
+import random
 from tkinter import filedialog, messagebox, ttk
 
 try:
-    from PIL import Image, ImageDraw, ImageEnhance, ImageOps, ImageTk
+    from PIL import Image, ImageDraw, ImageEnhance, ImageOps, ImageTk, ImageChops
 except ImportError:
     raise SystemExit("Pillow is required. Install with: pip install pillow")
 
@@ -35,6 +37,256 @@ from legacy_instax_printer import (
     VirtualInstaxShareServer,
     encode_planar_rgb,
 )
+
+
+def apply_analog_fx(
+    canvas: Image.Image,
+    photo_box=None,
+    warmth: float = 0.0,
+    vignette: float = 0.0,
+    light_leak: str = "none",
+    leak_placement: str = "auto",
+    leak_intensity: float = 0.70,
+    film_grain: float = 0.0,
+    analog_wear: float = 0.0,
+    show_vintage_date: bool = False,
+    vintage_date_text: str = "",
+    vintage_date_color: str = "amber",
+    vintage_date_placement: str = "bottomRight",
+    seed: int = 12345
+) -> Image.Image:
+    """Apply Analog Creative FX (PolaroidEngine) to a PIL Image."""
+    W, H = canvas.size
+    if photo_box is None:
+        px, py, pw, ph = 0, 0, W, H
+    else:
+        px, py, pw, ph = photo_box
+
+    region = canvas.crop((px, py, px + pw, py + ph)).convert("RGB")
+
+    # 1. Analog Warmth Dial
+    if abs(warmth) >= 0.01:
+        tint_rgb = (255, 175, 45) if warmth > 0 else (45, 135, 255)
+        tint_layer = Image.new("RGB", (pw, ph), tint_rgb)
+        alpha = min(0.45, abs(warmth) * 0.35)
+        region = Image.blend(region, tint_layer, alpha)
+        if warmth > 0.4:
+            warm_mult = Image.new("RGB", (pw, ph), (255, 240, 210))
+            region = ImageChops.multiply(region, warm_mult)
+
+    # 2. Lens Vignette Falloff
+    if vignette > 0.01:
+        mw, mh = 128, 128
+        mask = Image.new("L", (mw, mh))
+        cx, cy = mw / 2.0, mh / 2.0
+        max_r = math.hypot(mw, mh) / 2.0
+        pix = mask.load()
+        for my in range(mh):
+            for mx in range(mw):
+                dist = math.hypot(mx - cx, my - cy)
+                norm = max(0.0, min(1.0, (dist - max_r * 0.32) / (max_r * 0.68)))
+                pix[mx, my] = int(norm * vignette * 225)
+        mask_full = mask.resize((pw, ph), Image.BILINEAR)
+        black_layer = Image.new("RGB", (pw, ph), (0, 0, 0))
+        region.paste(black_layer, (0, 0), mask_full)
+
+    # 3. Analog Light Leaks
+    if light_leak and light_leak != "none" and leak_intensity > 0.01:
+        p = leak_placement or "auto"
+        if p == "auto":
+            if light_leak == "burn":
+                p = "left" if (seed % 2 == 0) else "right"
+            elif light_leak == "sunburst":
+                p = "topRight" if (seed % 2 == 0) else "topLeft"
+            elif light_leak == "sunset":
+                p = "bottomLeft"
+            elif light_leak == "rainbow":
+                p = "right" if (seed % 2 == 0) else "diagonal"
+            else:
+                p = "left"
+
+        if light_leak == "sunburst":
+            c1, c2, c3 = (255, 250, 215), (255, 175, 45), (240, 70, 38)
+        elif light_leak == "sunset":
+            c1, c2, c3 = (255, 115, 45), (255, 190, 75), (190, 38, 115)
+        else:
+            c1, c2, c3 = (255, 45, 15), (255, 140, 30), (205, 20, 90)
+
+        scale_c = lambda col, factor: tuple(int(v * factor * leak_intensity) for v in col)
+        c1_s = scale_c(c1, 1.0)
+        c2_s = scale_c(c2, 0.75)
+        c3_s = scale_c(c3, 0.35)
+
+        gw, gh = 64, 64
+        g_img = Image.new("RGB", (gw, gh), (0, 0, 0))
+        g_pix = g_img.load()
+
+        if p == "left":
+            for x in range(gw):
+                t = x / float(gw * 0.45) if x < gw * 0.45 else 1.0
+                if t < 0.35:
+                    f = t / 0.35
+                    col = tuple(int(c1_s[i] * (1.0 - f) + c2_s[i] * f) for i in range(3))
+                elif t < 0.70:
+                    f = (t - 0.35) / 0.35
+                    col = tuple(int(c2_s[i] * (1.0 - f) + c3_s[i] * f) for i in range(3))
+                elif t < 1.0:
+                    f = (t - 0.70) / 0.30
+                    col = tuple(int(c3_s[i] * (1.0 - f)) for i in range(3))
+                else:
+                    col = (0, 0, 0)
+                for y in range(gh):
+                    g_pix[x, y] = col
+        elif p == "right":
+            for x in range(gw):
+                inv_x = gw - 1 - x
+                t = inv_x / float(gw * 0.45) if inv_x < gw * 0.45 else 1.0
+                if t < 0.35:
+                    f = t / 0.35
+                    col = tuple(int(c1_s[i] * (1.0 - f) + c2_s[i] * f) for i in range(3))
+                elif t < 0.70:
+                    f = (t - 0.35) / 0.35
+                    col = tuple(int(c2_s[i] * (1.0 - f) + c3_s[i] * f) for i in range(3))
+                elif t < 1.0:
+                    f = (t - 0.70) / 0.30
+                    col = tuple(int(c3_s[i] * (1.0 - f)) for i in range(3))
+                else:
+                    col = (0, 0, 0)
+                for y in range(gh):
+                    g_pix[x, y] = col
+        else:
+            cx = gw if "Right" in p else 0
+            cy = gh if "bottom" in p.lower() else 0
+            max_d = math.hypot(gw, gh) * 0.85
+            for y in range(gh):
+                for x in range(gw):
+                    d = math.hypot(x - cx, y - cy) / max_d
+                    if d < 0.35:
+                        f = d / 0.35
+                        col = tuple(int(c1_s[i] * (1.0 - f) + c2_s[i] * f) for i in range(3))
+                    elif d < 0.70:
+                        f = (d - 0.35) / 0.35
+                        col = tuple(int(c2_s[i] * (1.0 - f) + c3_s[i] * f) for i in range(3))
+                    elif d < 1.0:
+                        f = (d - 0.70) / 0.30
+                        col = tuple(int(c3_s[i] * (1.0 - f)) for i in range(3))
+                    else:
+                        col = (0, 0, 0)
+                    g_pix[x, y] = col
+
+        leak_layer = g_img.resize((pw, ph), Image.BILINEAR)
+
+        if light_leak == "rainbow":
+            r_draw = ImageDraw.Draw(leak_layer)
+            rainbow = [(255, 64, 64), (255, 153, 38), (255, 230, 51), (64, 217, 115), (51, 153, 242), (166, 77, 217)]
+            stripe_w = pw * 0.08
+            for i, col in enumerate(rainbow):
+                rx = pw - (6 - i) * stripe_w
+                col_scaled = tuple(int(v * 0.65 * leak_intensity) for v in col)
+                r_draw.rectangle([rx, 0, rx + stripe_w * 1.4, ph], fill=col_scaled)
+
+        region = ImageChops.screen(region, leak_layer)
+
+    # 4. Tactile Film Grain
+    if film_grain > 0.01:
+        gw, gh = min(256, max(64, pw // 2)), min(256, max(64, ph // 2))
+        rng = random.Random(seed)
+        noise_bytes = bytearray(rng.getrandbits(8) for _ in range(gw * gh))
+        noise_img = Image.frombytes("L", (gw, gh), bytes(noise_bytes)).resize((pw, ph), Image.NEAREST).convert("RGB")
+        try:
+            overlayed = ImageChops.overlay(region, noise_img)
+            region = Image.blend(region, overlayed, min(0.65, film_grain * 0.75))
+        except Exception:
+            region = Image.blend(region, noise_img, min(0.20, film_grain * 0.20))
+
+    # 5. Analog Wear, Scratches & Dust
+    if analog_wear > 0.01:
+        rng = random.Random(seed + 101)
+        wear_draw = ImageDraw.Draw(region)
+        dust_count = 10 + int(analog_wear * 32)
+        for _ in range(dust_count):
+            rx = rng.uniform(0, pw)
+            ry = rng.uniform(0, ph)
+            is_white = (rng.random() < 0.33)
+            col = (245, 245, 247) if is_white else (38, 30, 25)
+            wtype = rng.randint(0, 2)
+            if wtype == 0:
+                length = rng.uniform(5.0, 18.0)
+                angle = rng.uniform(0, math.pi * 2)
+                wear_draw.line([(rx, ry), (rx + math.cos(angle) * length, ry + math.sin(angle) * length)], fill=col, width=1)
+            elif wtype == 1:
+                length = rng.uniform(8.0, 26.0)
+                angle = rng.uniform(0, math.pi)
+                wear_draw.line([(rx, ry), (rx + math.cos(angle) * length, ry + math.sin(angle) * length)], fill=col, width=1)
+            else:
+                r = rng.uniform(0.8, 2.0)
+                wear_draw.ellipse([(rx - r, ry - r), (rx + r, ry + r)], fill=col)
+
+        if analog_wear > 0.12:
+            pod_bottom = (rng.randint(0, 1) == 0)
+            mark_h = int(ph * (0.08 + analog_wear * 0.12))
+            mark_img = Image.new("RGB", (pw, mark_h), (0, 0, 0))
+            m_pix = mark_img.load()
+            for y in range(mark_h):
+                f = (mark_h - y) / float(mark_h) if pod_bottom else y / float(mark_h)
+                c_val = int(f * 85 * analog_wear)
+                c_amber = (c_val, int(c_val * 0.7), int(c_val * 0.35))
+                for x in range(pw):
+                    m_pix[x, y] = c_amber
+            dest_y = ph - mark_h if pod_bottom else 0
+            sub = region.crop((0, dest_y, pw, dest_y + mark_h))
+            screened = ImageChops.screen(sub, mark_img)
+            region.paste(screened, (0, dest_y))
+
+    # 6. Vintage Glowing LED Date Stamp
+    if show_vintage_date:
+        stamp = (vintage_date_text or "").strip()
+        if not stamp:
+            stamp = time.strftime("'%y %m %d")
+
+        col_map = {
+            "red": ((255, 37, 37), (255, 90, 90)),
+            "green": ((0, 230, 118), (80, 255, 160)),
+            "white": ((245, 245, 247), (255, 255, 255)),
+            "amber": ((255, 140, 0), (255, 185, 60))
+        }
+        primary_col, glow_col = col_map.get(vintage_date_color, col_map["amber"])
+
+        font_size = max(14, int(pw * 0.042))
+        try:
+            from PIL import ImageFont
+            font = ImageFont.load_default()
+        except Exception:
+            font = None
+
+        date_draw = ImageDraw.Draw(region)
+        pad_x = int(pw * 0.04)
+        pad_y = int(ph * 0.04)
+        try:
+            bbox = date_draw.textbbox((0, 0), stamp, font=font)
+            text_w = bbox[2] - bbox[0]
+            text_h = bbox[3] - bbox[1]
+        except Exception:
+            text_w = len(stamp) * (font_size * 0.6)
+            text_h = font_size
+
+        if vintage_date_placement == "bottomLeft":
+            sx, sy = pad_x, ph - pad_y - text_h
+        elif vintage_date_placement == "topRight":
+            sx, sy = pw - pad_x - text_w, pad_y
+        elif vintage_date_placement == "topLeft":
+            sx, sy = pad_x, pad_y
+        else:
+            sx, sy = pw - pad_x - text_w, ph - pad_y - text_h
+
+        for ox in [-2, -1, 0, 1, 2]:
+            for oy in [-2, -1, 0, 1, 2]:
+                if ox != 0 or oy != 0:
+                    date_draw.text((sx + ox, sy + oy), stamp, fill=glow_col, font=font)
+        date_draw.text((sx, sy), stamp, fill=primary_col, font=font)
+
+    canvas.paste(region, (px, py))
+    return canvas
 
 
 class LegacyInstaxPrinterGUI(tk.Tk):
@@ -73,6 +325,19 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.qr_text_var = tk.StringVar(value="https://github.com/analogbits/Instax-Offline-Printer")
         self.caption_var = tk.StringVar(value="")
         self.date_stamp_var = tk.BooleanVar(value=False)
+
+        # Analog Creative FX State
+        self.warmth_var = tk.DoubleVar(value=0.0)
+        self.vignette_var = tk.DoubleVar(value=0.0)
+        self.leak_type_var = tk.StringVar(value="none")
+        self.leak_placement_var = tk.StringVar(value="auto")
+        self.leak_intensity_var = tk.DoubleVar(value=0.70)
+        self.film_grain_var = tk.DoubleVar(value=0.0)
+        self.analog_wear_var = tk.DoubleVar(value=0.0)
+        self.vintage_date_var = tk.BooleanVar(value=False)
+        self.vintage_date_text_var = tk.StringVar(value="")
+        self.vintage_date_color_var = tk.StringVar(value="amber")
+        self.vintage_date_placement_var = tk.StringVar(value="bottomRight")
 
         # Authentic Telemetry State (None when disconnected!)
         self.is_connected = False
@@ -227,6 +492,44 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             state="readonly",
         ).pack(fill=tk.X, pady=4)
         self.filter_var.trace_add("write", lambda *_: self.refresh_preview())
+
+        tk.Label(right, text="ANALOG CREATIVE FX", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(10, 2))
+
+        # Warmth Scale
+        tk.Label(right, text="Warmth Dial (-1.0..+1.0):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(right, from_=-1.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.warmth_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
+        # Vignette Scale
+        tk.Label(right, text="Lens Vignette Falloff:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.vignette_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
+        # Light Leak
+        ttk.Combobox(right, textvariable=self.leak_type_var, values=["none", "burn", "sunburst", "sunset", "rainbow"], state="readonly").pack(fill=tk.X, pady=2)
+        self.leak_type_var.trace_add("write", lambda *_: self.refresh_preview())
+
+        ttk.Combobox(right, textvariable=self.leak_placement_var, values=["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"], state="readonly").pack(fill=tk.X, pady=2)
+        self.leak_placement_var.trace_add("write", lambda *_: self.refresh_preview())
+
+        # Grain & Wear Scales
+        tk.Label(right, text="Silver Halide Grain:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.film_grain_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
+        tk.Label(right, text="Analog Wear & Dust:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
+        tk.Scale(right, from_=0.0, to=1.0, resolution=0.05, orient=tk.HORIZONTAL, variable=self.analog_wear_var, bg=self.bg_card, fg=self.fg_text, highlightthickness=0, command=lambda _v: self.refresh_preview()).pack(fill=tk.X)
+
+        # Date Stamp
+        tk.Checkbutton(right, text="LED Date Stamp", variable=self.vintage_date_var, bg=self.bg_card, fg=self.fg_text, selectcolor=self.bg_root, command=self.refresh_preview).pack(anchor="w", pady=(4, 0))
+        d_row = tk.Frame(right, bg=self.bg_card)
+        d_row.pack(fill=tk.X, pady=2)
+        tk.Entry(d_row, textvariable=self.vintage_date_text_var, width=12).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.vintage_date_text_var.trace_add("write", lambda *_: self.refresh_preview())
+        ttk.Combobox(d_row, textvariable=self.vintage_date_color_var, values=["amber", "red", "green", "white"], width=7, state="readonly").pack(side=tk.LEFT, padx=2)
+        self.vintage_date_color_var.trace_add("write", lambda *_: self.refresh_preview())
+
+        fx_row = tk.Frame(right, bg=self.bg_card)
+        fx_row.pack(fill=tk.X, pady=4)
+        tk.Button(fx_row, text="🎲 Surprise Me!", bg="#2563EB", fg="white", relief=tk.FLAT, command=self.surprise_me_analog_fx).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
+        tk.Button(fx_row, text="Reset FX", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, command=self.reset_analog_fx).pack(side=tk.LEFT)
 
         tk.Label(right, text="MULTI-PHOTO COLLAGE", fg=self.fg_dim, bg=self.bg_card, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(10, 2))
         ttk.Combobox(
@@ -467,6 +770,33 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             out = ImageEnhance.Color(out).enhance(1.4)
         return out
 
+    def reset_analog_fx(self):
+        self.warmth_var.set(0.0)
+        self.vignette_var.set(0.0)
+        self.leak_type_var.set("none")
+        self.leak_placement_var.set("auto")
+        self.leak_intensity_var.set(0.70)
+        self.film_grain_var.set(0.0)
+        self.analog_wear_var.set(0.0)
+        self.vintage_date_var.set(False)
+        self.vintage_date_text_var.set("")
+        self.vintage_date_color_var.set("amber")
+        self.vintage_date_placement_var.set("bottomRight")
+        self.refresh_preview()
+
+    def surprise_me_analog_fx(self):
+        self.warmth_var.set(round(random.uniform(-0.3, 0.6), 2))
+        self.vignette_var.set(round(random.uniform(0.25, 0.75), 2))
+        self.leak_type_var.set(random.choice(["none", "burn", "sunburst", "sunset", "rainbow"]))
+        self.leak_placement_var.set(random.choice(["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"]))
+        self.leak_intensity_var.set(round(random.uniform(0.45, 0.90), 2))
+        self.film_grain_var.set(round(random.uniform(0.15, 0.55), 2))
+        self.analog_wear_var.set(round(random.uniform(0.10, 0.45), 2))
+        self.vintage_date_var.set(True)
+        self.vintage_date_color_var.set(random.choice(["amber", "red", "green", "white"]))
+        self.vintage_date_placement_var.set(random.choice(["bottomRight", "bottomLeft", "topRight", "topLeft"]))
+        self.refresh_preview()
+
     def refresh_preview(self):
         spec = MODELS.get(self.model_var.get(), MODELS["SP-2"])
         w, h = spec["width"], spec["height"]
@@ -506,6 +836,22 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             else:
                 fitted = ImageOps.pad(src, (sw, sh), color=(255, 255, 255))
             canvas.paste(fitted, (x0, y0))
+
+        # Apply Analog Creative FX (PolaroidEngine)
+        canvas = apply_analog_fx(
+            canvas,
+            warmth=self.warmth_var.get(),
+            vignette=self.vignette_var.get(),
+            light_leak=self.leak_type_var.get(),
+            leak_placement=self.leak_placement_var.get(),
+            leak_intensity=self.leak_intensity_var.get(),
+            film_grain=self.film_grain_var.get(),
+            analog_wear=self.analog_wear_var.get(),
+            show_vintage_date=self.vintage_date_var.get(),
+            vintage_date_text=self.vintage_date_text_var.get(),
+            vintage_date_color=self.vintage_date_color_var.get(),
+            vintage_date_placement=self.vintage_date_placement_var.get(),
+        )
 
         draw = ImageDraw.Draw(canvas)
         cap = self.caption_var.get().strip()

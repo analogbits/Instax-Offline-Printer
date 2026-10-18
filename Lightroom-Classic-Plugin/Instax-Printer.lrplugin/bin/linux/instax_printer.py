@@ -25,18 +25,19 @@ import io
 import math
 import time
 import struct
+import random
 import asyncio
 import argparse
 import subprocess
 from typing import Optional, Tuple, List, Callable
 
 try:
-    from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
+    from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont, ImageChops
 except ImportError:
     print("📦 First-run setup: Installing required Python packages (pillow, bleak)...")
     try:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "pillow", "bleak", "qrcode"])
-        from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
+        from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont, ImageChops
     except Exception:
         print("❌ Missing Python dependency 'Pillow'. Please run: pip install bleak pillow qrcode")
         sys.exit(1)
@@ -529,6 +530,255 @@ def _compress_pil_to_jpeg(canvas: Image.Image, max_bytes: int = 60 * 1024) -> by
     return data
 
 
+def apply_analog_fx(
+    canvas: Image.Image,
+    photo_box: Optional[Tuple[int, int, int, int]] = None,
+    warmth: float = 0.0,
+    vignette: float = 0.0,
+    light_leak: str = "none",
+    leak_placement: str = "auto",
+    leak_intensity: float = 0.70,
+    film_grain: float = 0.0,
+    analog_wear: float = 0.0,
+    show_vintage_date: bool = False,
+    vintage_date_text: str = "",
+    vintage_date_color: str = "amber",
+    vintage_date_placement: str = "bottomRight",
+    seed: int = 12345
+) -> Image.Image:
+    """Apply Analog Creative FX (PolaroidEngine) to a PIL Image."""
+    W, H = canvas.size
+    if photo_box is None:
+        px, py, pw, ph = 0, 0, W, H
+    else:
+        px, py, pw, ph = photo_box
+
+    region = canvas.crop((px, py, px + pw, py + ph)).convert("RGB")
+
+    # 1. Analog Warmth Dial
+    if abs(warmth) >= 0.01:
+        tint_rgb = (255, 175, 45) if warmth > 0 else (45, 135, 255)
+        tint_layer = Image.new("RGB", (pw, ph), tint_rgb)
+        alpha = min(0.45, abs(warmth) * 0.35)
+        region = Image.blend(region, tint_layer, alpha)
+        if warmth > 0.4:
+            warm_mult = Image.new("RGB", (pw, ph), (255, 240, 210))
+            region = ImageChops.multiply(region, warm_mult)
+
+    # 2. Lens Vignette Falloff
+    if vignette > 0.01:
+        mw, mh = 128, 128
+        mask = Image.new("L", (mw, mh))
+        cx, cy = mw / 2.0, mh / 2.0
+        max_r = math.hypot(mw, mh) / 2.0
+        pix = mask.load()
+        for my in range(mh):
+            for mx in range(mw):
+                dist = math.hypot(mx - cx, my - cy)
+                norm = max(0.0, min(1.0, (dist - max_r * 0.32) / (max_r * 0.68)))
+                pix[mx, my] = int(norm * vignette * 225)
+        mask_full = mask.resize((pw, ph), Image.BILINEAR)
+        black_layer = Image.new("RGB", (pw, ph), (0, 0, 0))
+        region.paste(black_layer, (0, 0), mask_full)
+
+    # 3. Analog Light Leaks
+    if light_leak and light_leak != "none" and leak_intensity > 0.01:
+        p = leak_placement or "auto"
+        if p == "auto":
+            if light_leak == "burn":
+                p = "left" if (seed % 2 == 0) else "right"
+            elif light_leak == "sunburst":
+                p = "topRight" if (seed % 2 == 0) else "topLeft"
+            elif light_leak == "sunset":
+                p = "bottomLeft"
+            elif light_leak == "rainbow":
+                p = "right" if (seed % 2 == 0) else "diagonal"
+            else:
+                p = "left"
+
+        if light_leak == "sunburst":
+            c1, c2, c3 = (255, 250, 215), (255, 175, 45), (240, 70, 38)
+        elif light_leak == "sunset":
+            c1, c2, c3 = (255, 115, 45), (255, 190, 75), (190, 38, 115)
+        else:
+            c1, c2, c3 = (255, 45, 15), (255, 140, 30), (205, 20, 90)
+
+        scale_c = lambda col, factor: tuple(int(v * factor * leak_intensity) for v in col)
+        c1_s = scale_c(c1, 1.0)
+        c2_s = scale_c(c2, 0.75)
+        c3_s = scale_c(c3, 0.35)
+
+        gw, gh = 64, 64
+        g_img = Image.new("RGB", (gw, gh), (0, 0, 0))
+        g_pix = g_img.load()
+
+        if p == "left":
+            for x in range(gw):
+                t = x / float(gw * 0.45) if x < gw * 0.45 else 1.0
+                if t < 0.35:
+                    f = t / 0.35
+                    col = tuple(int(c1_s[i] * (1.0 - f) + c2_s[i] * f) for i in range(3))
+                elif t < 0.70:
+                    f = (t - 0.35) / 0.35
+                    col = tuple(int(c2_s[i] * (1.0 - f) + c3_s[i] * f) for i in range(3))
+                elif t < 1.0:
+                    f = (t - 0.70) / 0.30
+                    col = tuple(int(c3_s[i] * (1.0 - f)) for i in range(3))
+                else:
+                    col = (0, 0, 0)
+                for y in range(gh):
+                    g_pix[x, y] = col
+        elif p == "right":
+            for x in range(gw):
+                inv_x = gw - 1 - x
+                t = inv_x / float(gw * 0.45) if inv_x < gw * 0.45 else 1.0
+                if t < 0.35:
+                    f = t / 0.35
+                    col = tuple(int(c1_s[i] * (1.0 - f) + c2_s[i] * f) for i in range(3))
+                elif t < 0.70:
+                    f = (t - 0.35) / 0.35
+                    col = tuple(int(c2_s[i] * (1.0 - f) + c3_s[i] * f) for i in range(3))
+                elif t < 1.0:
+                    f = (t - 0.70) / 0.30
+                    col = tuple(int(c3_s[i] * (1.0 - f)) for i in range(3))
+                else:
+                    col = (0, 0, 0)
+                for y in range(gh):
+                    g_pix[x, y] = col
+        else:
+            cx = gw if "Right" in p else 0
+            cy = gh if "bottom" in p.lower() else 0
+            max_d = math.hypot(gw, gh) * 0.85
+            for y in range(gh):
+                for x in range(gw):
+                    d = math.hypot(x - cx, y - cy) / max_d
+                    if d < 0.35:
+                        f = d / 0.35
+                        col = tuple(int(c1_s[i] * (1.0 - f) + c2_s[i] * f) for i in range(3))
+                    elif d < 0.70:
+                        f = (d - 0.35) / 0.35
+                        col = tuple(int(c2_s[i] * (1.0 - f) + c3_s[i] * f) for i in range(3))
+                    elif d < 1.0:
+                        f = (d - 0.70) / 0.30
+                        col = tuple(int(c3_s[i] * (1.0 - f)) for i in range(3))
+                    else:
+                        col = (0, 0, 0)
+                    g_pix[x, y] = col
+
+        leak_layer = g_img.resize((pw, ph), Image.BILINEAR)
+
+        if light_leak == "rainbow":
+            r_draw = ImageDraw.Draw(leak_layer)
+            rainbow = [(255, 64, 64), (255, 153, 38), (255, 230, 51), (64, 217, 115), (51, 153, 242), (166, 77, 217)]
+            stripe_w = pw * 0.08
+            for i, col in enumerate(rainbow):
+                rx = pw - (6 - i) * stripe_w
+                col_scaled = tuple(int(v * 0.65 * leak_intensity) for v in col)
+                r_draw.rectangle([rx, 0, rx + stripe_w * 1.4, ph], fill=col_scaled)
+
+        region = ImageChops.screen(region, leak_layer)
+
+    # 4. Tactile Film Grain
+    if film_grain > 0.01:
+        gw, gh = min(256, max(64, pw // 2)), min(256, max(64, ph // 2))
+        rng = random.Random(seed)
+        noise_bytes = bytearray(rng.getrandbits(8) for _ in range(gw * gh))
+        noise_img = Image.frombytes("L", (gw, gh), bytes(noise_bytes)).resize((pw, ph), Image.NEAREST).convert("RGB")
+        try:
+            overlayed = ImageChops.overlay(region, noise_img)
+            region = Image.blend(region, overlayed, min(0.65, film_grain * 0.75))
+        except Exception:
+            region = Image.blend(region, noise_img, min(0.20, film_grain * 0.20))
+
+    # 5. Analog Wear, Scratches & Dust
+    if analog_wear > 0.01:
+        rng = random.Random(seed + 101)
+        wear_draw = ImageDraw.Draw(region)
+        dust_count = 10 + int(analog_wear * 32)
+        for _ in range(dust_count):
+            rx = rng.uniform(0, pw)
+            ry = rng.uniform(0, ph)
+            is_white = (rng.random() < 0.33)
+            col = (245, 245, 247) if is_white else (38, 30, 25)
+            wtype = rng.randint(0, 2)
+            if wtype == 0:
+                length = rng.uniform(5.0, 18.0)
+                angle = rng.uniform(0, math.pi * 2)
+                wear_draw.line([(rx, ry), (rx + math.cos(angle) * length, ry + math.sin(angle) * length)], fill=col, width=1)
+            elif wtype == 1:
+                length = rng.uniform(8.0, 26.0)
+                angle = rng.uniform(0, math.pi)
+                wear_draw.line([(rx, ry), (rx + math.cos(angle) * length, ry + math.sin(angle) * length)], fill=col, width=1)
+            else:
+                r = rng.uniform(0.8, 2.0)
+                wear_draw.ellipse([(rx - r, ry - r), (rx + r, ry + r)], fill=col)
+
+        if analog_wear > 0.12:
+            pod_bottom = (rng.randint(0, 1) == 0)
+            mark_h = int(ph * (0.08 + analog_wear * 0.12))
+            mark_img = Image.new("RGB", (pw, mark_h), (0, 0, 0))
+            m_pix = mark_img.load()
+            for y in range(mark_h):
+                f = (mark_h - y) / float(mark_h) if pod_bottom else y / float(mark_h)
+                c_val = int(f * 85 * analog_wear)
+                c_amber = (c_val, int(c_val * 0.7), int(c_val * 0.35))
+                for x in range(pw):
+                    m_pix[x, y] = c_amber
+            dest_y = ph - mark_h if pod_bottom else 0
+            sub = region.crop((0, dest_y, pw, dest_y + mark_h))
+            screened = ImageChops.screen(sub, mark_img)
+            region.paste(screened, (0, dest_y))
+
+    # 6. Vintage Glowing LED Date Stamp
+    if show_vintage_date:
+        stamp = (vintage_date_text or "").strip()
+        if not stamp:
+            stamp = time.strftime("'%y %m %d")
+
+        col_map = {
+            "red": ((255, 37, 37), (255, 90, 90)),
+            "green": ((0, 230, 118), (80, 255, 160)),
+            "white": ((245, 245, 247), (255, 255, 255)),
+            "amber": ((255, 140, 0), (255, 185, 60))
+        }
+        primary_col, glow_col = col_map.get(vintage_date_color, col_map["amber"])
+
+        font_size = max(14, int(pw * 0.042))
+        try:
+            font = ImageFont.load_default()
+        except Exception:
+            font = None
+
+        date_draw = ImageDraw.Draw(region)
+        pad_x = int(pw * 0.04)
+        pad_y = int(ph * 0.04)
+        try:
+            bbox = date_draw.textbbox((0, 0), stamp, font=font)
+            text_w = bbox[2] - bbox[0]
+            text_h = bbox[3] - bbox[1]
+        except Exception:
+            text_w = len(stamp) * (font_size * 0.6)
+            text_h = font_size
+
+        if vintage_date_placement == "bottomLeft":
+            sx, sy = pad_x, ph - pad_y - text_h
+        elif vintage_date_placement == "topRight":
+            sx, sy = pw - pad_x - text_w, pad_y
+        elif vintage_date_placement == "topLeft":
+            sx, sy = pad_x, pad_y
+        else:
+            sx, sy = pw - pad_x - text_w, ph - pad_y - text_h
+
+        for ox in [-2, -1, 0, 1, 2]:
+            for oy in [-2, -1, 0, 1, 2]:
+                if ox != 0 or oy != 0:
+                    date_draw.text((sx + ox, sy + oy), stamp, fill=glow_col, font=font)
+        date_draw.text((sx, sy), stamp, fill=primary_col, font=font)
+
+    canvas.paste(region, (px, py))
+    return canvas
+
+
 def render_image(
     src_path: str,
     target_width: int = 800,
@@ -542,6 +792,17 @@ def render_image(
     qr_text: str = "",
     caption_text: str = "",
     max_bytes: int = 60 * 1024,
+    warmth: float = 0.0,
+    vignette: float = 0.0,
+    light_leak: str = "none",
+    leak_placement: str = "auto",
+    leak_intensity: float = 0.70,
+    film_grain: float = 0.0,
+    analog_wear: float = 0.0,
+    show_vintage_date: bool = False,
+    vintage_date_text: str = "",
+    vintage_date_color: str = "amber",
+    vintage_date_placement: str = "bottomRight",
 ) -> bytes:
     with Image.open(src_path) as raw:
         img = ImageOps.exif_transpose(raw).convert("RGB")
@@ -550,6 +811,20 @@ def render_image(
         img = img.rotate(-rotation, expand=True, resample=Image.BICUBIC)
 
     canvas = _fit_single_pil(img, target_width, target_height, fit_mode, bg_color, zoom, pan_x, pan_y)
+    canvas = apply_analog_fx(
+        canvas,
+        warmth=warmth,
+        vignette=vignette,
+        light_leak=light_leak,
+        leak_placement=leak_placement,
+        leak_intensity=leak_intensity,
+        film_grain=film_grain,
+        analog_wear=analog_wear,
+        show_vintage_date=show_vintage_date,
+        vintage_date_text=vintage_date_text,
+        vintage_date_color=vintage_date_color,
+        vintage_date_placement=vintage_date_placement,
+    )
     _draw_qr_and_caption(canvas, qr_text=qr_text, caption_text=caption_text)
     return _compress_pil_to_jpeg(canvas, max_bytes=max_bytes)
 
@@ -565,6 +840,17 @@ def render_collage(
     qr_text: str = "",
     caption_text: str = "",
     max_bytes: int = 60 * 1024,
+    warmth: float = 0.0,
+    vignette: float = 0.0,
+    light_leak: str = "none",
+    leak_placement: str = "auto",
+    leak_intensity: float = 0.70,
+    film_grain: float = 0.0,
+    analog_wear: float = 0.0,
+    show_vintage_date: bool = False,
+    vintage_date_text: str = "",
+    vintage_date_color: str = "amber",
+    vintage_date_placement: str = "bottomRight",
 ) -> bytes:
     canvas = Image.new("RGB", (target_width, target_height), bg_color)
     W, H = float(target_width), float(target_height)
@@ -622,13 +908,41 @@ def render_collage(
         tile = _fit_single_pil(imgs[idx % len(imgs)], iw, ih, fit_mode, bg_color)
         canvas.paste(tile, (int(round(sx)), int(round(sy))))
 
+    canvas = apply_analog_fx(
+        canvas,
+        warmth=warmth,
+        vignette=vignette,
+        light_leak=light_leak,
+        leak_placement=leak_placement,
+        leak_intensity=leak_intensity,
+        film_grain=film_grain,
+        analog_wear=analog_wear,
+        show_vintage_date=show_vintage_date,
+        vintage_date_text=vintage_date_text,
+        vintage_date_color=vintage_date_color,
+        vintage_date_placement=vintage_date_placement,
+    )
+
     _draw_qr_and_caption(canvas, qr_text=qr_text, caption_text=caption_text)
     return _compress_pil_to_jpeg(canvas, max_bytes=max_bytes)
 
 
 async def main_cli():
+    if "--serve" in sys.argv or (len(sys.argv) > 1 and sys.argv[1] == "serve"):
+        bridge_script = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "Web-Bluetooth-Offline", "instax_wifi_bridge.py")
+        )
+        if os.path.isfile(bridge_script):
+            extra_args = [a for a in sys.argv[1:] if a not in ("--serve", "serve")]
+            os.execv(sys.executable, [sys.executable, bridge_script] + extra_args)
+
     parser = argparse.ArgumentParser(description="Instax Cross-Platform Bluetooth Printer CLI (macOS, Windows, Linux)")
+    parser.add_argument("--serve", action="store_true", help="Start Local Wi-Fi Bluetooth Bridge for iPhone/iPad Safari")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # serve
+    p_serve = subparsers.add_parser("serve", help="Start Local Wi-Fi Bluetooth Bridge for iPhone/iPad/Mac Safari")
+    p_serve.add_argument("--port", type=int, default=8765)
 
     # scan
     p_scan = subparsers.add_parser("scan", help="Scan for nearby Instax printers")
@@ -676,7 +990,33 @@ async def main_cli():
     p_print.add_argument("--width", type=int, default=0)
     p_print.add_argument("--height", type=int, default=0)
 
+    for p in (p_prev, p_print):
+        p.add_argument("--warmth", type=float, default=0.0, help="Analog warmth (-1.0 to 1.0)")
+        p.add_argument("--vignette", type=float, default=0.0, help="Lens vignette falloff (0.0 to 1.0)")
+        p.add_argument("--light-leak", choices=["none", "burn", "sunburst", "sunset", "rainbow"], default="none", help="Light leak type")
+        p.add_argument("--leak-placement", choices=["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"], default="auto")
+        p.add_argument("--leak-intensity", type=float, default=0.70, help="Light leak intensity (0.0 to 1.0)")
+        p.add_argument("--grain", type=float, default=0.0, help="Silver halide film grain (0.0 to 1.0)")
+        p.add_argument("--wear", type=float, default=0.0, help="Analog wear, dust & scratches (0.0 to 1.0)")
+        p.add_argument("--date", default="", help="Vintage LED date stamp text, e.g. \"'98 10 24\"")
+        p.add_argument("--date-color", choices=["amber", "red", "green", "white"], default="amber")
+        p.add_argument("--date-placement", choices=["bottomRight", "bottomLeft", "topRight", "topLeft"], default="bottomRight")
+
     args = parser.parse_args()
+
+    analog_kwargs = {
+        "warmth": getattr(args, "warmth", 0.0),
+        "vignette": getattr(args, "vignette", 0.0),
+        "light_leak": getattr(args, "light_leak", "none"),
+        "leak_placement": getattr(args, "leak_placement", "auto"),
+        "leak_intensity": getattr(args, "leak_intensity", 0.70),
+        "film_grain": getattr(args, "grain", 0.0),
+        "analog_wear": getattr(args, "wear", 0.0),
+        "show_vintage_date": bool(getattr(args, "date", "").strip()),
+        "vintage_date_text": getattr(args, "date", ""),
+        "vintage_date_color": getattr(args, "date_color", "amber"),
+        "vintage_date_placement": getattr(args, "date_placement", "bottomRight"),
+    }
 
     if args.command == "preview":
         m = (args.model or "square").lower()
@@ -691,13 +1031,15 @@ async def main_cli():
             data = render_collage(
                 args.images, layout=args.collage, spacing=args.collage_spacing,
                 target_width=w, target_height=h, fit_mode=args.fit, bg_color=bg,
-                qr_text=args.qr, caption_text=args.caption, max_bytes=max_b
+                qr_text=args.qr, caption_text=args.caption, max_bytes=max_b,
+                **analog_kwargs
             )
         else:
             data = render_image(
                 args.images[0], target_width=w, target_height=h,
                 fit_mode=args.fit, bg_color=bg, qr_text=args.qr,
-                caption_text=args.caption, max_bytes=max_b
+                caption_text=args.caption, max_bytes=max_b,
+                **analog_kwargs
             )
         with open(args.output, "wb") as f:
             f.write(data)
@@ -759,7 +1101,8 @@ async def main_cli():
                 jpeg = render_collage(
                     args.images, layout=args.collage, spacing=args.collage_spacing,
                     target_width=w, target_height=h, fit_mode=args.fit, bg_color=bg,
-                    qr_text=args.qr, caption_text=args.caption, max_bytes=max_b
+                    qr_text=args.qr, caption_text=args.caption, max_bytes=max_b,
+                    **analog_kwargs
                 )
                 jobs = [("Collage", jpeg)]
             else:
@@ -767,7 +1110,8 @@ async def main_cli():
                 for p in args.images:
                     jpeg = render_image(
                         p, target_width=w, target_height=h, fit_mode=args.fit,
-                        bg_color=bg, qr_text=args.qr, caption_text=args.caption, max_bytes=max_b
+                        bg_color=bg, qr_text=args.qr, caption_text=args.caption, max_bytes=max_b,
+                        **analog_kwargs
                     )
                     jobs.append((p, jpeg))
 

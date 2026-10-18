@@ -161,6 +161,7 @@ enum InstaxPrinterModel: String, CaseIterable, Identifiable {
 enum InspectorTab: String, CaseIterable, Identifiable {
     case framing = "Framing"
     case color = "Color & Filters"
+    case analogFX = "Analog FX"
     case collage = "Collage"
     case qrOverlay = "QR & Text"
 
@@ -170,6 +171,7 @@ enum InspectorTab: String, CaseIterable, Identifiable {
         switch self {
         case .framing: return "crop"
         case .color: return "slider.horizontal.3"
+        case .analogFX: return "camera.filters"
         case .collage: return "square.grid.2x2"
         case .qrOverlay: return "qrcode"
         }
@@ -302,6 +304,19 @@ final class InstaxAppViewModel: ObservableObject {
     @Published var brightness: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var contrast: Double = 1.0 { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var saturation: Double = 1.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+
+    // Analog Creative FX Options (Ported from PolaroidEngine)
+    @Published var warmth: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var vignette: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var lightLeak: String = "none" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var leakPlacement: String = "auto" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var leakIntensity: Double = 0.70 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var filmGrain: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var analogWear: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var showVintageDate: Bool = false { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var vintageDateText: String = "" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var vintageDateColor: String = "amber" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var vintageDatePlacement: String = "bottomRight" { didSet { if !isLoadingSelection { updatePreview() } } }
 
     // Collage & Border Options
     @Published var borderColor: InstaxBorderColor = .white { didSet { if !isLoadingSelection { updatePreview() } } }
@@ -587,6 +602,17 @@ final class InstaxAppViewModel: ObservableObject {
         opts.qrCodePosition = qrCodePosition
         opts.qrCodeSize = qrCodeSize
         opts.qrCodeStyle = qrCodeStyle
+        opts.warmth = warmth
+        opts.vignette = vignette
+        opts.lightLeak = lightLeak
+        opts.leakPlacement = leakPlacement
+        opts.leakIntensity = leakIntensity
+        opts.filmGrain = filmGrain
+        opts.analogWear = analogWear
+        opts.showVintageDate = showVintageDate
+        opts.vintageDateText = vintageDateText
+        opts.vintageDateColor = vintageDateColor
+        opts.vintageDatePlacement = vintageDatePlacement
         return opts
     }
 
@@ -738,6 +764,17 @@ final class InstaxAppViewModel: ObservableObject {
         brightness = item.options.brightness
         contrast = item.options.contrast
         saturation = item.options.saturation
+        warmth = item.options.warmth
+        vignette = item.options.vignette
+        lightLeak = item.options.lightLeak
+        leakPlacement = item.options.leakPlacement
+        leakIntensity = item.options.leakIntensity
+        filmGrain = item.options.filmGrain
+        analogWear = item.options.analogWear
+        showVintageDate = item.options.showVintageDate
+        vintageDateText = item.options.vintageDateText
+        vintageDateColor = item.options.vintageDateColor
+        vintageDatePlacement = item.options.vintageDatePlacement
         renderedPreview = item.renderedPreview
         compressedJPEG = item.compressedJPEG
         jpegQualityPercent = item.jpegQualityPercent
@@ -941,6 +978,43 @@ final class InstaxAppViewModel: ObservableObject {
         filterPreset = .none
         captionText = ""
         showDateStamp = false
+        isLoadingSelection = false
+        updatePreview()
+    }
+
+    func resetAnalogFX() {
+        isLoadingSelection = true
+        warmth = 0.0
+        vignette = 0.0
+        lightLeak = "none"
+        leakPlacement = "auto"
+        leakIntensity = 0.70
+        filmGrain = 0.0
+        analogWear = 0.0
+        showVintageDate = false
+        vintageDateText = ""
+        vintageDateColor = "amber"
+        vintageDatePlacement = "bottomRight"
+        isLoadingSelection = false
+        updatePreview()
+    }
+
+    func surpriseMeAnalogFX() {
+        isLoadingSelection = true
+        warmth = Double(Int.random(in: -30...60)) / 100.0
+        vignette = Double(Int.random(in: 25...75)) / 100.0
+        let leaks = ["none", "burn", "sunburst", "sunset", "rainbow"]
+        lightLeak = leaks.randomElement() ?? "burn"
+        let placements = ["auto", "left", "right", "topRight", "topLeft", "bottomLeft", "bottomRight", "diagonal"]
+        leakPlacement = placements.randomElement() ?? "auto"
+        leakIntensity = Double(Int.random(in: 45...90)) / 100.0
+        filmGrain = Double(Int.random(in: 15...55)) / 100.0
+        analogWear = Double(Int.random(in: 10...45)) / 100.0
+        showVintageDate = true
+        let colors = ["amber", "red", "green", "white"]
+        vintageDateColor = colors.randomElement() ?? "amber"
+        let datePlacements = ["bottomRight", "bottomLeft", "topRight", "topLeft"]
+        vintageDatePlacement = datePlacements.randomElement() ?? "bottomRight"
         isLoadingSelection = false
         updatePreview()
     }
@@ -2139,6 +2213,8 @@ struct InstaxMainView: View {
                         framingTabContent
                     case .color:
                         colorAndFiltersTabContent
+                    case .analogFX:
+                        analogFXTabContent
                     case .collage:
                         collageTabContent
                     case .qrOverlay:
@@ -2408,6 +2484,179 @@ struct InstaxMainView: View {
                     }
                 }
                 .padding(8)
+            }
+        }
+    }
+
+    private var analogFXTabContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            GroupBox(label: Label("Analog Warmth & Temperature", systemImage: "thermometer.sun.fill")) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Warmth Dial")
+                            .font(.caption)
+                        Spacer()
+                        Text(
+                            vm.warmth > 0 ? String(format: "+%.2f (Amber)", vm.warmth) :
+                            vm.warmth < 0 ? String(format: "%.2f (Cool)", vm.warmth) : "0.00 (Neutral)"
+                        )
+                        .font(.system(.caption, design: .monospaced))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(Color.secondary.opacity(0.12))
+                        .cornerRadius(4)
+                    }
+                    Slider(value: $vm.warmth, in: -1.0...1.0)
+                    Text("Organic color shift between cool Arctic cyan (-1.0) and golden California amber (+1.0).")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(8)
+            }
+
+            GroupBox(label: Label("Lens Vignette Falloff", systemImage: "circle.circle")) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Vignette Intensity")
+                            .font(.caption)
+                        Spacer()
+                        Text("\(Int(vm.vignette * 100))%")
+                            .font(.system(.caption, design: .monospaced))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
+                            .background(Color.secondary.opacity(0.12))
+                            .cornerRadius(4)
+                    }
+                    Slider(value: $vm.vignette, in: 0.0...1.0)
+                    Text("Optical barrel light falloff naturally darkens corners like classic wide-angle lenses.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(8)
+            }
+
+            GroupBox(label: Label("Analog Light Leaks", systemImage: "sun.haze.fill")) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Picker("Leak Type", selection: $vm.lightLeak) {
+                        Text("None").tag("none")
+                        Text("🔥 Film Burn (Golden Red)").tag("burn")
+                        Text("☀️ Sunburst Flare (Amber)").tag("sunburst")
+                        Text("🌅 Sunset Glow (Magenta)").tag("sunset")
+                        Text("🌈 Rainbow Prism").tag("rainbow")
+                    }
+                    .pickerStyle(.menu)
+
+                    if vm.lightLeak != "none" {
+                        Picker("Placement", selection: $vm.leakPlacement) {
+                            Text("🎲 Auto (Organic)").tag("auto")
+                            Text("Left Edge").tag("left")
+                            Text("Right Edge").tag("right")
+                            Text("Top Right Corner").tag("topRight")
+                            Text("Top Left Corner").tag("topLeft")
+                            Text("Bottom Left Streak").tag("bottomLeft")
+                            Text("Bottom Right Corner").tag("bottomRight")
+                            Text("Diagonal Across").tag("diagonal")
+                        }
+                        .pickerStyle(.menu)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("Intensity")
+                                    .font(.caption)
+                                Spacer()
+                                Text("\(Int(vm.leakIntensity * 100))%")
+                                    .font(.system(.caption, design: .monospaced))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 1)
+                                    .background(Color.secondary.opacity(0.12))
+                                    .cornerRadius(4)
+                            }
+                            Slider(value: $vm.leakIntensity, in: 0.1...1.0)
+                        }
+                    }
+                }
+                .padding(8)
+            }
+
+            GroupBox(label: Label("Film Grain & Analog Wear", systemImage: "wand.and.stars")) {
+                VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Tactile Silver Halide Grain")
+                                .font(.caption)
+                            Spacer()
+                            Text("\(Int(vm.filmGrain * 100))%")
+                                .font(.system(.caption, design: .monospaced))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 1)
+                                .background(Color.secondary.opacity(0.12))
+                                .cornerRadius(4)
+                        }
+                        Slider(value: $vm.filmGrain, in: 0.0...1.0)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Analog Wear, Scratches & Dust")
+                                .font(.caption)
+                            Spacer()
+                            Text("\(Int(vm.analogWear * 100))%")
+                                .font(.system(.caption, design: .monospaced))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 1)
+                                .background(Color.secondary.opacity(0.12))
+                                .cornerRadius(4)
+                        }
+                        Slider(value: $vm.analogWear, in: 0.0...1.0)
+                    }
+
+                    Text("Generates curved bezier hair fibers, hairline surface scratches, dust motes & chemical roller spread.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(8)
+            }
+
+            GroupBox(label: Label("Vintage Glowing LED Date Stamp", systemImage: "clock.badge.checkmark")) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Toggle("Enable LED Date Stamp", isOn: $vm.showVintageDate)
+
+                    if vm.showVintageDate {
+                        TextField("Date Text (Empty = Today ''YY MM DD)", text: $vm.vintageDateText)
+                            .textFieldStyle(.roundedBorder)
+
+                        Picker("LED Color", selection: $vm.vintageDateColor) {
+                            Text("🟠 Amber Gold").tag("amber")
+                            Text("🔴 Retro Red").tag("red")
+                            Text("🟢 Matrix Green").tag("green")
+                            Text("⚪ Cool White").tag("white")
+                        }
+                        .pickerStyle(.menu)
+
+                        Picker("Placement", selection: $vm.vintageDatePlacement) {
+                            Text("Bottom Right").tag("bottomRight")
+                            Text("Bottom Left").tag("bottomLeft")
+                            Text("Top Right").tag("topRight")
+                            Text("Top Left").tag("topLeft")
+                        }
+                        .pickerStyle(.menu)
+                    }
+                }
+                .padding(8)
+            }
+
+            HStack {
+                Button(action: { vm.surpriseMeAnalogFX() }) {
+                    Label("🎲 Surprise Me!", systemImage: "sparkles")
+                }
+                .controlSize(.small)
+
+                Spacer()
+
+                Button("Reset Analog FX") {
+                    vm.resetAnalogFX()
+                }
+                .controlSize(.small)
             }
         }
     }
