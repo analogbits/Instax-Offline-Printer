@@ -168,6 +168,22 @@ Embed high-resolution, scannable QR codes onto your physical prints—just like 
 * **3 Badge Styles:** Translucent Glass, Solid White, or Dark Vignette.
 * **Available Across All Apps:** Native Swift macOS apps, Windows/Linux GUIs, Lightroom Classic & Darktable plugins, CLI (`--qr <text>`), and Web apps!
 
+### 🎞️ Analog Creative FX & Film Emulation Studio (Ported from PolaroidEngine)
+Bring the nostalgic warmth, chemical quirks, and physical characteristics of vintage instant film to any photo with zero external dependencies:
+* **Warmth / Color Temp Dial:** Shift color temperature non-destructively from `-1.0` (Cool Arctic Blue) to `+1.0` (Golden Amber Sunlight).
+* **Lens Vignette:** Dial in `0%` to `100%` optical falloff shadow around the edges of the frame.
+* **Authentic Light Leaks:** Choose from 4 physical film leak behaviors:
+  * **Red Film Burn:** Fiery orange/red light leaking through an unlatched film door hinge.
+  * **Golden Sunburst Flare:** Bright solar wash entering from the corner.
+  * **Sunset Glow:** Coral and rose dual-tone wash.
+  * **Prismatic Rainbow Spectrum:** Multi-band color prism streak across the emulsion.
+  * **8 Placements:** Auto, Left Edge, Right Edge, Top-Right, Top-Left, Bottom-Left, Bottom-Right, Diagonal.
+* **Tactile Film Grain (Silver Halide):** Procedural crystal noise rendered directly at native print DPI for authentic tactile film presence.
+* **Dust, Scratches & Wear:** Deterministic hairline scratches, fine dust motes, curved fibers, and chemical developer pod pressure spread marks that stay locked in place as you adjust intensity.
+* **Vintage LED Date Stamp:** Retro 90s digital LED datestamp (`'YY MM DD`) with authentic glowing halo (`shadowBlur: 6`) in Amber Gold (`#FF8C00`), Ruby Red (`#FF2525`), Emerald Green (`#00E676`), or Crisp White (`#F5F5F7`).
+* **🎲 "Surprise Me!" & ↺ "Reset":** One-click retro vibe randomizer that automatically styles your photo with a unique vintage combination.
+* **Frame-Aware Clipping:** Automatically clips all analog effects to the photo inside the paper border when using **Letterbox (Fit)** mode, keeping white/black card borders clean.
+
 ---
 
 ## 🖨 Supported Printer Models & Formats

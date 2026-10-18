@@ -17,6 +17,14 @@ A dedicated, 100% offline desktop and web application suite for Fujifilm's class
    - **Virtual SP Simulator (`127.0.0.1:18080`)** emulates a real SP-1, SP-2, or SP-3 locally so you can test the entire app and CLI without turning on your physical printer.
 3. **Full Creative Studio**:
    - **Multi-Photo Collage Studio** (`Single`, `2-Up Vertical`, `2-Up Horizontal`, `3-Photo Grid`, `4-Photo 2×2 Grid`, `3-Photo Strip`, `6-Photo Contact Sheet`) with live **Collage Border Spacing** (`0–28 px`).
+   - **Analog Creative FX & Film Emulation Studio (Ported from PolaroidEngine)**:
+     - Warmth & Color Temperature dial (`-1.0` Cool Arctic Blue to `+1.0` Golden Amber Sunlight)
+     - Radial Lens Vignette (`0%` to `100%`)
+     - Authentic Analog Light Leaks (`Red Film Burn`, `Golden Sunburst Flare`, `Sunset Glow`, `Prismatic Rainbow Spectrum`) across 8 placements
+     - Silver halide tactile film grain rendered at native print resolution
+     - Analog wear & tear (curved hair fibers, hairline scratches, fine dust motes, chemical roller pod spread wave)
+     - Vintage glowing 90s LED digital datestamps (`'YY MM DD`) in Amber Gold (`#FF8C00`), Ruby Red (`#FF2525`), Emerald Green (`#00E676`), or Crisp White (`#F5F5F7`)
+     - 1-Click `🎲 Surprise Me!` retro randomizer & `↺ Reset`
    - **Scannable QR Code Generator** (`Website URL`, `Custom Text`, `Phone`, `Email`, `Wi-Fi Access`, `Map Coordinates`).
    - **Fujifilm SHARE Artistic Filters** (`Normal`, `Fujifilm Intelligence`, `Monochrome`, `Sepia`, `Vivid Velvia`, `Classic Chrome`) + bottom caption & date stamp.
 
