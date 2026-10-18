@@ -4,7 +4,7 @@
 # (Zero-Install, 100% Offline, Native BlueZ Bluetooth)
 # ========================================================
 DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_PATH="$DIR/InstaxPrinterApp.html"
+APP_PATH="$DIR/InstaxPrinterWeb.html"
 APP_URL="file://$APP_PATH"
 
 # Look for Chromium-based browsers that support Web Bluetooth on Linux

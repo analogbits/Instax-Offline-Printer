@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
-set "APP_FILE=%~dp0InstaxPrinterApp.html"
+set "APP_FILE=%~dp0InstaxPrinterWeb.html"
 set "APP_URL=file:///%APP_FILE:\=/%"
 
 :: 1. Search for Microsoft Edge (Standard on 100% of modern Windows 10 & Windows 11)

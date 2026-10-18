@@ -7,7 +7,7 @@
 
 > 🚀 **Try either Web App right now in your browser (macOS, Windows, Linux, Android & iPhone/iPad):**  
 > - **🔵 [👉 Launch Web Bluetooth Printer (SQUARE Link • Link WIDE • Mini Link)](https://analogbits.github.io/Instax-Offline-Printer/)** *(Works natively in Chrome, Edge, Brave & Opera on Mac/Windows/Linux/Android — and on **iPhone / iPad** via the built-in **Local Wi-Fi Bluetooth Bridge** in regular Safari or the free **Bluefy** app!)*  
-> - **🎞️ [👉 Launch Legacy Wi-Fi Direct Web Printer (Instax SHARE SP-1 • SP-2 • SP-3)](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)** *(Short link: [`analogbits.github.io/Instax-Offline-Printer/legacy.html`](https://analogbits.github.io/Instax-Offline-Printer/legacy.html) — Works on Mac, Windows, Linux & iOS)*
+> - **🎞️ [👉 Launch Legacy Wi-Fi Direct Web Printer (Instax SHARE SP-1 • SP-2 • SP-3)](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)** *(Works on Mac, Windows, Linux, Android & iOS)*
 
 A complete, self-contained suite of native standalone applications, Adobe Lightroom Classic & Linux Darktable plugins, command-line tools, and zero-install offline utilities for printing directly to:
 * **Bluetooth Low Energy (BLE) Printers:** **Fujifilm Instax SQUARE Link**, **Instax Link WIDE / WIDE 2**, and **Instax Mini Link (1, 2, 3, & Link+)**
@@ -86,7 +86,7 @@ A complete, self-contained suite of native standalone applications, Adobe Lightr
 ---
 
 #### 🎞️ B. Legacy Wi-Fi Direct Printers (Instax SHARE SP-1, SP-2 & SP-3)
-* **Live Online Web App:** [https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html) *(or [`/legacy.html`](https://analogbits.github.io/Instax-Offline-Printer/legacy.html))*
+* **Live Online Web App:** [https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html](https://analogbits.github.io/Instax-Offline-Printer/Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)
 * **Offline Studio File:** [`Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html`](Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)
 * **📱 Printing from iPhone or iPad (3 Easy Options):**
   1. **Option 1 — Safari Web Studio via Local Wi-Fi Bridge:**
