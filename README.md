@@ -201,11 +201,13 @@ working directory.
 
 ### Q: Do I need to use Google Chrome for Bluetooth? Does that same requirement apply to Wi-Fi printers?
 * **Answer:** 
-  * **For Bluetooth (BLE) Printers:** Yes, if you are using direct in-browser Web Bluetooth, you must use **Google Chrome**, **Microsoft Edge**, or **Brave** (or the free **Bluefy** app on iPhone). This is because Apple deliberately disabled the Web Bluetooth API (`navigator.bluetooth`) inside WebKit (Safari).
-  * **For Wi-Fi Direct Printers (Instax SHARE SP-1/2/3):** **NO, Chrome is NOT required!** Wi-Fi printers communicate via standard HTTP and TCP/IP (`192.168.0.251:8080`). Standard HTTP is supported natively by **Apple Safari, Mobile Safari on iPhone/iPad, Chrome, Firefox, Edge, and Brave**. You can use regular **Safari on your iPhone and Mac** with 100% native compatibility.
+  * **For Bluetooth (BLE) Printers:** Yes, direct in-browser Web Bluetooth requires **Google Chrome**, **Microsoft Edge**, or **Brave** (or the free **Bluefy** app on iPhone) because Apple disabled Web Bluetooth in WebKit/Safari.
+  * **For Wi-Fi Direct Printers (Instax SHARE SP-1/2/3):** On desktop, you can use **any browser** (Safari, Chrome, Firefox, Edge) to run the Web Studio accompanied by `legacy_web_bridge.py`. Better yet, use the native desktop apps ([`Legacy Instax Printer.app`](Legacy-Instax-Printer/macOS/) on Mac, `.vbs` on Windows, or `.sh` on Linux) with zero browser setup needed!
 
 ### Q: How do I print photos from my iPhone to a Legacy Instax Wi-Fi printer (SP-1/2/3)?
-* **Answer:** Simply **AirDrop the photo to your Mac in 1 second!** Then connect your Mac to `INSTAX-XXXXXXXX`, open `Legacy Instax Printer.app` (or `LegacyInstaxPrinterWeb.html`), and click Print. You do not need any complicated bridges or network hopping.
+* **Answer:** You have two easy options:
+  1. **Direct from iPhone (No Computer Needed):** Connect your iPhone's Wi-Fi to `INSTAX-XXXXXXXX` (Password: `11111111`) and print directly using Fujifilm's official [instax SHARE app](https://apps.apple.com/app/instax-share/id816944602) on the iOS App Store.
+  2. **Print via Desktop Suite (For Collages, QR Codes & Filters):** AirDrop your photo from iPhone to your Mac in 1 second, join your Mac to `INSTAX-XXXXXXXX`, open `Legacy Instax Printer.app`, and click Print!
 
 ### Q: Why do the web apps need a local bridge script (`legacy_web_bridge.py` or `instax_wifi_bridge.py`)?
 * **Answer:** For security reasons, modern web browsers operate in a strict sandbox that prohibits client-side JavaScript from opening raw binary TCP sockets (needed for `192.168.0.251:8080`) or controlling OS-level Bluetooth hardware. The lightweight local bridge script acts as a safe, local translator between your desktop browser and the physical printer hardware.

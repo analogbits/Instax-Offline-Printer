@@ -33,22 +33,31 @@ A dedicated, 100% offline desktop and web application suite for Fujifilm's class
 
 ---
 
-## 📱 Have Photos on an iPhone or iPad? AirDrop to Mac in 1 Second!
+## 📱 Printing from iPhone or iPad: How It Works
 
-You do **not** need any complicated bridges or network hopping between your phone and computer:
-
-1. **AirDrop to Mac:** On your iPhone, select your photo in the Photos app $\to$ tap **Share** $\to$ tap **AirDrop** to your Mac. The photo lands instantly in your Mac's Downloads folder.
-2. **Connect Mac to Printer:** In your Mac's Wi-Fi menu, connect to your printer's **`INSTAX-XXXXXXXX`** network (Default Password: **`11111111`**).
-3. **Click Print:** Open **`Legacy Instax Printer.app`** (or [`LegacyInstaxPrinterWeb.html`](Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)), pick your photo, and click **Print Over Wi-Fi Direct**!
-
-*(If you are away from your computer, simply connect your iPhone's Wi-Fi directly to `INSTAX-XXXXXXXX` and use Fujifilm's official Instax SHARE app).*
+### Option 1: Direct iPhone-to-Printer Printing (No Computer Needed)
+You can print directly from your iPhone or iPad using Fujifilm's official **instax SHARE** app:
+1. **Power On Printer:** Turn on your Instax SHARE SP-1, SP-2, or SP-3 printer.
+2. **Join Printer Wi-Fi:** On your iPhone, open **Settings $\to$ Wi-Fi** and join **`INSTAX-XXXXXXXX`** (Default Password: **`11111111`**).
+   *(iOS may display "No Internet Connection" — this is completely normal since the printer is not a modem. Stay connected).*
+3. **Open App & Print:** Open the free [Fujifilm instax SHARE app](https://apps.apple.com/app/instax-share/id816944602) on your iPhone, select your photo, and tap Print!
 
 ---
 
-## 🌐 Safari vs Chrome: Zero Chrome Required!
-* **Web Bluetooth** requires Chrome/Edge/Brave because Apple blocks the Web Bluetooth API in WebKit/Safari.
-* **Wi-Fi Direct printers use standard HTTP and TCP/IP.**
-* Regular **Safari on iPhone, iPad, and macOS works 100% natively out of the box** for all Instax SHARE SP-1, SP-2, and SP-3 printers. **No Chrome, no Bluefy, and no extra apps required!**
+### Option 2: Printing iPhone Photos via This Offline Desktop Suite (AirDrop in 1 Second!)
+If you want to take advantage of this suite's advanced creative studio (9-photo collages, QR code badges, border spacing, artistic filters, and film simulation) on a large computer screen:
+1. **AirDrop to Mac:** On your iPhone, select your photo in Apple Photos $\to$ tap **Share** $\to$ tap **AirDrop** to your Mac. The photo appears in your Mac's Downloads folder in 1 second.
+2. **Connect Mac to Printer:** In your Mac's Wi-Fi menu, join your printer's **`INSTAX-XXXXXXXX`** network (Default Password: **`11111111`**).
+3. **Click Print:** Open **`Legacy Instax Printer.app`** (or [`LegacyInstaxPrinterWeb.html`](Web-WiFi-Offline/LegacyInstaxPrinterWeb.html)), pick your photo, and click **Print Over Wi-Fi Direct**!
+
+---
+
+## 🌐 Why Web Browsers Need a Local Helper (Raw TCP vs HTTP)
+* Unlike modern Web Bluetooth printers, older Instax SHARE printers (SP-1, SP-2, SP-3) communicate over **raw binary TCP sockets on port 8080** (`0x24` command bytes / `0x2A` responses).
+* All web browsers (Safari, Chrome, Edge, Firefox) operate inside a strict security sandbox that prohibits client-side JavaScript from opening raw TCP stream sockets directly.
+* That is why:
+  * **Native Desktop Apps (`Legacy Instax Printer.app`, `.vbs`, `.sh`):** Connect directly to `192.168.0.251:8080` with native OS sockets (zero helpers needed).
+  * **Desktop Web Studio (`LegacyInstaxPrinterWeb.html`):** Uses the lightweight local helper `python3 legacy_web_bridge.py` on your computer to bridge browser requests to the printer's TCP socket.
 
 ---
 

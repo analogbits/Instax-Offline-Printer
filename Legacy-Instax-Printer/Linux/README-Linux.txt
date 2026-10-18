@@ -23,21 +23,20 @@ COMMAND LINE USAGE:
   python3 legacy_instax_printer.py --model SP-3 photo.jpg
   python3 legacy_instax_printer.py --serve
 
-HAVE PHOTOS ON IPHONE OR IPAD? EASY TRANSFER:
-------------------------------------------------
-Transfer the photo to your Linux computer (via local network, USB, or cloud),
-connect your Wi-Fi to "INSTAX-XXXXXXXX", and run `./Legacy-Instax-Printer-Linux.sh`
-to print!
+PRINTING FROM IPHONE OR IPAD:
+-----------------------------
+Option 1 (Direct from iPhone without PC):
+  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111) and print
+  using the official "instax SHARE" app from the iOS App Store.
+
+Option 2 (Print iPhone Photos via Linux):
+  Transfer photo to your Linux PC (via local network, USB, or cloud), connect
+  Wi-Fi to "INSTAX-XXXXXXXX", and run `./Legacy-Instax-Printer-Linux.sh` to print!
 
 LOCAL WEB STUDIO BACKEND (OPTIONAL):
 ------------------------------------
 If you prefer running the browser studio (LegacyInstaxPrinterWeb.html),
 run `python3 legacy_web_bridge.py` to bridge browser requests to the
-printer's raw TCP socket (192.168.0.251:8080).
-
-ZERO CHROME REQUIREMENT FOR WI-FI PRINTERS:
---------------------------------------------
-Unlike Bluetooth LE printers (which need Chrome for Web Bluetooth), Instax
-SHARE Wi-Fi Direct printers use standard HTTP & TCP. Works in all browsers natively!
+printer's raw binary TCP socket (192.168.0.251:8080).
 
 

@@ -29,22 +29,20 @@ COMMAND LINE (CLI) USAGE:
   ./legacy-instax --model sp3 photo.jpg
   ./legacy-instax --serve
 
-HAVE PHOTOS ON IPHONE OR IPAD? AIRDROP TO MAC IN 1 SECOND!
------------------------------------------------------------
-1. On iPhone: Select photo in Photos app -> Share -> AirDrop to Mac.
-2. On Mac: Connect Mac Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111).
-3. Open "Legacy Instax Printer.app" -> pick photo from Downloads -> click Print!
+PRINTING FROM IPHONE OR IPAD:
+-----------------------------
+Option 1 (Direct from iPhone without Mac):
+  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111) and print
+  using the official "instax SHARE" app from the iOS App Store.
+
+Option 2 (Print iPhone Photos via Mac):
+  AirDrop photo from iPhone to your Mac in 1 second, join Mac Wi-Fi to
+  "INSTAX-XXXXXXXX", open "Legacy Instax Printer.app", and click Print!
 
 LOCAL WEB STUDIO BACKEND (OPTIONAL):
 ------------------------------------
 If you want to use the offline browser studio (LegacyInstaxPrinterWeb.html),
 run `python3 legacy_web_bridge.py` to bridge browser requests to the
-printer's raw TCP socket (192.168.0.251:8080).
-
-ZERO CHROME REQUIREMENT FOR WI-FI PRINTERS:
---------------------------------------------
-Unlike Bluetooth LE printers (which need Chrome for Web Bluetooth), Instax
-SHARE Wi-Fi Direct printers use standard HTTP & TCP. Regular Apple Safari on
-macOS and iOS works 100% natively with zero extra apps required!
+printer's raw binary TCP socket (192.168.0.251:8080).
 
 

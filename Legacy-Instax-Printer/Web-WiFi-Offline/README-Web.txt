@@ -9,28 +9,23 @@ Wi-Fi Direct TCP Bridge ("legacy_web_bridge.py") for Fujifilm Instax SHARE:
   - Instax SHARE SP-3 (SQUARE Film • 800 × 800 Planar RGB)
 
 ---------------------------------------------------------------------------
-🌐 SAFARI VS CHROME: ZERO CHROME REQUIRED FOR WI-FI PRINTERS!
+📱 PRINTING FROM IPHONE OR IPAD:
 ---------------------------------------------------------------------------
-Unlike Bluetooth LE printers (which require Chrome/Edge/Brave because Apple
-blocks Web Bluetooth in WebKit), Instax SHARE printers communicate over
-standard HTTP and TCP/IP (192.168.0.251:8080).
-Regular Apple Safari on iPhone, iPad, and macOS works 100% natively!
-No third-party browsers like Chrome or Bluefy are needed.
+Option 1 — Direct iPhone-to-Printer (No Computer Needed):
+  Connect iPhone Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111) and print
+  directly using Fujifilm's official "instax SHARE" app on the iOS App Store.
 
----------------------------------------------------------------------------
-📱 HAVE PHOTOS ON IPHONE OR IPAD? AIRDROP TO MAC IN 1 SECOND!
----------------------------------------------------------------------------
-You do NOT need any complicated bridge scripts or network switching:
-  1. On iPhone: Tap Share -> AirDrop photo to your Mac (1 second).
-  2. On Mac: Connect Wi-Fi to "INSTAX-XXXXXXXX" (Password: 11111111).
-  3. Open LegacyInstaxPrinterWeb.html -> click "Choose Photo" -> click Print!
+Option 2 — Creative Desktop Suite (Collages, QR Codes, Filters):
+  AirDrop photo from iPhone to your Mac in 1 second, connect Mac to
+  "INSTAX-XXXXXXXX", and click Print in LegacyInstaxPrinterWeb.html!
 
 ---------------------------------------------------------------------------
 💻 LOCAL WEB STUDIO BACKEND (legacy_web_bridge.py):
 ---------------------------------------------------------------------------
+Instax SHARE printers communicate over raw binary TCP sockets (port 8080).
 Because web browsers block direct raw TCP sockets from webpages for security,
-run `python3 legacy_web_bridge.py` on your computer to provide a lightweight local
-bridge between LegacyInstaxPrinterWeb.html and the printer at 192.168.0.251:8080.
+run `python3 legacy_web_bridge.py` on your computer to bridge browser requests
+to the printer at 192.168.0.251:8080.
 
 ---------------------------------------------------------------------------
 📶 INTERACTIVE WI-FI TEST & HARDWARE DIAGNOSTICS:
