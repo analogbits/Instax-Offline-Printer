@@ -262,8 +262,10 @@ Every application across the suite (Web Bluetooth, Web Wi-Fi Direct, native macO
   * **Festive Pine & Berry Garland:** Deep forest green pine boughs with holiday red winterberry clusters
   * **Autumn Botanical Leaves:** Warm russet, maple gold, and burnt orange autumn foliage border
 * **🎯 Free Canvas Positioning & Interactive Dragging:**
-  * Drag stickers, custom overlay images, and custom banners freely anywhere across the photo canvas using intuitive mouse or touch dragging.
-  * Direct numeric **X & Y Offset sliders** (`-1.0` to `+1.0`) with live sub-pixel coordinate mapping for precision placement across all canvas aspect ratios (Square, Wide, Mini).
+  * **Intelligent Drag Target Hit-Testing:** Click and drag stickers, custom image watermarks, or banners freely anywhere across the canvas. Smart hit-testing ensures clicking an overlay manipulates that element directly without accidentally moving or panning the underlying photo.
+  * **Dedicated Drag Target Focus Bar (`🎯 Auto` • `🖼️ Photo` • `🎨 Sticker` • `🎀 Banner`):** Quickly toggle canvas drag focus across native macOS SwiftUI apps, Web Studios, and desktop GUIs to lock dragging onto stickers, banners, or photo framing.
+  * **Seamless Preset Synchronization:** Switching between position presets (corners, centers) automatically aligns the internal coordinate space so manual dragging continues smoothly from the exact preset anchor without coordinate jumping.
+  * Direct numeric **X & Y Offset sliders** (`-1.0` to `+1.0`) with live coordinate mapping for precision placement across all canvas aspect ratios (Square, Wide, Mini).
   * Scale multipliers (`0.10×` to `2.50×`), opacity transparency (`10%` to `100%`), and continuous `360°` rotation dials (`-180°` to `+180°`).
 * **🎀 Custom Banner Maker:**
   * Create personalized typographic ribbons, banners, and badges with your own custom text!

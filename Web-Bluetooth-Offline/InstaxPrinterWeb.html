@@ -265,6 +265,17 @@
         <canvas id="photoCanvas" width="800" height="800"></canvas>
       </div>
 
+      <!-- Drag Target Focus Bar -->
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0 6px 0; font-size: 12px;">
+        <span style="color: var(--text-dim); font-weight: 600;">Drag Target:</span>
+        <div style="display: inline-flex; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 2px;">
+          <button type="button" id="btnDragAuto" onclick="setDragFocus('auto')" style="padding: 4px 12px; border-radius: 16px; border: none; font-size: 11px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff;">🎯 Auto</button>
+          <button type="button" id="btnDragPhoto" onclick="setDragFocus('photo')" style="padding: 4px 12px; border-radius: 16px; border: none; font-size: 11px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-dim);">🖼️ Photo</button>
+          <button type="button" id="btnDragSticker" onclick="setDragFocus('sticker')" style="padding: 4px 12px; border-radius: 16px; border: none; font-size: 11px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-dim);">🎨 Sticker</button>
+          <button type="button" id="btnDragBanner" onclick="setDragFocus('banner')" style="padding: 4px 12px; border-radius: 16px; border: none; font-size: 11px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-dim);">🎀 Banner</button>
+        </div>
+      </div>
+
       <!-- Quick Action Toolbar -->
       <div class="toolbar">
         <input type="file" id="fileInput" accept="image/*" style="display: none;">
@@ -1067,11 +1078,52 @@ function actionTestCard() {
 
 // Canvas Drag (Photo Pan + Sticker Drag + Banner Drag for Mouse + iPhone/iPad Touch)
 let isDragging = false;
+let canvasDragMode = 'auto'; // 'auto', 'photo', 'sticker', 'banner'
 let activeDragTarget = 'photo'; // 'photo', 'sticker', 'banner'
 let dragStartX = 0;
 let dragStartY = 0;
 
+function setDragFocus(mode) {
+  canvasDragMode = mode;
+  ['auto', 'photo', 'sticker', 'banner'].forEach(m => {
+    const btn = document.getElementById('btnDrag' + m.charAt(0).toUpperCase() + m.slice(1));
+    if (btn) {
+      if (m === mode) {
+        btn.style.background = 'var(--accent, #3b82f6)';
+        btn.style.color = '#fff';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--text-dim, #9ca3af)';
+      }
+    }
+  });
+}
+
+function prepareDragCoordinates(target) {
+  if (target === 'sticker') {
+    const posSel = document.getElementById('stickerPosSelect');
+    const sx = document.getElementById('sliderStickerX');
+    const sy = document.getElementById('sliderStickerY');
+    if (posSel && posSel.value !== 'custom' && sx && sy) {
+      const stPos = getStickerCenterCoords(canvas.width, canvas.height);
+      const scale = parseFloat(document.getElementById('sliderStickerScale')?.value || 0.25);
+      const targetDim = Math.min(canvas.width, canvas.height) * scale;
+      const spanX = canvas.width / 2 - targetDim / 2 - 5;
+      const spanY = canvas.height / 2 - targetDim / 2 - 5;
+      const normX = spanX > 0 ? (stPos.cx - canvas.width / 2) / spanX : 0;
+      const normY = spanY > 0 ? (stPos.cy - canvas.height / 2) / spanY : 0;
+      sx.value = Math.max(-1.0, Math.min(1.0, normX)).toFixed(2);
+      sy.value = Math.max(-1.0, Math.min(1.0, normY)).toFixed(2);
+      posSel.value = 'custom';
+    }
+  }
+}
+
 function hitTestCanvas(clientX, clientY) {
+  if (canvasDragMode === 'photo') return loadedImage ? 'photo' : null;
+  if (canvasDragMode === 'sticker') return 'sticker';
+  if (canvasDragMode === 'banner') return 'banner';
+
   const rect = canvas.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return loadedImage ? 'photo' : null;
   const scaleX = canvas.width / rect.width;
@@ -1079,13 +1131,13 @@ function hitTestCanvas(clientX, clientY) {
   const clickX = (clientX - rect.left) * scaleX;
   const clickY = (clientY - rect.top) * scaleY;
 
-  // 1. Check sticker / custom image hit
+  // 1. Check sticker / custom image hit with generous target area
   const stickerType = document.getElementById('stickerSelect')?.value || 'none';
   const hasSticker = (stickerType !== 'none' || !!customStickerImage);
   if (hasSticker) {
     const stPos = getStickerCenterCoords(canvas.width, canvas.height);
     const scale = parseFloat(document.getElementById('sliderStickerScale')?.value || 0.25);
-    const hitRadius = (Math.min(canvas.width, canvas.height) * scale * 0.70) + 24;
+    const hitRadius = Math.max(50, (Math.min(canvas.width, canvas.height) * scale * 0.85) + 36);
     if (Math.hypot(clickX - stPos.cx, clickY - stPos.cy) <= hitRadius) {
       return 'sticker';
     }
@@ -1097,9 +1149,9 @@ function hitTestCanvas(clientX, clientY) {
   if (bannerText && bannerStyle !== 'none') {
     const bnPos = getBannerCenterCoords(canvas.width, canvas.height);
     const bnScale = parseFloat(document.getElementById('sliderBannerScale')?.value || 1.0);
-    const approxW = (bannerText.length * 20 + 80) * bnScale;
-    const approxH = 65 * bnScale;
-    if (Math.abs(clickX - bnPos.cx) <= approxW / 2 + 18 && Math.abs(clickY - bnPos.cy) <= approxH / 2 + 18) {
+    const approxW = (bannerText.length * 22 + 90) * bnScale;
+    const approxH = 75 * bnScale;
+    if (Math.abs(clickX - bnPos.cx) <= approxW / 2 + 25 && Math.abs(clickY - bnPos.cy) <= approxH / 2 + 25) {
       return 'banner';
     }
   }
@@ -1114,6 +1166,7 @@ canvas.addEventListener('mousedown', (e) => {
   activeDragTarget = hit;
   dragStartX = e.clientX;
   dragStartY = e.clientY;
+  prepareDragCoordinates(hit);
 });
 
 window.addEventListener('mousemove', (e) => {
@@ -1161,6 +1214,7 @@ canvas.addEventListener('touchstart', (e) => {
   activeDragTarget = hit;
   dragStartX = e.touches[0].clientX;
   dragStartY = e.touches[0].clientY;
+  prepareDragCoordinates(hit);
 }, { passive: true });
 
 canvas.addEventListener('touchmove', (e) => {

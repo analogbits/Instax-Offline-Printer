@@ -191,6 +191,24 @@ enum InspectorTab: String, CaseIterable, Identifiable {
     }
 }
 
+enum CanvasDragMode: String, CaseIterable, Identifiable {
+    case auto = "Auto"
+    case photo = "Photo"
+    case sticker = "Sticker"
+    case banner = "Banner"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .auto: return "Auto 🎯"
+        case .photo: return "Photo 🖼️"
+        case .sticker: return "Sticker 🎨"
+        case .banner: return "Banner 🎀"
+        }
+    }
+}
+
 enum LogCategory: String, CaseIterable, Identifiable {
     case all = "ALL"
     case ble = "BLE"
@@ -428,7 +446,16 @@ final class InstaxAppViewModel: ObservableObject {
     @Published var sticker: String = "none" { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var customStickerImage: NSImage? = nil { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var customStickerFilename: String = ""
-    @Published var stickerPosition: String = "bottomRight" { didSet { if !isLoadingSelection { updatePreview() } } }
+    @Published var stickerPosition: String = "bottomRight" {
+        didSet {
+            if stickerPosition != "custom" {
+                let pos = effectiveStickerNormalizedPosition()
+                stickerX = pos.x
+                stickerY = pos.y
+            }
+            if !isLoadingSelection { updatePreview() }
+        }
+    }
     @Published var stickerScale: Double = 0.25 { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var stickerOpacity: Double = 1.0 { didSet { if !isLoadingSelection { updatePreview() } } }
     @Published var stickerRotation: Double = 0.0 { didSet { if !isLoadingSelection { updatePreview() } } }
@@ -1776,8 +1803,28 @@ final class InstaxAppViewModel: ObservableObject {
         }
     }
 
+    @Published var canvasDragMode: CanvasDragMode = .auto
+    var activeDragTarget: CanvasDragMode = .photo
     var dragStartOffset: CGSize = .zero
+    var stickerStartOffset: CGSize = .zero
+    var bannerStartOffset: CGSize = .zero
     var isDraggingCanvas: Bool = false
+
+    func effectiveStickerNormalizedPosition() -> (x: Double, y: Double) {
+        if stickerPosition == "custom" {
+            return (stickerX, stickerY)
+        }
+        switch stickerPosition {
+        case "topLeft": return (-0.68, -0.68)
+        case "topRight": return (0.68, -0.68)
+        case "bottomLeft": return (-0.68, 0.68)
+        case "bottomRight": return (0.68, 0.68)
+        case "center": return (0.0, 0.0)
+        case "topCenter": return (0.0, -0.68)
+        case "bottomCenter": return (0.0, 0.68)
+        default: return (stickerX, stickerY)
+        }
+    }
 
     static func makeSampleTestCard() -> NSImage {
         let size = NSSize(width: 800, height: 800)
@@ -2101,16 +2148,89 @@ struct InstaxMainView: View {
                             .frame(width: vm.selectedModel.previewWidth, height: vm.selectedModel.previewHeight)
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                             .gesture(
-                                DragGesture()
+                                DragGesture(minimumDistance: 1)
                                     .onChanged { value in
+                                        let pWidth = Double(vm.selectedModel.previewWidth)
+                                        let pHeight = Double(vm.selectedModel.previewHeight)
+                                        let halfW = pWidth / 2.0
+                                        let halfH = pHeight / 2.0
+
                                         if !vm.isDraggingCanvas {
                                             vm.isDraggingCanvas = true
                                             vm.dragStartOffset = CGSize(width: vm.offsetX, height: vm.offsetY)
+                                            vm.stickerStartOffset = CGSize(width: vm.stickerX, height: vm.stickerY)
+                                            vm.bannerStartOffset = CGSize(width: vm.bannerX, height: vm.bannerY)
+
+                                            switch vm.canvasDragMode {
+                                            case .photo:
+                                                vm.activeDragTarget = .photo
+                                            case .sticker:
+                                                vm.activeDragTarget = .sticker
+                                                let stPos = vm.effectiveStickerNormalizedPosition()
+                                                if vm.stickerPosition != "custom" {
+                                                    vm.stickerPosition = "custom"
+                                                    vm.stickerX = stPos.x
+                                                    vm.stickerY = stPos.y
+                                                    vm.stickerStartOffset = CGSize(width: stPos.x, height: stPos.y)
+                                                }
+                                            case .banner:
+                                                vm.activeDragTarget = .banner
+                                            case .auto:
+                                                let clickNormX = (Double(value.startLocation.x) - halfW) / halfW
+                                                let clickNormY = (Double(value.startLocation.y) - halfH) / halfH
+
+                                                let hasSticker = (vm.sticker != "none" || vm.customStickerImage != nil)
+                                                let hasBanner = (!vm.bannerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && vm.bannerStyle != "none")
+
+                                                var stickerHit = false
+                                                let stPos = vm.effectiveStickerNormalizedPosition()
+                                                if hasSticker {
+                                                    let dist = hypot(clickNormX - stPos.x, clickNormY - stPos.y)
+                                                    if dist < 0.45 {
+                                                        stickerHit = true
+                                                    }
+                                                }
+
+                                                var bannerHit = false
+                                                if hasBanner {
+                                                    let bannerDistX = abs(clickNormX - vm.bannerX)
+                                                    let bannerDistY = abs(clickNormY - vm.bannerY)
+                                                    if bannerDistX < 0.50 && bannerDistY < 0.28 {
+                                                        bannerHit = true
+                                                    }
+                                                }
+
+                                                if stickerHit {
+                                                    vm.activeDragTarget = .sticker
+                                                    if vm.stickerPosition != "custom" {
+                                                        vm.stickerPosition = "custom"
+                                                        vm.stickerX = stPos.x
+                                                        vm.stickerY = stPos.y
+                                                        vm.stickerStartOffset = CGSize(width: stPos.x, height: stPos.y)
+                                                    }
+                                                } else if bannerHit {
+                                                    vm.activeDragTarget = .banner
+                                                } else {
+                                                    vm.activeDragTarget = .photo
+                                                }
+                                            }
                                         }
-                                        let dx = Double(value.translation.width) / (Double(vm.selectedModel.previewWidth) / 2.0)
-                                        let dy = Double(value.translation.height) / (Double(vm.selectedModel.previewHeight) / 2.0)
-                                        vm.offsetX = max(-1.5, min(1.5, Double(vm.dragStartOffset.width) + dx))
-                                        vm.offsetY = max(-1.5, min(1.5, Double(vm.dragStartOffset.height) + dy))
+
+                                        let dx = Double(value.translation.width) / halfW
+                                        let dy = Double(value.translation.height) / halfH
+
+                                        switch vm.activeDragTarget {
+                                        case .sticker:
+                                            vm.stickerPosition = "custom"
+                                            vm.stickerX = max(-1.0, min(1.0, Double(vm.stickerStartOffset.width) + dx))
+                                            vm.stickerY = max(-1.0, min(1.0, Double(vm.stickerStartOffset.height) + dy))
+                                        case .banner:
+                                            vm.bannerX = max(-1.0, min(1.0, Double(vm.bannerStartOffset.width) + dx))
+                                            vm.bannerY = max(-1.0, min(1.0, Double(vm.bannerStartOffset.height) + dy))
+                                        case .photo, .auto:
+                                            vm.offsetX = max(-1.5, min(1.5, Double(vm.dragStartOffset.width) + dx))
+                                            vm.offsetY = max(-1.5, min(1.5, Double(vm.dragStartOffset.height) + dy))
+                                        }
                                     }
                                     .onEnded { _ in
                                         vm.isDraggingCanvas = false
@@ -2124,6 +2244,21 @@ struct InstaxMainView: View {
                         .frame(width: vm.selectedModel.previewWidth, height: vm.selectedModel.previewHeight)
                         .allowsHitTesting(false)
                 }
+
+                // Drag Target Focus Control
+                HStack(spacing: 8) {
+                    Text("Drag Target:")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Picker("Drag Target", selection: $vm.canvasDragMode) {
+                        ForEach(CanvasDragMode.allCases) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 320)
+                }
+                .padding(.top, 2)
 
                 // Quick Action Toolbar directly beneath preview
                 HStack(spacing: 8) {

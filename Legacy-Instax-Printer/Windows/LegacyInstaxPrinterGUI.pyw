@@ -478,6 +478,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.sticker_rot_var = tk.DoubleVar(value=0.0)
         self.sticker_pos_x_var = tk.DoubleVar(value=0.65)
         self.sticker_pos_y_var = tk.DoubleVar(value=0.65)
+        self.drag_focus_mode_var = tk.StringVar(value="auto")
 
         # Custom Banner Maker State
         self.banner_text_var = tk.StringVar(value="")
@@ -726,7 +727,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
 
         tk.Label(tab_decor, text="Sticker Position Preset:", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
         cb_pos = ttk.Combobox(tab_decor, textvariable=self.sticker_pos_var, values=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter", "custom"], state="readonly")
-        cb_pos.bind("<<ComboboxSelected>>", lambda _e: self.refresh_preview())
+        cb_pos.bind("<<ComboboxSelected>>", self._on_sticker_preset_change)
         cb_pos.pack(fill=tk.X, pady=(0, 4))
 
         tk.Label(tab_decor, text="Sticker X Offset (-1.0 to 1.0):", fg=self.fg_text, bg=self.bg_card).pack(anchor="w")
@@ -865,6 +866,12 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         self.canvas_label.pack(expand=True, pady=10)
         self.canvas_label.bind("<ButtonPress-1>", self._on_canvas_press)
         self.canvas_label.bind("<B1-Motion>", self._on_canvas_drag)
+
+        drag_bar = tk.Frame(center, bg=self.bg_root)
+        drag_bar.pack(pady=(0, 6))
+        tk.Label(drag_bar, text="Drag Target:", bg=self.bg_root, fg=self.fg_text, font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, padx=4)
+        for val, txt in [("auto", "🎯 Auto"), ("sticker", "🎨 Sticker"), ("banner", "🎀 Banner")]:
+            tk.Radiobutton(drag_bar, text=txt, variable=self.drag_focus_mode_var, value=val, bg=self.bg_root, fg=self.fg_text, selectcolor=self.bg_card).pack(side=tk.LEFT, padx=3)
 
         btn_bar = tk.Frame(center, bg=self.bg_root)
         btn_bar.pack(pady=8)
@@ -1320,6 +1327,24 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             self.banner_color_var.set(c)
             self.refresh_preview()
 
+    def _on_sticker_preset_change(self, *args):
+        pos = self.sticker_pos_var.get()
+        if pos != "custom":
+            preset_map = {
+                "topLeft": (-0.68, -0.68),
+                "topRight": (0.68, -0.68),
+                "bottomLeft": (-0.68, 0.68),
+                "bottomRight": (0.68, 0.68),
+                "center": (0.0, 0.0),
+                "topCenter": (0.0, -0.68),
+                "bottomCenter": (0.0, 0.68),
+            }
+            if pos in preset_map:
+                x, y = preset_map[pos]
+                self.sticker_pos_x_var.set(x)
+                self.sticker_pos_y_var.set(y)
+        self.refresh_preview()
+
     def _on_canvas_press(self, event):
         self.drag_start_x = event.x
         self.drag_start_y = event.y
@@ -1333,13 +1358,45 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         has_sticker = (self.sticker_var.get() != "none" or self.custom_sticker_img is not None)
         has_banner = (bool(self.banner_text_var.get().strip()) and self.banner_style_var.get() != "none")
 
-        if has_sticker and abs(norm_x - self.sticker_pos_x_var.get()) < 0.32 and abs(norm_y - self.sticker_pos_y_var.get()) < 0.32:
+        st_pos = self.sticker_pos_var.get()
+        if st_pos == "custom":
+            eff_st_x = self.sticker_pos_x_var.get()
+            eff_st_y = self.sticker_pos_y_var.get()
+        else:
+            preset_map = {
+                "topLeft": (-0.68, -0.68),
+                "topRight": (0.68, -0.68),
+                "bottomLeft": (-0.68, 0.68),
+                "bottomRight": (0.68, 0.68),
+                "center": (0.0, 0.0),
+                "topCenter": (0.0, -0.68),
+                "bottomCenter": (0.0, 0.68),
+            }
+            eff_st_x, eff_st_y = preset_map.get(st_pos, (0.68, 0.68))
+
+        mode = getattr(self, "drag_focus_mode_var", None)
+        focus = mode.get() if mode else "auto"
+
+        if focus == "sticker":
             self.drag_target = "sticker"
+            self.sticker_pos_x_var.set(eff_st_x)
+            self.sticker_pos_y_var.set(eff_st_y)
             self.sticker_pos_var.set("custom")
-        elif has_banner and abs(norm_x - self.banner_pos_x_var.get()) < 0.40 and abs(norm_y - self.banner_pos_y_var.get()) < 0.28:
+        elif focus == "banner":
             self.drag_target = "banner"
         else:
-            self.drag_target = "sticker" if has_sticker else "banner"
+            sticker_hit = has_sticker and (abs(norm_x - eff_st_x) < 0.45 and abs(norm_y - eff_st_y) < 0.45)
+            banner_hit = has_banner and (abs(norm_x - self.banner_pos_x_var.get()) < 0.48 and abs(norm_y - self.banner_pos_y_var.get()) < 0.32)
+
+            if sticker_hit:
+                self.drag_target = "sticker"
+                self.sticker_pos_x_var.set(eff_st_x)
+                self.sticker_pos_y_var.set(eff_st_y)
+                self.sticker_pos_var.set("custom")
+            elif banner_hit:
+                self.drag_target = "banner"
+            else:
+                self.drag_target = "sticker" if has_sticker else "banner"
 
     def _on_canvas_drag(self, event):
         lw = self.canvas_label.winfo_width()

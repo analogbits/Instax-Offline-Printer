@@ -245,6 +245,7 @@ class InstaxDesktopApp(tk.Tk):
         self.sticker_rotation = tk.DoubleVar(value=0.0)
         self.sticker_pos_x = tk.DoubleVar(value=0.65)
         self.sticker_pos_y = tk.DoubleVar(value=0.65)
+        self.drag_focus_mode = tk.StringVar(value="auto")
 
         # Custom Banner Maker State
         self.banner_text = tk.StringVar(value="")
@@ -350,6 +351,13 @@ class InstaxDesktopApp(tk.Tk):
         self.canvas.pack(fill=tk.BOTH, expand=True)
         self.canvas.bind("<ButtonPress-1>", self._on_canvas_press)
         self.canvas.bind("<B1-Motion>", self._on_canvas_drag)
+
+        # Drag Focus Mode Control Bar
+        drag_bar = ttk.Frame(preview_container, padding=2)
+        drag_bar.pack(side=tk.BOTTOM, fill=tk.X)
+        ttk.Label(drag_bar, text="Drag Target:", font=("TkDefaultFont", 8, "bold")).pack(side=tk.LEFT, padx=4)
+        for val, txt in [("auto", "🎯 Auto"), ("pan", "🖼️ Photo"), ("sticker", "🎨 Sticker"), ("banner", "🎀 Banner")]:
+            ttk.Radiobutton(drag_bar, text=txt, variable=self.drag_focus_mode, value=val).pack(side=tk.LEFT, padx=3)
 
         # Quick Preview Action Buttons
         prev_btn_bar = ttk.Frame(preview_container, padding=6)
@@ -541,7 +549,7 @@ class InstaxDesktopApp(tk.Tk):
             values=["topRight", "topLeft", "bottomRight", "bottomLeft", "center", "topCenter", "bottomCenter", "custom"],
             state="readonly"
         )
-        cb_pos.bind("<<ComboboxSelected>>", lambda e: self.update_preview())
+        cb_pos.bind("<<ComboboxSelected>>", self._on_sticker_preset_change)
         cb_pos.pack(fill=tk.X, pady=(0, 6))
 
         ttk.Label(tab_decor, text="Sticker X Offset (-1.0 to 1.0):", font=("Arial", 8)).pack(anchor=tk.W)
@@ -670,6 +678,24 @@ class InstaxDesktopApp(tk.Tk):
         self._refresh_queue_listbox()
         self.update_preview()
 
+    def _on_sticker_preset_change(self, *args):
+        pos = self.sticker_position.get()
+        if pos != "custom":
+            preset_map = {
+                "topLeft": (-0.68, -0.68),
+                "topRight": (0.68, -0.68),
+                "bottomLeft": (-0.68, 0.68),
+                "bottomRight": (0.68, 0.68),
+                "center": (0.0, 0.0),
+                "topCenter": (0.0, -0.68),
+                "bottomCenter": (0.0, 0.68),
+            }
+            if pos in preset_map:
+                x, y = preset_map[pos]
+                self.sticker_pos_x.set(x)
+                self.sticker_pos_y.set(y)
+        self.update_preview()
+
     def _on_canvas_press(self, event):
         self.drag_start_x = event.x
         self.drag_start_y = event.y
@@ -688,13 +714,48 @@ class InstaxDesktopApp(tk.Tk):
         has_sticker = (self.sticker.get() != "none" or self.custom_sticker_img is not None)
         has_banner = (bool(self.banner_text.get().strip()) and self.banner_style.get() != "none")
 
-        if has_sticker and abs(norm_x - self.sticker_pos_x.get()) < 0.32 and abs(norm_y - self.sticker_pos_y.get()) < 0.32:
-            self.drag_target = "sticker"
-            self.sticker_position.set("custom")
-        elif has_banner and abs(norm_x - self.banner_pos_x.get()) < 0.40 and abs(norm_y - self.banner_pos_y.get()) < 0.28:
-            self.drag_target = "banner"
+        st_pos = self.sticker_position.get()
+        if st_pos == "custom":
+            eff_st_x = self.sticker_pos_x.get()
+            eff_st_y = self.sticker_pos_y.get()
         else:
+            preset_map = {
+                "topLeft": (-0.68, -0.68),
+                "topRight": (0.68, -0.68),
+                "bottomLeft": (-0.68, 0.68),
+                "bottomRight": (0.68, 0.68),
+                "center": (0.0, 0.0),
+                "topCenter": (0.0, -0.68),
+                "bottomCenter": (0.0, 0.68),
+            }
+            eff_st_x, eff_st_y = preset_map.get(st_pos, (0.68, 0.68))
+
+        mode = getattr(self, "drag_focus_mode", None)
+        focus = mode.get() if mode else "auto"
+
+        if focus == "sticker":
+            self.drag_target = "sticker"
+            self.sticker_pos_x.set(eff_st_x)
+            self.sticker_pos_y.set(eff_st_y)
+            self.sticker_position.set("custom")
+        elif focus == "banner":
+            self.drag_target = "banner"
+        elif focus == "pan":
             self.drag_target = "pan"
+        else:
+            # Auto detection with generous hit areas
+            sticker_hit = has_sticker and (abs(norm_x - eff_st_x) < 0.45 and abs(norm_y - eff_st_y) < 0.45)
+            banner_hit = has_banner and (abs(norm_x - self.banner_pos_x.get()) < 0.48 and abs(norm_y - self.banner_pos_y.get()) < 0.32)
+
+            if sticker_hit:
+                self.drag_target = "sticker"
+                self.sticker_pos_x.set(eff_st_x)
+                self.sticker_pos_y.set(eff_st_y)
+                self.sticker_position.set("custom")
+            elif banner_hit:
+                self.drag_target = "banner"
+            else:
+                self.drag_target = "pan"
 
     def _on_canvas_drag(self, event):
         cfg = self.model_configs.get(self.selected_model.get(), self.model_configs["SQUARE"])

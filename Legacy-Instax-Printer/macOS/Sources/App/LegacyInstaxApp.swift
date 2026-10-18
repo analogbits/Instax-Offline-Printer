@@ -49,6 +49,24 @@ enum LegacyInspectorTab: String, CaseIterable, Identifiable {
     }
 }
 
+enum CanvasDragMode: String, CaseIterable, Identifiable {
+    case auto = "Auto"
+    case photo = "Photo"
+    case sticker = "Sticker"
+    case banner = "Banner"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .auto: return "Auto 🎯"
+        case .photo: return "Photo 🖼️"
+        case .sticker: return "Sticker 🎨"
+        case .banner: return "Banner 🎀"
+        }
+    }
+}
+
 final class LegacyStudioViewModel: ObservableObject {
     @Published var options = LegacyPrintOptions()
     @Published var selectedTab: LegacyInspectorTab = .framing
@@ -59,6 +77,29 @@ final class LegacyStudioViewModel: ObservableObject {
     @Published var photoPickerItems: [PhotosPickerItem] = []
     @Published var collagePickerItems: [PhotosPickerItem] = []
     @Published var showProtocolConsole: Bool = false
+
+    @Published var canvasDragMode: CanvasDragMode = .auto
+    var activeDragTarget: CanvasDragMode = .photo
+    var dragStartOffset: CGSize = .zero
+    var stickerStartOffset: CGSize = .zero
+    var bannerStartOffset: CGSize = .zero
+    var isDraggingCanvas: Bool = false
+
+    func effectiveStickerNormalizedPosition() -> (x: Double, y: Double) {
+        if options.stickerPosition == "custom" {
+            return (options.stickerX, options.stickerY)
+        }
+        switch options.stickerPosition {
+        case "topLeft": return (-0.68, -0.68)
+        case "topRight": return (0.68, -0.68)
+        case "bottomLeft": return (-0.68, 0.68)
+        case "bottomRight": return (0.68, 0.68)
+        case "center": return (0.0, 0.0)
+        case "topCenter": return (0.0, -0.68)
+        case "bottomCenter": return (0.0, 0.68)
+        default: return (options.stickerX, options.stickerY)
+        }
+    }
 
     init() {
         primaryImage = Self.makeSampleTestCard(for: .sp2)
@@ -652,6 +693,98 @@ struct LegacyMainStudioView: View {
                                 RoundedRectangle(cornerRadius: 4)
                                     .stroke(Color.black.opacity(0.12), lineWidth: 1)
                             )
+                            .gesture(
+                                DragGesture(minimumDistance: 1)
+                                    .onChanged { value in
+                                        let pWidth: Double = (vm.options.model == .sp3 ? 380.0 : 305.0)
+                                        let pHeight: Double = pWidth / vm.options.model.aspectRatio
+                                        let halfW = pWidth / 2.0
+                                        let halfH = pHeight / 2.0
+
+                                        if !vm.isDraggingCanvas {
+                                            vm.isDraggingCanvas = true
+                                            vm.dragStartOffset = CGSize(width: vm.options.offsetX, height: vm.options.offsetY)
+                                            vm.stickerStartOffset = CGSize(width: vm.options.stickerX, height: vm.options.stickerY)
+                                            vm.bannerStartOffset = CGSize(width: vm.options.bannerX, height: vm.options.bannerY)
+
+                                            switch vm.canvasDragMode {
+                                            case .photo:
+                                                vm.activeDragTarget = .photo
+                                            case .sticker:
+                                                vm.activeDragTarget = .sticker
+                                                let stPos = vm.effectiveStickerNormalizedPosition()
+                                                if vm.options.stickerPosition != "custom" {
+                                                    vm.options.stickerPosition = "custom"
+                                                    vm.options.stickerX = stPos.x
+                                                    vm.options.stickerY = stPos.y
+                                                    vm.stickerStartOffset = CGSize(width: stPos.x, height: stPos.y)
+                                                }
+                                            case .banner:
+                                                vm.activeDragTarget = .banner
+                                            case .auto:
+                                                let clickNormX = (Double(value.startLocation.x) - halfW) / halfW
+                                                let clickNormY = (Double(value.startLocation.y) - halfH) / halfH
+
+                                                let hasSticker = (vm.options.sticker != "none" || vm.options.stickerImage != nil)
+                                                let hasBanner = (!vm.options.bannerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && vm.options.bannerStyle != "none")
+
+                                                var stickerHit = false
+                                                let stPos = vm.effectiveStickerNormalizedPosition()
+                                                if hasSticker {
+                                                    let dist = hypot(clickNormX - stPos.x, clickNormY - stPos.y)
+                                                    if dist < 0.45 {
+                                                        stickerHit = true
+                                                    }
+                                                }
+
+                                                var bannerHit = false
+                                                if hasBanner {
+                                                    let bannerDistX = abs(clickNormX - vm.options.bannerX)
+                                                    let bannerDistY = abs(clickNormY - vm.options.bannerY)
+                                                    if bannerDistX < 0.50 && bannerDistY < 0.28 {
+                                                        bannerHit = true
+                                                    }
+                                                }
+
+                                                if stickerHit {
+                                                    vm.activeDragTarget = .sticker
+                                                    if vm.options.stickerPosition != "custom" {
+                                                        vm.options.stickerPosition = "custom"
+                                                        vm.options.stickerX = stPos.x
+                                                        vm.options.stickerY = stPos.y
+                                                        vm.stickerStartOffset = CGSize(width: stPos.x, height: stPos.y)
+                                                    }
+                                                } else if bannerHit {
+                                                    vm.activeDragTarget = .banner
+                                                } else {
+                                                    vm.activeDragTarget = .photo
+                                                }
+                                            }
+                                        }
+
+                                        let dx = Double(value.translation.width) / halfW
+                                        let dy = Double(value.translation.height) / halfH
+
+                                        switch vm.activeDragTarget {
+                                        case .sticker:
+                                            vm.options.stickerPosition = "custom"
+                                            vm.options.stickerX = max(-1.0, min(1.0, Double(vm.stickerStartOffset.width) + dx))
+                                            vm.options.stickerY = max(-1.0, min(1.0, Double(vm.stickerStartOffset.height) + dy))
+                                            vm.refreshPreview()
+                                        case .banner:
+                                            vm.options.bannerX = max(-1.0, min(1.0, Double(vm.bannerStartOffset.width) + dx))
+                                            vm.options.bannerY = max(-1.0, min(1.0, Double(vm.bannerStartOffset.height) + dy))
+                                            vm.refreshPreview()
+                                        case .photo, .auto:
+                                            vm.options.offsetX = max(-1.5, min(1.5, Double(vm.dragStartOffset.width) + dx))
+                                            vm.options.offsetY = max(-1.5, min(1.5, Double(vm.dragStartOffset.height) + dy))
+                                            vm.refreshPreview()
+                                        }
+                                    }
+                                    .onEnded { _ in
+                                        vm.isDraggingCanvas = false
+                                    }
+                            )
                     } else {
                         ProgressView("Rendering preview...")
                     }
@@ -680,6 +813,21 @@ struct LegacyMainStudioView: View {
             .onDrop(of: [UTType.fileURL, UTType.image], isTargeted: nil) { providers in
                 handleDrop(providers: providers)
             }
+
+            // Drag Target Focus Selector
+            HStack(spacing: 8) {
+                Text("Drag Target:")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.secondary)
+                Picker("Drag Target", selection: $vm.canvasDragMode) {
+                    ForEach(CanvasDragMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 320)
+            }
+            .padding(.top, 4)
 
             Spacer()
 
@@ -1449,7 +1597,15 @@ struct LegacyMainStudioView: View {
 
             Picker("Position", selection: Binding(
                 get: { vm.options.stickerPosition },
-                set: { vm.options.stickerPosition = $0; vm.refreshPreview() }
+                set: { newPos in
+                    vm.options.stickerPosition = newPos
+                    if newPos != "custom" {
+                        let pos = vm.effectiveStickerNormalizedPosition()
+                        vm.options.stickerX = pos.x
+                        vm.options.stickerY = pos.y
+                    }
+                    vm.refreshPreview()
+                }
             )) {
                 Text("Bottom-Right Corner").tag("bottomRight")
                 Text("Bottom-Left Corner").tag("bottomLeft")
