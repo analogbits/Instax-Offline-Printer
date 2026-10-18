@@ -663,6 +663,10 @@ function actionModelChange() {
     canvas.width = 800; canvas.height = 800;
     document.getElementById('canvasInfo').textContent = 'Target: 800 × 800 px (Instax SQUARE Link)';
   }
+  if (loadedImage && loadedImage._isTestCard) {
+    actionTestCard();
+    return;
+  }
   renderCanvas();
 }
 
@@ -684,41 +688,120 @@ function actionReset() {
   document.getElementById('sliderContrast').value = 1.0;
   document.getElementById('sliderSat').value = 1.0;
   document.getElementById('filterPresetSelect').value = "none";
+  const selColor = document.getElementById('filmPresetSelectColor');
+  const selAnalog = document.getElementById('filmPresetSelect');
+  if (selColor) selColor.value = 'default';
+  if (selAnalog) selAnalog.value = 'default';
   renderCanvas();
 }
 
 function actionTestCard() {
+  const w = canvas.width;
+  const h = canvas.height;
   const off = document.createElement('canvas');
-  off.width = canvas.width;
-  off.height = canvas.height;
+  off.width = w;
+  off.height = h;
   const gctx = off.getContext('2d');
-  const grad = gctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  grad.addColorStop(0, '#1e3a5f');
-  grad.addColorStop(0.55, '#d96b43');
-  grad.addColorStop(1, '#f4c96b');
+
+  // Photographic sunset & film emulsion gradient
+  const grad = gctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, '#0f172a');
+  grad.addColorStop(0.35, '#1e293b');
+  grad.addColorStop(0.65, '#991b1b');
+  grad.addColorStop(0.85, '#d97706');
+  grad.addColorStop(1, '#f59e0b');
   gctx.fillStyle = grad;
-  gctx.fillRect(0, 0, canvas.width, canvas.height);
-  gctx.strokeStyle = 'rgba(255,255,255,0.45)';
-  gctx.lineWidth = 4;
-  gctx.beginPath();
-  gctx.arc(canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.32, 0, Math.PI * 2);
-  gctx.stroke();
-  gctx.fillStyle = '#fff';
-  gctx.textAlign = 'center';
-  gctx.font = 'bold 36px sans-serif';
+  gctx.fillRect(0, 0, w, h);
+
+  // Subtle alignment grid
+  gctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+  gctx.lineWidth = 1;
+  const step = Math.round(Math.min(w, h) / 8);
+  for (let x = step; x < w; x += step) {
+    gctx.beginPath(); gctx.moveTo(x, 0); gctx.lineTo(x, h); gctx.stroke();
+  }
+  for (let y = step; y < h; y += step) {
+    gctx.beginPath(); gctx.moveTo(0, y); gctx.lineTo(w, y); gctx.stroke();
+  }
+
+  // Framing guide border
+  gctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  gctx.lineWidth = 3;
+  gctx.strokeRect(30, 30, w - 60, h - 60);
+
+  // Target alignment crosshairs & concentric circles
+  const cx = w / 2;
+  const cy = h / 2 - 25;
+  const maxR = Math.min(w, h) * 0.30;
+
+  gctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+  gctx.lineWidth = 2;
+  gctx.beginPath(); gctx.arc(cx, cy, maxR, 0, Math.PI * 2); gctx.stroke();
+  gctx.beginPath(); gctx.arc(cx, cy, maxR * 0.65, 0, Math.PI * 2); gctx.stroke();
+  gctx.beginPath(); gctx.arc(cx, cy, maxR * 0.30, 0, Math.PI * 2); gctx.stroke();
+
+  // Crosshairs
+  gctx.strokeStyle = 'rgba(255, 255, 255, 0.40)';
+  gctx.lineWidth = 1.5;
+  gctx.beginPath(); gctx.moveTo(cx - maxR - 15, cy); gctx.lineTo(cx + maxR + 15, cy); gctx.stroke();
+  gctx.beginPath(); gctx.moveTo(cx, cy - maxR - 15); gctx.lineTo(cx, cy + maxR + 15); gctx.stroke();
+
+  // Typography
   const m = document.getElementById('modelSelect').value;
-  gctx.fillText(`INSTAX ${m.toUpperCase()} TEST CARD`, canvas.width / 2, canvas.height / 2 - 10);
-  gctx.font = '18px monospace';
-  gctx.fillText(`${canvas.width} × ${canvas.height} px • Web Bluetooth`, canvas.width / 2, canvas.height / 2 + 25);
+  let modelTitle = `INSTAX ${m.toUpperCase()} LINK`;
+  if (m === 'square') modelTitle = 'INSTAX SQUARE LINK';
+  else if (m === 'wide') modelTitle = 'INSTAX LINK WIDE';
+  else if (m === 'mini') modelTitle = 'INSTAX MINI LINK';
+
+  gctx.fillStyle = '#ffffff';
+  gctx.textAlign = 'center';
+  gctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  gctx.fillText(`${modelTitle} TEST CARD`, cx, cy - 20);
+
+  gctx.font = '600 18px monospace';
+  gctx.fillStyle = '#fde68a';
+  const modeText = bridgeActive ? 'iPhone Safari Wi-Fi Bridge' : 'Web Bluetooth (Chrome/Edge/Brave/Bluefy)';
+  gctx.fillText(`${w} × ${h} px • ${modeText}`, cx, cy + 15);
+
+  gctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  gctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+  gctx.fillText('analogbits/Instax-Offline-Printer • Calibration Test Target', cx, cy + 45);
+
+  // Calibration Color & Grayscale Swatches at bottom
+  const barY = h - 90;
+  const barH = 26;
+  const marginX = 50;
+  const barW = w - (marginX * 2);
+
+  const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#a855f7'];
+  const cW = barW / colors.length;
+  colors.forEach((col, i) => {
+    gctx.fillStyle = col;
+    gctx.fillRect(marginX + i * cW, barY, cW, barH);
+  });
+  gctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  gctx.lineWidth = 1;
+  gctx.strokeRect(marginX, barY, barW, barH);
+
+  const grayY = barY + barH + 6;
+  const grays = ['#000000', '#222222', '#444444', '#666666', '#888888', '#aaaaaa', '#cccccc', '#ffffff'];
+  const gW = barW / grays.length;
+  grays.forEach((gray, i) => {
+    gctx.fillStyle = gray;
+    gctx.fillRect(marginX + i * gW, grayY, gW, 14);
+  });
+  gctx.strokeRect(marginX, grayY, barW, 14);
+
   const img = new Image();
   img.onload = () => {
+    img._isTestCard = true;
     loadedImage = img;
     renderCanvas();
     if (writeChar || bridgeActive || bridgeConnected) {
       document.getElementById('btnPrint').disabled = false;
     }
   };
-  img.src = off.toDataURL('image/jpeg', 0.92);
+  img.src = off.toDataURL('image/jpeg', 0.95);
 }
 
 // Canvas Drag-to-Pan (Mouse + iPhone/iPad Touch)
@@ -2561,8 +2644,8 @@ async function initBridgeAndBrowserNotice() {
 
 initBridgeAndBrowserNotice();
 
-// Initial draw
-renderCanvas();
+// Initial draw with instant calibration test card
+actionTestCard();
 </script>
 </body>
 </html>

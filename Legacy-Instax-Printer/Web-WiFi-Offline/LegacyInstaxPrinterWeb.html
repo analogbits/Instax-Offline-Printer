@@ -387,6 +387,9 @@
 
       <!-- Action Buttons -->
       <div class="action-buttons-row">
+        <button class="secondary" onclick="document.getElementById('fileInput').click()">📁 Open Photo...</button>
+        <button class="secondary" onclick="actionTestCard()" title="Generate instant test card to preview filters and framing">✨ Test Card</button>
+        <button class="secondary" onclick="actionRotate(90)">↺ Rotate 90°</button>
         <button class="success" id="printBtn" style="padding:10px 18px; font-size:13px;" onclick="runPrint(false)">🖨 Print Over Wi-Fi Direct</button>
         <button class="amber" id="dryRunBtn" style="padding:10px 16px; font-size:13px;" onclick="runPrint(true)">🧪 Dry Run (0-Film Verification)</button>
         <button class="secondary" id="exportPngBtn" onclick="actionSaveImage()">💾 Export Framed PNG</button>
@@ -827,6 +830,10 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     canvas.height = spec.height;
     document.getElementById('frameModelBadge').textContent = `FUJIFILM instax SHARE ${m}`;
     document.getElementById('specHeadline').textContent = `${spec.width} × ${spec.height} px (${m})`;
+    if (primaryImg && primaryImg._isTestCard) {
+      actionTestCard();
+      return;
+    }
     renderCanvas();
   }
 
@@ -2225,30 +2232,103 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   function actionTestCard() {
     const m = document.getElementById('modelSelect').value;
     const spec = MODELS[m];
+    const w = spec.width;
+    const h = spec.height;
     const off = document.createElement('canvas');
-    off.width = spec.width;
-    off.height = spec.height;
+    off.width = w;
+    off.height = h;
     const gctx = off.getContext('2d');
-    const grad = gctx.createLinearGradient(0, 0, spec.width, spec.height);
-    grad.addColorStop(0, '#1e3a5f');
-    grad.addColorStop(0.55, '#d96b43');
-    grad.addColorStop(1, '#f4c96b');
+
+    // Photographic sunset & film emulsion gradient
+    const grad = gctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, '#0f172a');
+    grad.addColorStop(0.35, '#1e293b');
+    grad.addColorStop(0.65, '#991b1b');
+    grad.addColorStop(0.85, '#d97706');
+    grad.addColorStop(1, '#f59e0b');
     gctx.fillStyle = grad;
-    gctx.fillRect(0, 0, spec.width, spec.height);
-    gctx.strokeStyle = 'rgba(255,255,255,0.45)';
-    gctx.lineWidth = 4;
-    gctx.beginPath();
-    gctx.arc(spec.width / 2, spec.height / 2, Math.min(spec.width, spec.height) * 0.32, 0, Math.PI * 2);
+    gctx.fillRect(0, 0, w, h);
+
+    // Subtle alignment grid
+    gctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    gctx.lineWidth = 1;
+    const step = Math.round(Math.min(w, h) / 8);
+    for (let x = step; x < w; x += step) {
+      gctx.beginPath(); gctx.moveTo(x, 0); gctx.lineTo(x, h); gctx.stroke();
+    }
+    for (let y = step; y < h; y += step) {
+      gctx.beginPath(); gctx.moveTo(0, y); gctx.lineTo(w, y); gctx.stroke();
+    }
+
+    // Framing guide border
+    gctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    gctx.lineWidth = 3;
+    gctx.strokeRect(30, 30, w - 60, h - 60);
+
+    // Target alignment crosshairs & concentric circles
+    const cx = w / 2;
+    const cy = h / 2 - 25;
+    const maxR = Math.min(w, h) * 0.30;
+
+    gctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    gctx.lineWidth = 2;
+    gctx.beginPath(); gctx.arc(cx, cy, maxR, 0, Math.PI * 2); gctx.stroke();
+    gctx.beginPath(); gctx.arc(cx, cy, maxR * 0.65, 0, Math.PI * 2); gctx.stroke();
+    gctx.beginPath(); gctx.arc(cx, cy, maxR * 0.30, 0, Math.PI * 2); gctx.stroke();
+
+    // Crosshairs
+    gctx.strokeStyle = 'rgba(255, 255, 255, 0.40)';
+    gctx.lineWidth = 1.5;
+    gctx.beginPath(); gctx.moveTo(cx - maxR - 15, cy); gctx.lineTo(cx + maxR + 15, cy);
+    gctx.beginPath(); gctx.moveTo(cx, cy - maxR - 15); gctx.lineTo(cx, cy + maxR + 15);
     gctx.stroke();
-    gctx.fillStyle = '#fff';
+
+    // Typography
+    gctx.fillStyle = '#ffffff';
     gctx.textAlign = 'center';
-    gctx.font = 'bold 32px sans-serif';
-    gctx.fillText(`INSTAX SHARE ${m}`, spec.width / 2, spec.height / 2 - 8);
-    gctx.font = '16px monospace';
-    gctx.fillText(`Wi-Fi Direct • ${spec.width}×${spec.height} Planar RGB`, spec.width / 2, spec.height / 2 + 24);
+    gctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    gctx.fillText(`INSTAX SHARE ${m} TEST CARD`, cx, cy - 20);
+
+    gctx.font = '600 18px monospace';
+    gctx.fillStyle = '#fde68a';
+    gctx.fillText(`${w} × ${h} px • Wi-Fi Direct (Planar RGB)`, cx, cy + 15);
+
+    gctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    gctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    gctx.fillText('analogbits/Instax-Offline-Printer • Hardware Calibration Target', cx, cy + 45);
+
+    // Calibration Color & Grayscale Swatches at bottom
+    const barY = h - 90;
+    const barH = 26;
+    const marginX = 50;
+    const barW = w - (marginX * 2);
+
+    const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#a855f7'];
+    const cW = barW / colors.length;
+    colors.forEach((col, i) => {
+      gctx.fillStyle = col;
+      gctx.fillRect(marginX + i * cW, barY, cW, barH);
+    });
+    gctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    gctx.lineWidth = 1;
+    gctx.strokeRect(marginX, barY, barW, barH);
+
+    const grayY = barY + barH + 6;
+    const grays = ['#000000', '#222222', '#444444', '#666666', '#888888', '#aaaaaa', '#cccccc', '#ffffff'];
+    const gW = barW / grays.length;
+    grays.forEach((gray, i) => {
+      gctx.fillStyle = gray;
+      gctx.fillRect(marginX + i * gW, grayY, gW, 14);
+    });
+    gctx.strokeRect(marginX, grayY, barW, 14);
+
     const img = new Image();
-    img.onload = () => { primaryImg = img; renderCanvas(); };
-    img.src = off.toDataURL();
+    img.onload = () => {
+      img._isTestCard = true;
+      primaryImg = img;
+      renderCanvas();
+    };
+    img.src = off.toDataURL('image/jpeg', 0.95);
   }
 
   function actionSaveImage() {
