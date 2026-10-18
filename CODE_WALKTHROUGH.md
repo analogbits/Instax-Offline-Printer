@@ -599,7 +599,55 @@ function drawQRBadge(targetCtx, text, x, y, size, style) {
 
 ---
 
-### 5.4 Web Bluetooth API (`navigator.bluetooth`) Engine
+### 5.4 Analog Creative FX & Film Emulation Engine (Ported from PolaroidEngine)
+
+The Analog FX tab introduces physical darkroom chemistry emulation ported directly from the Objective-C `PolaroidEngine`:
+
+```javascript
+// Warmth / Temperature Adjustment (-1.0 Cool to +1.0 Golden Amber)
+function applyAnalogWarmth(targetCtx, x, y, w, h, warmth) {
+  if (Math.abs(warmth) < 0.01) return;
+  targetCtx.save();
+  targetCtx.beginPath();
+  targetCtx.rect(x, y, w, h);
+  targetCtx.clip();
+  targetCtx.globalCompositeOperation = 'soft-light';
+  targetCtx.fillStyle = (warmth > 0)
+    ? `rgba(255, 175, 45, ${Math.min(1.0, warmth * 0.65)})`
+    : `rgba(45, 135, 255, ${Math.min(1.0, (-warmth) * 0.65)})`;
+  targetCtx.fillRect(x, y, w, h);
+  targetCtx.restore();
+}
+
+// Light Leak Blending (Screen Blend Mode)
+function drawLightLeakEffect(targetCtx, x, y, w, h, type, placement, intensity, seed) {
+  if (!type || type === 'none' || intensity <= 0.01) return;
+  targetCtx.save();
+  targetCtx.beginPath();
+  targetCtx.rect(x, y, w, h);
+  targetCtx.clip();
+  targetCtx.globalCompositeOperation = 'screen';
+  targetCtx.globalAlpha = Math.min(1.0, intensity);
+  // Draws smooth multi-stop linear/radial gradients for burn, sunburst, sunset, and prismatic rainbow
+  targetCtx.restore();
+}
+```
+
+#### Line-by-Line Explanation:
+1. `globalCompositeOperation = 'soft-light'`:
+   Blends golden amber (`#FFAF2D`) or cool arctic blue (`#2D87FF`) color washes non-destructively into the midtones and highlights, mimicking physical silver halide temperature shifts.
+2. `globalCompositeOperation = 'screen'`:
+   Light leaks are optical intrusions of light into unexposed film; using `screen` compositing ensures the leak only lightens the underlying scene naturally without clamping shadows to muddy grays.
+3. `drawTactileFilmGrain`:
+   Employs an offscreen procedural noise canvas blended with `overlay` at `intensity * 0.85` to give physical texture and crystal grain presence without blurring upon downsampling.
+4. `drawAnalogWear`:
+   Uses a seeded linear congruential pseudo-random generator (LCG) to deterministically generate curved fibers, hairline scratches, fine dust motes, and a chemical roller spread gradient that stay stable as sliders are adjusted.
+5. `drawVintageDateStamp`:
+   Renders authentic 90s monospaced digital LED datestamps (`'YY MM DD`) with custom color glow halos (`shadowColor` + `shadowBlur: 6`) in Amber Gold (`#FF8C00`), Ruby Red (`#FF2525`), Emerald Green (`#00E676`), or Crisp White (`#F5F5F7`).
+
+---
+
+### 5.5 Web Bluetooth API (`navigator.bluetooth`) Engine
 
 ```javascript
 async function connectBluetooth() {

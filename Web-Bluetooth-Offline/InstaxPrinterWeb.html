@@ -299,8 +299,9 @@
       <div class="card-group">
         <div class="tabs-nav">
           <button class="tab-btn active" id="tabFramingBtn" onclick="showTab('framing')">Framing</button>
-          <button class="tab-btn" id="tabColorBtn" onclick="showTab('color')">Film & Filters</button>
-          <button class="tab-btn" id="tabQRBtn" onclick="showTab('qr')">QR & Text</button>
+          <button class="tab-btn" id="tabColorBtn" onclick="showTab('color')">Film &amp; Filters</button>
+          <button class="tab-btn" id="tabAnalogBtn" onclick="showTab('analog')">Analog FX</button>
+          <button class="tab-btn" id="tabQRBtn" onclick="showTab('qr')">QR &amp; Text</button>
         </div>
 
         <!-- Framing Tab Content -->
@@ -383,6 +384,96 @@
           <div class="field-row">
             <div class="field-label"><span>Saturation</span><span class="field-value" id="valSat">1.00</span></div>
             <input type="range" id="sliderSat" min="0.0" max="2.0" step="0.05" value="1.0" oninput="renderCanvas()">
+          </div>
+        </div>
+
+        <!-- Analog FX Tab Content (Ported from PolaroidEngine) -->
+        <div id="tabAnalogContent" style="display: none;">
+          <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+            <button class="primary" style="flex: 1; padding: 6px 10px; font-size: 11px; background: linear-gradient(135deg, #f59e0b, #ec4899); border: none; font-weight: 600;" onclick="randomizeAnalogFX()">🎲 Surprise Me!</button>
+            <button class="secondary" style="padding: 6px 10px; font-size: 11px;" onclick="resetAnalogFX()">↺ Reset</button>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Warmth / Temperature</span><span class="field-value" id="valWarmth">0.00 (Neutral)</span></div>
+            <input type="range" id="sliderWarmth" min="-1.0" max="1.0" step="0.05" value="0.0" oninput="renderCanvas()">
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Lens Vignette</span><span class="field-value" id="valVignette">0%</span></div>
+            <input type="range" id="sliderVignette" min="0.0" max="1.0" step="0.05" value="0.0" oninput="renderCanvas()">
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Analog Light Leak</span></div>
+            <select id="leakTypeSelect" onchange="renderCanvas()">
+              <option value="none">None (Off)</option>
+              <option value="burn">Red Film Burn (Fiery Edge)</option>
+              <option value="sunburst">Golden Sunburst Flare</option>
+              <option value="sunset">Sunset Coral &amp; Rose</option>
+              <option value="rainbow">Prismatic Rainbow Spectrum</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Leak Placement</span></div>
+            <select id="leakPlacementSelect" onchange="renderCanvas()">
+              <option value="auto">Auto (Authentic Placement)</option>
+              <option value="left">Left Edge (Film Door Hinge)</option>
+              <option value="right">Right Edge (Takeup Spool)</option>
+              <option value="topRight">Top-Right Corner (Sunburst)</option>
+              <option value="topLeft">Top-Left Corner (Sunburst)</option>
+              <option value="bottomLeft">Bottom-Left Corner</option>
+              <option value="bottomRight">Bottom-Right Corner</option>
+              <option value="diagonal">Diagonal Sweep</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Leak Intensity</span><span class="field-value" id="valLeakIntensity">70%</span></div>
+            <input type="range" id="sliderLeakIntensity" min="0.1" max="1.0" step="0.05" value="0.70" oninput="renderCanvas()">
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Tactile Film Grain</span><span class="field-value" id="valFilmGrain">0%</span></div>
+            <input type="range" id="sliderFilmGrain" min="0.0" max="1.0" step="0.05" value="0.0" oninput="renderCanvas()">
+          </div>
+
+          <div class="field-row">
+            <div class="field-label"><span>Dust, Scratches &amp; Wear</span><span class="field-value" id="valAnalogWear">0%</span></div>
+            <input type="range" id="sliderAnalogWear" min="0.0" max="1.0" step="0.05" value="0.0" oninput="renderCanvas()">
+          </div>
+
+          <div style="border-top: 1px solid var(--border); margin: 12px 0 8px 0; padding-top: 10px;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: #fbbf24; margin-bottom: 8px;">
+              <input type="checkbox" id="chkDateStamp" onchange="renderCanvas()">
+              <span>📅 Vintage LED Date Stamp</span>
+            </label>
+
+            <div class="field-row">
+              <div class="field-label"><span>Date Text (Custom or Auto)</span></div>
+              <input type="text" id="dateStampInput" placeholder="'YY MM DD (auto)" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: #121318; color: #fff; font-size: 12px; box-sizing: border-box;" oninput="renderCanvas()">
+            </div>
+
+            <div class="field-row">
+              <div class="field-label"><span>LED Glow Color</span></div>
+              <select id="dateColorSelect" onchange="renderCanvas()">
+                <option value="amber">Amber Gold LED (Classic 90s)</option>
+                <option value="red">Ruby Red LED</option>
+                <option value="green">Emerald Green LED</option>
+                <option value="white">Crisp Silver / White</option>
+              </select>
+            </div>
+
+            <div class="field-row">
+              <div class="field-label"><span>LED Placement</span></div>
+              <select id="datePlacementSelect" onchange="renderCanvas()">
+                <option value="bottomRight" selected>Bottom-Right Corner</option>
+                <option value="bottomLeft">Bottom-Left Corner</option>
+                <option value="topRight">Top-Right Corner</option>
+                <option value="topLeft">Top-Left Corner</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -491,9 +582,11 @@ function log(msg) {
 function showTab(tab) {
   document.getElementById('tabFramingContent').style.display = (tab === 'framing') ? 'block' : 'none';
   document.getElementById('tabColorContent').style.display = (tab === 'color') ? 'block' : 'none';
+  document.getElementById('tabAnalogContent').style.display = (tab === 'analog') ? 'block' : 'none';
   document.getElementById('tabQRContent').style.display = (tab === 'qr') ? 'block' : 'none';
   document.getElementById('tabFramingBtn').className = (tab === 'framing') ? 'tab-btn active' : 'tab-btn';
   document.getElementById('tabColorBtn').className = (tab === 'color') ? 'tab-btn active' : 'tab-btn';
+  document.getElementById('tabAnalogBtn').className = (tab === 'analog') ? 'tab-btn active' : 'tab-btn';
   document.getElementById('tabQRBtn').className = (tab === 'qr') ? 'tab-btn active' : 'tab-btn';
 }
 
@@ -817,6 +910,391 @@ function getFilteredSource(img, opts) {
   return img._filteredCanvas;
 }
 
+// ==========================================
+// Analog Creative FX Engine (Ported from PolaroidEngine)
+// ==========================================
+let analogRandomSeed = 54321;
+let _grainNoiseCanvas = null;
+let _grainNoiseSeed = null;
+
+function randomizeAnalogFX() {
+  const leaks = ['burn', 'sunburst', 'sunset', 'rainbow'];
+  const colors = ['amber', 'red', 'green', 'white'];
+  const placements = ['auto', 'left', 'right', 'topRight', 'topLeft', 'bottomLeft', 'bottomRight', 'diagonal'];
+
+  const w = (Math.random() * 0.75 - 0.15).toFixed(2);
+  const v = (0.20 + Math.random() * 0.45).toFixed(2);
+  const lk = leaks[Math.floor(Math.random() * leaks.length)];
+  const plc = placements[Math.floor(Math.random() * placements.length)];
+  const intn = (0.45 + Math.random() * 0.45).toFixed(2);
+  const gr = (0.15 + Math.random() * 0.35).toFixed(2);
+  const wr = (0.08 + Math.random() * 0.25).toFixed(2);
+
+  document.getElementById('sliderWarmth').value = w;
+  document.getElementById('sliderVignette').value = v;
+  document.getElementById('leakTypeSelect').value = lk;
+  document.getElementById('leakPlacementSelect').value = plc;
+  document.getElementById('sliderLeakIntensity').value = intn;
+  document.getElementById('sliderFilmGrain').value = gr;
+  document.getElementById('sliderAnalogWear').value = wr;
+  document.getElementById('chkDateStamp').checked = (Math.random() > 0.3);
+  document.getElementById('dateColorSelect').value = colors[Math.floor(Math.random() * colors.length)];
+  analogRandomSeed = Math.floor(Math.random() * 900000) + 10000;
+  renderCanvas();
+}
+
+function resetAnalogFX() {
+  document.getElementById('sliderWarmth').value = '0.00';
+  document.getElementById('sliderVignette').value = '0.00';
+  document.getElementById('leakTypeSelect').value = 'none';
+  document.getElementById('leakPlacementSelect').value = 'auto';
+  document.getElementById('sliderLeakIntensity').value = '0.70';
+  document.getElementById('sliderFilmGrain').value = '0.00';
+  document.getElementById('sliderAnalogWear').value = '0.00';
+  document.getElementById('chkDateStamp').checked = false;
+  document.getElementById('dateColorSelect').value = 'amber';
+  document.getElementById('datePlacementSelect').value = 'bottomRight';
+  renderCanvas();
+}
+
+function applyAnalogWarmth(targetCtx, x, y, w, h, warmth) {
+  if (Math.abs(warmth) < 0.01) return;
+  targetCtx.save();
+  targetCtx.beginPath();
+  targetCtx.rect(x, y, w, h);
+  targetCtx.clip();
+  targetCtx.globalCompositeOperation = 'soft-light';
+  if (warmth > 0) {
+    targetCtx.fillStyle = `rgba(255, 175, 45, ${Math.min(1.0, warmth * 0.65)})`;
+  } else {
+    targetCtx.fillStyle = `rgba(45, 135, 255, ${Math.min(1.0, (-warmth) * 0.65)})`;
+  }
+  targetCtx.fillRect(x, y, w, h);
+  if (warmth > 0.4) {
+    targetCtx.globalCompositeOperation = 'multiply';
+    targetCtx.fillStyle = `rgba(255, 240, 210, ${(warmth - 0.4) * 0.30})`;
+    targetCtx.fillRect(x, y, w, h);
+  }
+  targetCtx.restore();
+}
+
+function drawLensVignette(targetCtx, x, y, w, h, intensity) {
+  if (intensity <= 0.01) return;
+  targetCtx.save();
+  targetCtx.beginPath();
+  targetCtx.rect(x, y, w, h);
+  targetCtx.clip();
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const maxR = Math.hypot(w, h) / 2;
+  const grad = targetCtx.createRadialGradient(cx, cy, maxR * 0.32, cx, cy, maxR);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(0.65, `rgba(0,0,0,${intensity * 0.30})`);
+  grad.addColorStop(1, `rgba(0,0,0,${intensity * 0.90})`);
+  targetCtx.fillStyle = grad;
+  targetCtx.fillRect(x, y, w, h);
+  targetCtx.restore();
+}
+
+function drawLightLeakEffect(targetCtx, x, y, w, h, type, placement, intensity, seed) {
+  if (!type || type === 'none' || intensity <= 0.01) return;
+
+  targetCtx.save();
+  targetCtx.beginPath();
+  targetCtx.rect(x, y, w, h);
+  targetCtx.clip();
+  targetCtx.globalCompositeOperation = 'screen';
+  targetCtx.globalAlpha = Math.min(1.0, intensity);
+
+  let p = placement;
+  if (!p || p === 'auto') {
+    if (type === 'burn') {
+      p = (seed % 2 === 0) ? 'left' : 'right';
+    } else if (type === 'sunburst') {
+      p = (seed % 2 === 0) ? 'topRight' : 'topLeft';
+    } else if (type === 'sunset') {
+      p = 'bottomLeft';
+    } else if (type === 'rainbow') {
+      p = (seed % 2 === 0) ? 'right' : 'diagonal';
+    } else {
+      p = 'left';
+    }
+  }
+
+  let c1, c2, c3;
+  if (type === 'sunburst') {
+    c1 = 'rgba(255, 250, 215, 1.0)';
+    c2 = 'rgba(255, 175, 45, 0.75)';
+    c3 = 'rgba(240, 70, 38, 0.30)';
+  } else if (type === 'sunset') {
+    c1 = 'rgba(255, 115, 45, 0.95)';
+    c2 = 'rgba(255, 190, 75, 0.60)';
+    c3 = 'rgba(190, 38, 115, 0.25)';
+  } else {
+    // burn
+    c1 = 'rgba(255, 45, 15, 0.95)';
+    c2 = 'rgba(255, 140, 30, 0.65)';
+    c3 = 'rgba(205, 20, 90, 0.25)';
+  }
+
+  let grad;
+  if (p === 'left') {
+    grad = targetCtx.createLinearGradient(x, y + h / 2, x + w * 0.45, y + h / 2);
+    grad.addColorStop(0, c1);
+    grad.addColorStop(0.35, c2);
+    grad.addColorStop(0.70, c3);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    targetCtx.fillStyle = grad;
+    targetCtx.fillRect(x, y, w * 0.45, h);
+  } else if (p === 'right') {
+    grad = targetCtx.createLinearGradient(x + w, y + h / 2, x + w - w * 0.45, y + h / 2);
+    grad.addColorStop(0, c1);
+    grad.addColorStop(0.35, c2);
+    grad.addColorStop(0.70, c3);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    targetCtx.fillStyle = grad;
+    targetCtx.fillRect(x + w - w * 0.45, y, w * 0.45, h);
+  } else if (p === 'topRight') {
+    const cx = x + w;
+    const cy = y;
+    const rad = w * 0.85;
+    grad = targetCtx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    grad.addColorStop(0, c1);
+    grad.addColorStop(0.35, c2);
+    grad.addColorStop(0.70, c3);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    targetCtx.fillStyle = grad;
+    targetCtx.fillRect(x, y, w, h);
+  } else if (p === 'topLeft') {
+    const cx = x;
+    const cy = y;
+    const rad = w * 0.85;
+    grad = targetCtx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    grad.addColorStop(0, c1);
+    grad.addColorStop(0.35, c2);
+    grad.addColorStop(0.70, c3);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    targetCtx.fillStyle = grad;
+    targetCtx.fillRect(x, y, w, h);
+  } else if (p === 'bottomLeft') {
+    grad = targetCtx.createLinearGradient(x, y + h, x + w * 0.5 + 60, y + h * 0.5 - 60);
+    grad.addColorStop(0, c1);
+    grad.addColorStop(0.35, c2);
+    grad.addColorStop(0.70, c3);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    targetCtx.fillStyle = grad;
+    targetCtx.fillRect(x, y, w, h);
+  } else if (p === 'bottomRight') {
+    const cx = x + w;
+    const cy = y + h;
+    const rad = w * 0.85;
+    grad = targetCtx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    grad.addColorStop(0, c1);
+    grad.addColorStop(0.35, c2);
+    grad.addColorStop(0.70, c3);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    targetCtx.fillStyle = grad;
+    targetCtx.fillRect(x, y, w, h);
+  } else if (p === 'diagonal') {
+    grad = targetCtx.createLinearGradient(x, y, x + w, y + h);
+    grad.addColorStop(0, c1);
+    grad.addColorStop(0.35, c2);
+    grad.addColorStop(0.70, c3);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    targetCtx.fillStyle = grad;
+    targetCtx.fillRect(x, y, w, h);
+  }
+
+  if (type === 'rainbow') {
+    const rainbowColors = [
+      'rgba(255, 64, 64, 0.65)',
+      'rgba(255, 153, 38, 0.65)',
+      'rgba(255, 230, 51, 0.65)',
+      'rgba(64, 217, 115, 0.65)',
+      'rgba(51, 153, 242, 0.65)',
+      'rgba(166, 77, 217, 0.65)'
+    ];
+    const stripeW = w * 0.08;
+    for (let i = 0; i < 6; i++) {
+      targetCtx.fillStyle = rainbowColors[i];
+      targetCtx.fillRect(x + w - (6 - i) * stripeW, y, stripeW * 1.4, h);
+    }
+  }
+
+  targetCtx.restore();
+}
+
+function drawTactileFilmGrain(targetCtx, x, y, w, h, intensity, seed) {
+  if (intensity <= 0.01) return;
+
+  const gw = Math.min(320, Math.max(64, Math.round(w / 2.2)));
+  const gh = Math.min(320, Math.max(64, Math.round(h / 2.2)));
+
+  if (!_grainNoiseCanvas || _grainNoiseSeed !== seed || _grainNoiseCanvas.width !== gw || _grainNoiseCanvas.height !== gh) {
+    _grainNoiseCanvas = document.createElement('canvas');
+    _grainNoiseCanvas.width = gw;
+    _grainNoiseCanvas.height = gh;
+    const gCtx = _grainNoiseCanvas.getContext('2d');
+    const imgData = gCtx.createImageData(gw, gh);
+    const data = imgData.data;
+    let s = (seed || 12345);
+    for (let i = 0; i < data.length; i += 4) {
+      s = (s * 9301 + 49297) % 233280;
+      const val = Math.floor((s / 233280) * 256);
+      data[i] = val;
+      data[i + 1] = val;
+      data[i + 2] = val;
+      data[i + 3] = 255;
+    }
+    gCtx.putImageData(imgData, 0, 0);
+    _grainNoiseSeed = seed;
+  }
+
+  targetCtx.save();
+  targetCtx.beginPath();
+  targetCtx.rect(x, y, w, h);
+  targetCtx.clip();
+  targetCtx.imageSmoothingEnabled = false;
+  targetCtx.globalCompositeOperation = 'overlay';
+  targetCtx.globalAlpha = Math.min(1.0, intensity * 0.85);
+  targetCtx.drawImage(_grainNoiseCanvas, x, y, w, h);
+  targetCtx.restore();
+}
+
+function drawAnalogWear(targetCtx, x, y, w, h, intensity, seed) {
+  if (intensity <= 0.01) return;
+
+  targetCtx.save();
+  targetCtx.beginPath();
+  targetCtx.rect(x, y, w, h);
+  targetCtx.clip();
+
+  let s = (seed || 54321);
+  function rng() {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  }
+
+  const dustCount = 10 + Math.floor(intensity * 32);
+  for (let i = 0; i < dustCount; i++) {
+    const rx = x + rng() * w;
+    const ry = y + rng() * h;
+    const isWhite = (rng() < 0.33);
+    const alpha = (0.20 + rng() * 0.40) * Math.min(1.0, intensity * 1.2);
+
+    targetCtx.strokeStyle = isWhite ? `rgba(242, 242, 245, ${alpha})` : `rgba(38, 30, 25, ${alpha * 0.85})`;
+    targetCtx.fillStyle = targetCtx.strokeStyle;
+
+    const type = Math.floor(rng() * 3);
+    if (type === 0) {
+      const len = 5.0 + rng() * 14.0;
+      const angle = rng() * 2.0 * Math.PI;
+      const curve = -4.0 + rng() * 8.0;
+
+      targetCtx.lineWidth = 0.8 + rng() * 0.6;
+      targetCtx.lineCap = 'round';
+      targetCtx.beginPath();
+      targetCtx.moveTo(rx, ry);
+      const ctrlX = rx + Math.cos(angle) * (len * 0.5) + Math.sin(angle) * curve;
+      const ctrlY = ry + Math.sin(angle) * (len * 0.5) - Math.cos(angle) * curve;
+      const endX = rx + Math.cos(angle) * len;
+      const endY = ry + Math.sin(angle) * len;
+      targetCtx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+      targetCtx.stroke();
+    } else if (type === 1) {
+      const len = 8.0 + rng() * 26.0;
+      const angle = rng() * Math.PI;
+      targetCtx.lineWidth = 0.7;
+      targetCtx.beginPath();
+      targetCtx.moveTo(rx, ry);
+      targetCtx.lineTo(rx + Math.cos(angle) * len, ry + Math.sin(angle) * len);
+      targetCtx.stroke();
+    } else {
+      const r = 0.8 + rng() * 1.5;
+      targetCtx.beginPath();
+      targetCtx.arc(rx, ry, r, 0, Math.PI * 2);
+      targetCtx.fill();
+    }
+  }
+
+  if (intensity > 0.12) {
+    targetCtx.globalCompositeOperation = 'screen';
+    const podAtBottom = (Math.floor(rng() * 2) === 0);
+    const gradH = h * (0.08 + intensity * 0.12);
+
+    let grad;
+    if (podAtBottom) {
+      grad = targetCtx.createLinearGradient(x, y + h, x, y + h - gradH);
+    } else {
+      grad = targetCtx.createLinearGradient(x, y, x, y + gradH);
+    }
+    grad.addColorStop(0, `rgba(255, 191, 115, ${0.26 * intensity})`);
+    grad.addColorStop(0.4, `rgba(230, 153, 76, ${0.10 * intensity})`);
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    targetCtx.fillStyle = grad;
+    if (podAtBottom) {
+      targetCtx.fillRect(x, y + h - gradH, w, gradH);
+    } else {
+      targetCtx.fillRect(x, y, w, gradH);
+    }
+  }
+
+  targetCtx.restore();
+}
+
+function drawVintageDateStamp(targetCtx, x, y, w, h, text, colorName, placement) {
+  let stamp = (text || "").trim();
+  if (!stamp) {
+    const d = new Date();
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    stamp = `'${yy} ${mm} ${dd}`;
+  }
+
+  let hex = '#FF8C00';
+  let glowColor = 'rgba(255, 140, 0, 0.75)';
+  if (colorName === 'red') {
+    hex = '#FF2525';
+    glowColor = 'rgba(255, 37, 37, 0.75)';
+  } else if (colorName === 'green') {
+    hex = '#00E676';
+    glowColor = 'rgba(0, 230, 118, 0.75)';
+  } else if (colorName === 'white') {
+    hex = '#F5F5F7';
+    glowColor = 'rgba(245, 245, 247, 0.75)';
+  }
+
+  const fontSize = Math.max(14, Math.round(w * 0.042));
+  targetCtx.save();
+  targetCtx.font = `bold ${fontSize}px 'Courier New', Courier, 'SF Mono', monospace`;
+  targetCtx.fillStyle = hex;
+  targetCtx.shadowColor = glowColor;
+  targetCtx.shadowBlur = 6;
+  targetCtx.textBaseline = 'bottom';
+
+  const metrics = targetCtx.measureText(stamp);
+  const padX = Math.round(w * 0.04);
+  const padY = Math.round(h * 0.04);
+
+  let stampX = x + w - metrics.width - padX;
+  let stampY = y + h - padY;
+
+  if (placement === 'bottomLeft') {
+    stampX = x + padX;
+    stampY = y + h - padY;
+  } else if (placement === 'topRight') {
+    stampX = x + w - metrics.width - padX;
+    stampY = y + padY + fontSize;
+  } else if (placement === 'topLeft') {
+    stampX = x + padX;
+    stampY = y + padY + fontSize;
+  }
+
+  targetCtx.fillText(stamp, stampX, stampY);
+  targetCtx.restore();
+}
+
 // Canvas Rendering Pipeline (Framing + Film Mode + Artistic Filters)
 function renderCanvas() {
   const zoom = parseFloat(document.getElementById('sliderZoom').value);
@@ -830,6 +1308,19 @@ function renderCanvas() {
   const filter = document.getElementById('filterPresetSelect').value;
   const bgColor = document.getElementById('bgColorPicker').value;
 
+  // Analog FX Parameters
+  const warmth = parseFloat(document.getElementById('sliderWarmth')?.value || 0.0);
+  const vignette = parseFloat(document.getElementById('sliderVignette')?.value || 0.0);
+  const leakType = document.getElementById('leakTypeSelect')?.value || 'none';
+  const leakPlacement = document.getElementById('leakPlacementSelect')?.value || 'auto';
+  const leakIntensity = parseFloat(document.getElementById('sliderLeakIntensity')?.value || 0.70);
+  const filmGrain = parseFloat(document.getElementById('sliderFilmGrain')?.value || 0.0);
+  const analogWear = parseFloat(document.getElementById('sliderAnalogWear')?.value || 0.0);
+  const showDateStamp = !!document.getElementById('chkDateStamp')?.checked;
+  const dateText = document.getElementById('dateStampInput')?.value || '';
+  const dateColor = document.getElementById('dateColorSelect')?.value || 'amber';
+  const datePlacement = document.getElementById('datePlacementSelect')?.value || 'bottomRight';
+
   // Update label indicators
   document.getElementById('valZoom').textContent = zoom.toFixed(2) + "×";
   document.getElementById('valPanX').textContent = (panX >= 0 ? "+" : "") + panX.toFixed(2);
@@ -837,6 +1328,21 @@ function renderCanvas() {
   document.getElementById('valBright').textContent = (bright >= 0 ? "+" : "") + bright.toFixed(2);
   document.getElementById('valContrast').textContent = contrast.toFixed(2);
   document.getElementById('valSat').textContent = sat.toFixed(2);
+
+  const valWarmthEl = document.getElementById('valWarmth');
+  if (valWarmthEl) {
+    if (warmth > 0) valWarmthEl.textContent = `+${warmth.toFixed(2)} (Golden Amber)`;
+    else if (warmth < 0) valWarmthEl.textContent = `${warmth.toFixed(2)} (Cool Blue)`;
+    else valWarmthEl.textContent = "0.00 (Neutral)";
+  }
+  const valVignetteEl = document.getElementById('valVignette');
+  if (valVignetteEl) valVignetteEl.textContent = `${Math.round(vignette * 100)}%`;
+  const valLeakEl = document.getElementById('valLeakIntensity');
+  if (valLeakEl) valLeakEl.textContent = `${Math.round(leakIntensity * 100)}%`;
+  const valGrainEl = document.getElementById('valFilmGrain');
+  if (valGrainEl) valGrainEl.textContent = `${Math.round(filmGrain * 100)}%`;
+  const valWearEl = document.getElementById('valAnalogWear');
+  if (valWearEl) valWearEl.textContent = `${Math.round(analogWear * 100)}%`;
 
   // Background
   ctx.fillStyle = (fitMode === 'fit') ? bgColor : '#1E1E1E';
@@ -926,6 +1432,25 @@ function renderCanvas() {
   ctx.drawImage(sourceImg, -drawW / 2 + offsetX, -drawH / 2 + offsetY, drawW, drawH);
   ctx.restore();
   ctx.filter = 'none'; // reset
+
+  // Target photo bounds for analog effects
+  let photoX = 0, photoY = 0, photoW = canvas.width, photoH = canvas.height;
+  if (fitMode === 'fit' && currentRotation === 0) {
+    photoX = Math.round(canvas.width / 2 - drawW / 2 + offsetX);
+    photoY = Math.round(canvas.height / 2 - drawH / 2 + offsetY);
+    photoW = Math.round(drawW);
+    photoH = Math.round(drawH);
+  }
+
+  // Analog FX Pipeline (Ported from PolaroidEngine)
+  applyAnalogWarmth(ctx, photoX, photoY, photoW, photoH, warmth);
+  drawLensVignette(ctx, photoX, photoY, photoW, photoH, vignette);
+  drawLightLeakEffect(ctx, photoX, photoY, photoW, photoH, leakType, leakPlacement, leakIntensity, analogRandomSeed);
+  drawTactileFilmGrain(ctx, photoX, photoY, photoW, photoH, filmGrain, analogRandomSeed);
+  drawAnalogWear(ctx, photoX, photoY, photoW, photoH, analogWear, analogRandomSeed);
+  if (showDateStamp) {
+    drawVintageDateStamp(ctx, photoX, photoY, photoW, photoH, dateText, dateColor, datePlacement);
+  }
 
   // Draw optional caption stamp
   const caption = (document.getElementById('captionTextInput')?.value || "").trim();
