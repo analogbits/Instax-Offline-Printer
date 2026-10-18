@@ -93,17 +93,20 @@ jobs:
           done
           echo "✅ All shell and macOS command scripts passed syntax validation!"
 
-      - name: 🛡️ Verify Web Studio Multi-Platform Consistency
+      - name: 🛡️ Verify Web Studio Canonical Architecture & Bridge Consistency
         shell: bash
         run: |
-          echo "Verifying MD5 integrity of LegacyInstaxPrinterWeb.html copies..."
-          m1=$(python -c "import hashlib; print(hashlib.md5(open('Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html','rb').read()).hexdigest())")
-          m2=$(python -c "import hashlib; print(hashlib.md5(open('Legacy-Instax-Printer/macOS/LegacyInstaxPrinterWeb.html','rb').read()).hexdigest())")
-          m3=$(python -c "import hashlib; print(hashlib.md5(open('Legacy-Instax-Printer/Windows/LegacyInstaxPrinterWeb.html','rb').read()).hexdigest())")
-          m4=$(python -c "import hashlib; print(hashlib.md5(open('Legacy-Instax-Printer/Linux/LegacyInstaxPrinterWeb.html','rb').read()).hexdigest())")
+          echo "Verifying canonical Web Studios & bridge scripts integrity..."
+          python -c "
+          import os, hashlib, sys
+          ble_html = 'Web-Bluetooth-Offline/InstaxPrinterWeb.html'
+          legacy_html = 'Legacy-Instax-Printer/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html'
+          assert os.path.isfile(ble_html) and os.path.getsize(ble_html) > 1000, 'BLE HTML missing'
+          assert os.path.isfile(legacy_html) and os.path.getsize(legacy_html) > 1000, 'Legacy HTML missing'
 
-          if [ "$m1" != "$m2" ] || [ "$m1" != "$m3" ] || [ "$m1" != "$m4" ]; then
-            echo "❌ MD5 mismatch across LegacyInstaxPrinterWeb.html copies!"
-            exit 1
-          fi
-          echo "✅ LegacyInstaxPrinterWeb.html is identical across all 4 platforms ($m1)"
+          ble_bridges = ['macOS/instax_wifi_bridge.py', 'Linux/instax_wifi_bridge.py', 'Windows/instax_wifi_bridge.py', 'Web-Bluetooth-Offline/instax_wifi_bridge.py']
+          legacy_bridges = ['Legacy-Instax-Printer/macOS/legacy_web_bridge.py', 'Legacy-Instax-Printer/Linux/legacy_web_bridge.py', 'Legacy-Instax-Printer/Windows/legacy_web_bridge.py', 'Legacy-Instax-Printer/Web-WiFi-Offline/legacy_web_bridge.py']
+          assert len(set(hashlib.md5(open(f, 'rb').read()).hexdigest() for f in ble_bridges)) == 1, 'BLE bridge mismatch'
+          assert len(set(hashlib.md5(open(f, 'rb').read()).hexdigest() for f in legacy_bridges)) == 1, 'Legacy bridge mismatch'
+          print('✅ Canonical Web Studios verified & bridge scripts match identically across all OS platforms')
+          "

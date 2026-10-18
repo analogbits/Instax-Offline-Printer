@@ -26,10 +26,10 @@ A dedicated, 100% offline desktop and web application suite for Fujifilm's class
 
 | Folder | Platform | Application Files |
 | :--- | :--- | :--- |
-| **`macOS/`** | macOS 13+ (Universal) | `Legacy Instax Printer.app`, `legacy-instax` CLI, `LegacyInstaxPrinterWeb.html`, `legacy_web_bridge.py`, `build.sh` |
-| **`Windows/`** | Windows 10 / 11 | `LegacyInstaxPrinterGUI.pyw`, `legacy_instax_printer.py`, `Legacy-Instax-Printer.vbs`, `LegacyInstaxPrinterWeb.html`, `legacy_web_bridge.py`, `Legacy-Instax-Printer.bat` |
-| **`Linux/`** | Ubuntu / Fedora / Arch | `LegacyInstaxPrinterGUI.py`, `legacy_instax_printer.py`, `Legacy-Instax-Printer-Linux.sh`, `LegacyInstaxPrinterWeb.html`, `legacy_web_bridge.py` |
-| **`Web-WiFi-Offline/`** | Any Desktop Browser | `LegacyInstaxPrinterWeb.html` (Standalone Offline Studio) + `legacy_web_bridge.py` (Local TCP Helper) |
+| **`macOS/`** | macOS 13+ (Universal) | `Legacy Instax Printer.app`, `legacy-instax` CLI, `Start-iPhone-WiFi-Bridge.command`, `legacy_web_bridge.py`, `build.sh` |
+| **`Windows/`** | Windows 10 / 11 | `LegacyInstaxPrinterGUI.pyw`, `legacy_instax_printer.py`, `Legacy-Instax-Printer.vbs`, `Start-iPhone-WiFi-Bridge.bat`, `legacy_web_bridge.py`, `Legacy-Instax-Printer.bat` |
+| **`Linux/`** | Ubuntu / Fedora / Arch | `LegacyInstaxPrinterGUI.py`, `legacy_instax_printer.py`, `Legacy-Instax-Printer-Linux.sh`, `Start-iPhone-WiFi-Bridge.sh`, `legacy_web_bridge.py` |
+| **`Web-WiFi-Offline/`** | Any Browser / iPhone / Android | `LegacyInstaxPrinterWeb.html` (Canonical Offline Studio) + `legacy_web_bridge.py` (Local TCP Helper) |
 
 ---
 

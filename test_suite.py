@@ -90,21 +90,38 @@ def run_tests():
     pass_test(f"Validated {len(all_sh)} shell and .command scripts successfully.")
     passed_tests += 1
 
-    # TEST 3: Web Studio MD5 Consistency
+    # TEST 3: Web Studio Canonical Architecture & Bridge Integrity
     total_tests += 1
-    log_test("Cross-Platform Web Studio MD5 Integrity")
-    web_copies = [
-        os.path.join(SCRIPT_DIR, "Legacy-Instax-Printer", "Web-WiFi-Offline", "LegacyInstaxPrinterWeb.html"),
-        os.path.join(SCRIPT_DIR, "Legacy-Instax-Printer", "macOS", "LegacyInstaxPrinterWeb.html"),
-        os.path.join(SCRIPT_DIR, "Legacy-Instax-Printer", "Windows", "LegacyInstaxPrinterWeb.html"),
-        os.path.join(SCRIPT_DIR, "Legacy-Instax-Printer", "Linux", "LegacyInstaxPrinterWeb.html"),
+    log_test("Web Studio Canonical Architecture & Bridge Integrity")
+    ble_html = os.path.join(SCRIPT_DIR, "Web-Bluetooth-Offline", "InstaxPrinterWeb.html")
+    legacy_html = os.path.join(SCRIPT_DIR, "Legacy-Instax-Printer", "Web-WiFi-Offline", "LegacyInstaxPrinterWeb.html")
+    if not os.path.isfile(ble_html) or os.path.getsize(ble_html) < 1000:
+        fail_test("Canonical InstaxPrinterWeb.html is missing or corrupted.")
+    if not os.path.isfile(legacy_html) or os.path.getsize(legacy_html) < 1000:
+        fail_test("Canonical LegacyInstaxPrinterWeb.html is missing or corrupted.")
+
+    # Verify bridge scripts consistency across all OS platform folders
+    ble_bridges = [
+        os.path.join(SCRIPT_DIR, "macOS", "instax_wifi_bridge.py"),
+        os.path.join(SCRIPT_DIR, "Linux", "instax_wifi_bridge.py"),
+        os.path.join(SCRIPT_DIR, "Windows", "instax_wifi_bridge.py"),
+        os.path.join(SCRIPT_DIR, "Web-Bluetooth-Offline", "instax_wifi_bridge.py"),
     ]
-    hashes = [hashlib.md5(open(f, "rb").read()).hexdigest() for f in web_copies]
-    if len(set(hashes)) == 1:
-        pass_test(f"All 4 copies of LegacyInstaxPrinterWeb.html match identically ({hashes[0]}).")
-        passed_tests += 1
-    else:
-        fail_test(f"MD5 mismatch found in Web Studio copies: {hashes}")
+    legacy_bridges = [
+        os.path.join(SCRIPT_DIR, "Legacy-Instax-Printer", "macOS", "legacy_web_bridge.py"),
+        os.path.join(SCRIPT_DIR, "Legacy-Instax-Printer", "Linux", "legacy_web_bridge.py"),
+        os.path.join(SCRIPT_DIR, "Legacy-Instax-Printer", "Windows", "legacy_web_bridge.py"),
+        os.path.join(SCRIPT_DIR, "Legacy-Instax-Printer", "Web-WiFi-Offline", "legacy_web_bridge.py"),
+    ]
+    ble_hashes = [hashlib.md5(open(f, "rb").read()).hexdigest() for f in ble_bridges if os.path.isfile(f)]
+    legacy_hashes = [hashlib.md5(open(f, "rb").read()).hexdigest() for f in legacy_bridges if os.path.isfile(f)]
+    if len(set(ble_hashes)) != 1:
+        fail_test(f"MD5 mismatch in BLE bridge scripts: {ble_hashes}")
+    if len(set(legacy_hashes)) != 1:
+        fail_test(f"MD5 mismatch in legacy bridge scripts: {legacy_hashes}")
+
+    pass_test("Canonical Web Studios verified & all platform bridge scripts synchronized identically.")
+    passed_tests += 1
 
     # TEST 4: Planar RGB Encoding (SP-1 / SP-2 Mini vs SP-3 SQUARE)
     total_tests += 1

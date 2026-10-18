@@ -3,6 +3,7 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 set "APP_FILE=%~dp0InstaxPrinterWeb.html"
+if not exist "!APP_FILE!" set "APP_FILE=%~dp0..\Web-Bluetooth-Offline\InstaxPrinterWeb.html"
 set "APP_URL=file:///%APP_FILE:\=/%"
 
 :: 1. Search for Microsoft Edge (Standard on 100% of modern Windows 10 & Windows 11)

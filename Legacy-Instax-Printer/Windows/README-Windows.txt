@@ -45,8 +45,8 @@ Option 3 (Direct from iPhone without PC):
 
 LOCAL WEB STUDIO BACKEND (OPTIONAL):
 ------------------------------------
-If you prefer running the browser studio (LegacyInstaxPrinterWeb.html),
-run `python legacy_web_bridge.py` to bridge browser requests to the
+If you prefer running the browser studio (Web-WiFi-Offline/LegacyInstaxPrinterWeb.html),
+run `Start-iPhone-WiFi-Bridge.bat` (or `python legacy_web_bridge.py`) to bridge browser requests to the
 printer's raw binary TCP socket (192.168.0.251:8080).
 
 

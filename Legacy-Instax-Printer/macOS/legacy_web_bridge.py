@@ -32,6 +32,18 @@ from urllib.parse import parse_qs, urlparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Resolve canonical LegacyInstaxPrinterWeb.html path
+LEGACY_HTML_PATH = None
+for _cand in (
+    os.path.join(SCRIPT_DIR, "LegacyInstaxPrinterWeb.html"),
+    os.path.join(SCRIPT_DIR, "Web-WiFi-Offline", "LegacyInstaxPrinterWeb.html"),
+    os.path.join(SCRIPT_DIR, "..", "Web-WiFi-Offline", "LegacyInstaxPrinterWeb.html"),
+    os.path.join(SCRIPT_DIR, "..", "Legacy-Instax-Printer", "Web-WiFi-Offline", "LegacyInstaxPrinterWeb.html"),
+):
+    if os.path.isfile(_cand):
+        LEGACY_HTML_PATH = os.path.abspath(_cand)
+        break
+
 # Look for legacy_instax_printer in common directories
 for cand in [
     SCRIPT_DIR,
@@ -384,9 +396,8 @@ class LegacyBridgeHandler(BaseHTTPRequestHandler):
 
         # Serve LegacyInstaxPrinterWeb.html at / or /LegacyInstaxPrinterWeb.html
         if path in ("/", "/index.html", "/LegacyInstaxPrinterWeb.html", "/Web-WiFi-Offline/LegacyInstaxPrinterWeb.html"):
-            html_path = os.path.join(SCRIPT_DIR, "LegacyInstaxPrinterWeb.html")
-            if os.path.isfile(html_path):
-                with open(html_path, "rb") as f:
+            if LEGACY_HTML_PATH and os.path.isfile(LEGACY_HTML_PATH):
+                with open(LEGACY_HTML_PATH, "rb") as f:
                     content = f.read()
                 try:
                     self.send_response(200)
