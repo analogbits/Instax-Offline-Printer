@@ -478,33 +478,44 @@ python3 test_gui.py
 ### 5.2 Platform Runbooks & Quickstart Tutorials
 
 #### 5.2.1 macOS Native App & Terminal Binaries
-1. **Desktop App**: Open `macOS/` and double-click `Instax Printer.app` (for Link series) or `Legacy Instax Printer.app` (for SHARE series).
-2. **Photos Library**: Click **Browse Photos** to access your native macOS Photos library and iCloud albums directly.
-3. **Shortcuts**:
+1. **Modern BLE Desktop App (`Instax Printer.app`)**: Open `macOS/` and double-click `Instax Printer.app`. Connects over Bluetooth Low Energy to SQUARE Link, Link WIDE, and Mini Link 1/2/3.
+2. **Legacy Wi-Fi Desktop App (`Legacy Instax Printer.app`)**: Open `Legacy-Instax-Printer/macOS/` and double-click `Legacy Instax Printer.app`.
+   - Connect your Mac's Wi-Fi to **`INSTAX-XXXXXXXX`** (password: `11111111`).
+   - Select your model (**SP-2**, **SP-1**, or **SP-3**), click **`📡 Connect`**, and print directly over native TCP socket `192.168.0.251:8080`.
+3. **Apple Photos & System Extensions**: Right-click any photo in Apple Photos $\to$ **Share $\to$ Instax Share** or **Legacy Instax Share**.
+4. **Shortcuts**:
    - `⌘D` — Toggle Protocol Debug Console.
    - `⌘?` — Open Built-In Help & Guide.
    - `⌘O` — Open Image File.
-4. **Command-Line CLI**:
+5. **Command-Line CLI**:
    ```bash
-   # Run standalone native binary (no Python needed)
+   # BLE Link series
    ./macOS/instax-square print ~/Desktop/photo.jpg --model wide
+   
+   # Legacy SHARE Wi-Fi series
+   ./Legacy-Instax-Printer/macOS/legacy-instax print ~/Desktop/photo.jpg --model SP-2
    ```
 
 #### 5.2.2 Windows Zero-Install Desktop App & Python GUI
-1. **Standalone App (Recommended)**: Open `Windows/` and double-click **`Instax-Printer.vbs`**.
-   - Launches instantly in a borderless native window using Microsoft Edge's built-in WinRT engine.
-   - Zero terminal popups, zero Python installations required.
-2. **Python Launcher**: Double-click `Windows-Run.bat` to launch the Tkinter GUI.
-3. **iPhone Bridge**: Double-click `Start-iPhone-WiFi-Bridge.bat` to print from your iPhone over home Wi-Fi.
+1. **Modern BLE Zero-Install App**: Double-click `Windows/Instax-Printer.vbs` for Link series.
+2. **Legacy Wi-Fi Zero-Install App**: Double-click `Legacy-Instax-Printer/Windows/Legacy-Instax-Printer.vbs`.
+   - Connect Windows Wi-Fi to **`INSTAX-XXXXXXXX`** (password: `11111111`).
+   - Launches in a dedicated desktop window and connects directly to TCP `192.168.0.251:8080` with zero command-line popups.
+3. **Python Desktop GUI**: Double-click `Legacy-Instax-Printer.bat` or run `pythonw LegacyInstaxPrinterGUI.pyw`.
+4. **iPhone Bridge**: Double-click `Start-iPhone-WiFi-Bridge.bat` (or `Start-Legacy-iPhone-WiFi-Bridge.bat`).
 
 #### 5.2.3 Linux Desktop App, CLI & System Menu Integration
-1. **Standalone App (Recommended)**: Open `Linux/` and double-click **`Instax-Printer-Linux.sh`** (or run `./Instax-Printer-Linux.sh`).
-   - Automatically detects Google Chrome, Chromium, Brave, or Edge and runs in app mode.
-2. **Application Menu**:
+1. **Zero-Install Standalone Apps**:
+   - BLE Link series: Double-click `Linux/Instax-Printer-Linux.sh`.
+   - Legacy SHARE series: Double-click `Legacy-Instax-Printer/Linux/Legacy-Instax-Printer-Linux.sh`.
+2. **Python Tkinter GUI**: Run `python3 Legacy-Instax-Printer/Linux/LegacyInstaxPrinterGUI.py`.
+   - Connect Wi-Fi via `nmcli dev wifi connect "INSTAX-XXXXXXXX" password "11111111"`.
+   - Click Connect in the app and print over native TCP socket.
+3. **Application Menu**:
    ```bash
    cp Linux/instax-printer.desktop ~/.local/share/applications/
    ```
-3. **BlueZ Permissions Note**: Ensure your Linux user belongs to the `bluetooth` group:
+4. **BlueZ Permissions Note**: Ensure your Linux user belongs to the `bluetooth` group for BLE:
    ```bash
    sudo usermod -a -G bluetooth $USER
    ```

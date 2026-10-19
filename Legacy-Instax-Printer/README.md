@@ -41,6 +41,116 @@ A dedicated, 100% offline desktop and web application suite for Fujifilm's class
 
 ---
 
+## 💻 Desktop Application Runbooks (macOS, Windows & Linux)
+
+Unlike web browsers, all **native desktop applications** in this suite connect **directly to your printer's TCP socket (`192.168.0.251:8080`)** using your computer's native OS network stack. **No bridge helpers or web servers are required!**
+
+### 🔌 The 3-Step Connection Rule (Same for Mac, Windows & Linux):
+1. **Power on your printer** (Instax SHARE SP-1, SP-2, or SP-3).
+2. **Join the printer's Wi-Fi network** from your computer's Wi-Fi menu:
+   - **SSID:** `INSTAX-XXXXXXXX` (printed on the barcode sticker under the battery/film door, e.g. `INSTAX-82193812`)
+   - **Default Wi-Fi Password:** `11111111`
+   - *(Your OS may show "No Internet" or "Connected without Internet" — this is completely normal because the printer is an offline direct hotspot).*
+3. **Launch your desktop app and click Connect!** The live 10-LED film counter and battery level will light up immediately.
+
+---
+
+### 🍏 1. macOS Desktop Guide (`Legacy-Instax-Printer/macOS/`)
+
+#### Native macOS SwiftUI Application (`Legacy Instax Printer.app`):
+* **How to run:** Double-click **`Legacy Instax Printer.app`** (or unzip `Legacy-Instax-Printer-macOS.zip` and move it to your `/Applications` folder).
+* **Step-by-step workflow:**
+  1. Join your printer's **`INSTAX-XXXXXXXX`** Wi-Fi in the macOS menu bar.
+  2. Open **`Legacy Instax Printer.app`**.
+  3. Select your model (**SP-2**, **SP-1**, or **SP-3**) in the top toolbar.
+  4. Click **`📡 Connect`**. The top indicator turns green, displaying your printer's model, and the authentic 10-LED gauge reflects your remaining film sheets.
+  5. Drag-and-drop any photo into the window (or click **`📂 Open Image File...`**).
+  6. *(Optional)* Apply filters, add light leaks, date stamps, or build a collage in the right-hand Creative Inspector.
+  7. Click **`🖨 Print Over Wi-Fi Direct`**!
+* **Built-in Safe Testing:**
+  - Toggle **`🧪 Dry Run (0-Film)`** to transmit 100% of the image data over Wi-Fi and verify PIN authentication without dispensing physical film.
+  - Switch the target to **`Virtual SP Simulator`** to practice framing and collages completely offline on your Mac even when away from your physical printer.
+* **Apple Photos Extension:** Right-click any photo in Apple Photos $\to$ **Share $\to$ Legacy Instax Share** to beam it directly into the printer queue.
+
+#### macOS Command-Line Tool (`legacy-instax`):
+* **High-Performance Standalone Binary** compiled natively with Swift. Requires zero Python or external libraries.
+* **Query printer status & film count:**
+  ```bash
+  ./legacy-instax status
+  ```
+* **Verify transfer without wasting film (Dry-Run):**
+  ```bash
+  ./legacy-instax print my_photo.jpg --model SP-2 --dry-run
+  ```
+* **Print physical photo:**
+  ```bash
+  ./legacy-instax print my_photo.jpg --model SP-2
+  ```
+* **Start local virtual simulator:**
+  ```bash
+  ./legacy-instax sim --port 18080 --model SP-2
+  ```
+
+---
+
+### 🪟 2. Windows Desktop Guide (`Legacy-Instax-Printer/Windows/`)
+
+#### Zero-Install Standalone Window (`Legacy-Instax-Printer.vbs`):
+* **Recommended for everyday use:** Double-click **`Legacy-Instax-Printer.vbs`** in Windows Explorer.
+* It launches the studio immediately in a dedicated, distraction-free desktop window with no black terminal windows.
+* Requires no Python, pip, or administrator privileges.
+
+#### Python Desktop GUI (`LegacyInstaxPrinterGUI.pyw` / `Legacy-Instax-Printer.bat`):
+* **How to run:** Double-click **`Legacy-Instax-Printer.bat`** (or right-click `LegacyInstaxPrinterGUI.pyw` $\to$ *Run with Python*).
+* **Step-by-step workflow:**
+  1. Click the Wi-Fi icon in the Windows taskbar and connect to **`INSTAX-XXXXXXXX`** (Password: `11111111`).
+  2. Launch the desktop app.
+  3. Select your model (`SP-1`, `SP-2`, or `SP-3`) from the dropdown.
+  4. Click **`Connect / Status`**. The 10-LED film counter updates live from the printer's EEPROM.
+  5. Click **`Open Photo`**, adjust pan/zoom, choose your analog effects, and click **`Print Over Wi-Fi Direct`**.
+
+#### Windows Command-Line Engine (`legacy_instax_printer.py`):
+* Run in PowerShell or Command Prompt:
+  ```powershell
+  python legacy_instax_printer.py status
+  python legacy_instax_printer.py print photo.jpg --model SP-2 --pin 1111
+  python legacy_instax_printer.py print photo.jpg --dry-run
+  ```
+
+---
+
+### 🐧 3. Linux Desktop Guide (`Legacy-Instax-Printer/Linux/`)
+
+#### Zero-Install Standalone Launcher (`Legacy-Instax-Printer-Linux.sh`):
+* **How to run:** Double-click **`Legacy-Instax-Printer-Linux.sh`** or execute in terminal:
+  ```bash
+  chmod +x Legacy-Instax-Printer-Linux.sh
+  ./Legacy-Instax-Printer-Linux.sh
+  ```
+* Runs natively inside your installed browser (Chromium, Chrome, Brave, Edge) in app-window mode.
+
+#### Native Tkinter Desktop Application (`LegacyInstaxPrinterGUI.py`):
+* **How to run:**
+  ```bash
+  python3 LegacyInstaxPrinterGUI.py
+  ```
+* **Step-by-step workflow:**
+  1. Connect your Wi-Fi interface to the printer:
+     ```bash
+     nmcli dev wifi connect "INSTAX-XXXXXXXX" password "11111111"
+     ```
+  2. In the app, select your printer model (`SP-1`, `SP-2`, or `SP-3`) and click **`Connect`**.
+  3. Load your image, customize borders or filters, and click **`Print Over Wi-Fi Direct`**.
+
+#### Linux Command-Line Engine:
+* ```bash
+  python3 legacy_instax_printer.py status
+  python3 legacy_instax_printer.py print photo.jpg --model SP-2
+  python3 legacy_instax_printer.py print photo.jpg --dry-run
+  ```
+
+---
+
 ## 📱 Printing from iPhone or iPad (3 Easy Options)
 
 ### Option 1: Mobile Safari Web Studio via Local Wi-Fi Bridge (Zero iOS Apps Needed!)
