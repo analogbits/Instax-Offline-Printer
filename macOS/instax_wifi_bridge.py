@@ -253,6 +253,16 @@ class InstaxWiFiBridgeHandler(BaseHTTPRequestHandler):
         except Exception:
             data = {}
 
+        if path == "/api/flash-led":
+            device = data.get("device") or "INSTAX-"
+            try:
+                cmd = find_cli_command(["led", "--device", device])
+                subprocess.run(cmd, capture_output=True, text=True, timeout=12)
+                self._send_json({"ok": True})
+            except Exception as e:
+                self._send_json({"ok": False, "error": str(e)}, status_code=500)
+            return
+
         if path == "/api/stop-led":
             device = data.get("device") or "INSTAX-"
             try:

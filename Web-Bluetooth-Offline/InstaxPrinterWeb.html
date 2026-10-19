@@ -301,10 +301,30 @@
           <span>1. Bluetooth Printer</span>
           <span id="btStatusText" style="color: #9ca3af; text-transform: none;">Not connected</span>
         </div>
+
+        <div class="field-row" style="margin-bottom: 8px;">
+          <div class="field-label"><span>Connection Target</span></div>
+          <select id="connTargetSelect" onchange="actionConnectionTargetChange()">
+            <option value="auto">⚡ Auto-Discover (All Nearby Instax Link)</option>
+            <option value="square">🔲 SQUARE Link (INSTAX-)</option>
+            <option value="wide">🖼️ Link WIDE (INSTAX-)</option>
+            <option value="mini">📷 Mini Link 1 / 2 / 3 (INSTAX-)</option>
+            <option value="custom">✏️ Custom Name / Prefix...</option>
+          </select>
+        </div>
+        <div id="customDeviceRow" style="display: none; margin-bottom: 8px;">
+          <input type="text" id="customDevicePrefix" placeholder="e.g. INSTAX-12345678" style="width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff;" />
+        </div>
+
         <div style="display: flex; gap: 8px;">
           <button id="btnConnect" onclick="connectBluetooth()" style="flex: 1;">📡 Connect Instax</button>
-          <button class="secondary" id="btnStopLed" onclick="actionStopLed()" title="Stop LED loop">🛑 Stop LED</button>
         </div>
+
+        <div style="display: flex; gap: 6px; margin-top: 6px;">
+          <button class="secondary" id="btnFlashLed" onclick="actionFlashLed()" title="Flash Rainbow LED on printer" style="flex: 1;">🌈 Flash LED</button>
+          <button class="secondary" id="btnStopLed" onclick="actionStopLed()" title="Stop LED loop" style="flex: 1;">🛑 Stop LED</button>
+        </div>
+
         <div style="font-size: 11px; color: #fbbf24; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 6px; padding: 7px 9px; margin-top: 8px; line-height: 1.4;">
           💡 <b>Bluetooth Tip:</b> Turn <b>OFF</b> Bluetooth on your phone/tablet. Instax printers can only pair with one device at a time and will hide if paired with your phone.
         </div>
@@ -3890,12 +3910,72 @@ function applyBridgeStatusUI(st) {
   }
 }
 
+let knownBluetoothDevices = [];
+
+function actionConnectionTargetChange() {
+  const sel = document.getElementById('connTargetSelect');
+  const customRow = document.getElementById('customDeviceRow');
+  if (!sel) return;
+  const val = sel.value;
+  if (customRow) {
+    customRow.style.display = (val === 'custom') ? 'block' : 'none';
+  }
+  if (val === 'square') {
+    document.getElementById('modelSelect').value = 'square';
+    actionModelChange();
+  } else if (val === 'wide') {
+    document.getElementById('modelSelect').value = 'wide';
+    actionModelChange();
+  } else if (val === 'mini') {
+    document.getElementById('modelSelect').value = 'mini';
+    actionModelChange();
+  }
+}
+
+function getSelectedDeviceTarget() {
+  const sel = document.getElementById('connTargetSelect');
+  if (!sel) return "INSTAX-";
+  const val = sel.value;
+  if (val === 'custom') {
+    const cust = document.getElementById('customDevicePrefix') ? document.getElementById('customDevicePrefix').value.trim() : '';
+    return cust || "INSTAX-";
+  }
+  return "INSTAX-";
+}
+
+async function refreshKnownBluetoothDevices() {
+  if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return;
+  try {
+    const devices = await navigator.bluetooth.getDevices();
+    if (!Array.isArray(devices) || devices.length === 0) return;
+    knownBluetoothDevices = devices;
+    const sel = document.getElementById('connTargetSelect');
+    if (!sel) return;
+
+    let optGroup = document.getElementById('pairedDevicesGroup');
+    if (!optGroup) {
+      optGroup = document.createElement('optgroup');
+      optGroup.id = 'pairedDevicesGroup';
+      optGroup.label = 'Paired / Known Printers';
+      sel.insertBefore(optGroup, sel.firstChild);
+    }
+    optGroup.innerHTML = '';
+    devices.forEach(dev => {
+      const opt = document.createElement('option');
+      opt.value = `paired:${dev.id}`;
+      opt.textContent = `⭐ Reconnect: ${dev.name || 'Instax Printer'}`;
+      optGroup.appendChild(opt);
+    });
+  } catch (_) {}
+}
+
 async function connectBluetooth() {
   if (bridgeActive) {
     try {
-      log("[Wi-Fi Bridge] Scanning & querying Instax printer via computer Bluetooth...");
+      const targetDev = getSelectedDeviceTarget();
+      log(`[Wi-Fi Bridge] Querying Instax printer (${targetDev}) via computer Bluetooth...`);
       document.getElementById('btStatusText').innerHTML = `<span style='color:#fbbf24;'>Scanning via Wi-Fi Bridge...</span>`;
-      const resp = await fetch('/api/status');
+      const resp = await fetch(`/api/status?device=${encodeURIComponent(targetDev)}`);
       const data = await resp.json();
       if (!resp.ok || !data.ok) {
         throw new Error(data.error || "Could not find an active Instax printer nearby.");
@@ -3935,21 +4015,39 @@ async function connectBluetooth() {
   }
 
   try {
-    log("Scanning for nearby Instax printers...");
-    try {
-      btDevice = await navigator.bluetooth.requestDevice({
-        filters: [{ namePrefix: "INSTAX" }, { namePrefix: "instax" }],
-        optionalServices: [SERVICE_UUID]
-      });
-    } catch (filterErr) {
-      // Fallback for iOS Bluefy / WebBLE browsers if multiple namePrefix filters aren't supported
-      if (filterErr.name === 'TypeError') {
+    const targetVal = document.getElementById('connTargetSelect') ? document.getElementById('connTargetSelect').value : 'auto';
+    let chosenDevice = null;
+    if (targetVal.startsWith('paired:')) {
+      const devId = targetVal.replace('paired:', '');
+      chosenDevice = knownBluetoothDevices.find(d => d.id === devId);
+      if (chosenDevice) {
+        log(`Reconnecting directly to paired device: ${chosenDevice.name || 'Instax'}...`);
+        btDevice = chosenDevice;
+      }
+    }
+
+    if (!btDevice) {
+      log("Scanning for nearby Instax printers...");
+      let filterList = [{ namePrefix: "INSTAX" }, { namePrefix: "instax" }];
+      if (targetVal === 'custom') {
+        const cust = document.getElementById('customDevicePrefix') ? document.getElementById('customDevicePrefix').value.trim() : '';
+        if (cust) filterList = [{ namePrefix: cust }];
+      }
+      try {
         btDevice = await navigator.bluetooth.requestDevice({
-          filters: [{ namePrefix: "INSTAX" }],
+          filters: filterList,
           optionalServices: [SERVICE_UUID]
         });
-      } else {
-        throw filterErr;
+      } catch (filterErr) {
+        // Fallback for iOS Bluefy / WebBLE browsers if multiple namePrefix filters aren't supported
+        if (filterErr.name === 'TypeError') {
+          btDevice = await navigator.bluetooth.requestDevice({
+            filters: [{ namePrefix: "INSTAX" }],
+            optionalServices: [SERVICE_UUID]
+          });
+        } else {
+          throw filterErr;
+        }
       }
     }
 
@@ -3966,6 +4064,8 @@ async function connectBluetooth() {
     document.getElementById('btStatusText').innerHTML = `<b style='color:#4ade80;'>Connected (${btDevice.name || 'Instax'})</b>`;
     document.getElementById('btnConnect').textContent = "Connected ✓";
     document.getElementById('btnConnect').disabled = true;
+
+    refreshKnownBluetoothDevices();
 
     log("GATT channel open. Querying printer status...");
     await queryPrinterStatus();
@@ -4127,6 +4227,50 @@ async function queryPrinterStatus() {
     }
   } catch (err) {
     log("Film query: " + err.message);
+  }
+}
+
+async function actionFlashLed() {
+  if (bridgeActive) {
+    try {
+      const dev = getSelectedDeviceTarget();
+      await fetch('/api/flash-led', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device: dev || undefined })
+      });
+      log("[Wi-Fi Bridge] LED flashing rainbow sequence sent.");
+    } catch (e) {
+      log("[Wi-Fi Bridge] Flash LED error: " + e.message);
+    }
+    return;
+  }
+  if (!writeChar) {
+    log("⚠️ Connect to printer first before flashing LED.");
+    return;
+  }
+  try {
+    const rainbowPayload = new Uint8Array([
+      0x00, // when = 0 (now)
+      0x06, // color_count = 6
+      0x0F, // speed = 15 (~150ms per step)
+      0x00, // repeat = 0 (play ONCE)
+      0x00, 0x00, 0xFF, // Red (BGR)
+      0x00, 0x7F, 0xFF, // Orange (BGR)
+      0x00, 0xFF, 0xFF, // Yellow (BGR)
+      0x00, 0xFF, 0x00, // Green (BGR)
+      0xFF, 0x00, 0x00, // Blue (BGR)
+      0xFF, 0x00, 0x8B  // Violet (BGR)
+    ]);
+    await sendCmd(0x30, 0x01, rainbowPayload, 4000);
+    log("🌈 Rainbow LED flashed successfully.");
+    setTimeout(async () => {
+      try {
+        await sendCmd(0x30, 0x01, new Uint8Array([0x00, 0x01, 0x05, 0x00, 0x00, 0x00, 0x00]), 2000);
+      } catch (_) {}
+    }, 1500);
+  } catch (err) {
+    log("Flash LED error: " + err.message);
   }
 }
 
