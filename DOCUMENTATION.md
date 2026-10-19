@@ -1,6 +1,6 @@
 # 📘 Instax Offline Printer Suite — Comprehensive Software Documentation & Runbook
 **Universal 100% Offline Printing for macOS, Windows, Linux, Web, and iOS**  
-*Document Version: 2.0.0 • Standard: ISO/IEC/IEEE 26511 Software Documentation Specification • Repository Release: v2.0.0*
+*Document Version: 2.0.0 • Repository Release: v2.0.0*
 
 > 🔬 **Developer Notice**: For line-by-line annotated source code breakdowns, reverse-engineered protocol math, and function-level explanations, see the companion document:  
 > 👉 **[Code Walkthrough & Developer Reference Manual (`CODE_WALKTHROUGH.md`)](CODE_WALKTHROUGH.md)**
@@ -9,12 +9,10 @@
 
 ## 📑 Table of Contents
 1. [Document Overview & Scope](#1-document-overview--scope)
-2. [Requirements Documentation](#2-requirements-documentation)
-   - 2.1 [Business & Philosophical Objectives](#21-business--philosophical-objectives)
-   - 2.2 [User Personas & Target Audience](#22-user-personas--target-audience)
-   - 2.3 [User Stories](#23-user-stories)
-   - 2.4 [Functional Requirements (FR)](#24-functional-requirements-fr)
-   - 2.5 [Non-Functional Requirements (NFR)](#25-non-functional-requirements-nfr)
+2. [System Objectives & Core Capabilities](#2-system-objectives--core-capabilities)
+   - 2.1 [Core Objectives & Privacy Philosophy](#21-core-objectives--privacy-philosophy)
+   - 2.2 [Supported Features & Functional Matrix](#22-supported-features--functional-matrix)
+   - 2.3 [Performance & Reliability Targets](#23-performance--reliability-targets)
 3. [Architecture & Design Documentation](#3-architecture--design-documentation)
    - 3.1 [High-Level System Topology](#31-high-level-system-topology)
    - 3.2 [Modern BLE Link Subsystem Architecture](#32-modern-ble-link-subsystem-architecture)
@@ -52,7 +50,7 @@
 ## 1. Document Overview & Scope
 
 ### 1.1 Purpose
-This comprehensive software engineering document serves as the canonical technical reference manual, architectural specification, user guide, and operational runbook for the **Instax Offline Printer Applications Suite**. It is designed to satisfy the software documentation standard described by IEEE/ISO guidelines, providing complete coverage across requirements, architecture, technical algorithms, end-user operations, and release workflows.
+This software engineering document serves as the canonical technical reference manual, architectural specification, user guide, and operational runbook for the **Instax Offline Printer Applications Suite**, providing complete coverage across system architecture, communication protocols, technical algorithms, end-user operations, and release workflows.
 
 ### 1.2 System Scope
 The suite provides an independent, reverse-engineered, 100% offline desktop and web-based driver ecosystem for both modern Bluetooth Low Energy (BLE) and legacy Wi-Fi Direct instant photo printers manufactured by Fujifilm.
@@ -65,53 +63,40 @@ The suite provides an independent, reverse-engineered, 100% offline desktop and 
 
 ---
 
-## 2. Requirements Documentation
+## 2. System Objectives & Core Capabilities
 
-### 2.1 Business & Philosophical Objectives
+### 2.1 Core Objectives & Privacy Philosophy
 1. **Zero External Dependency (100% Offline)**: Guarantee continuous operation with zero telemetry, zero cloud backends, zero user accounts, and zero internet connection requirements.
 2. **Permanent Archival Longevity**: Protect consumer hardware investment against future obsolescence, operating system updates, or discontinuation of vendor mobile apps.
 3. **Film Preservation (Zero-Waste Philosophy)**: Eliminate accidental film consumption caused by misframing, color clipping, or communication errors through **0-Film Dry Run verification** and accurate print simulators.
 4. **Universal Cross-Platform Parity**: Provide identical printing capabilities across macOS, Windows 10/11, Linux distributions, web browsers, and iOS devices.
 
-### 2.2 User Personas & Target Audience
-- **Desktop Photographers & Curators**: Users managing high-resolution photo libraries in Apple Photos, Adobe Lightroom Classic, or Darktable who require direct, one-click physical printing from desktop workspaces.
-- **Privacy-Conscious Creators**: Individuals who decline mobile app permission requirements (location tracking, contacts, telemetry, continuous cloud syncing) for local Bluetooth or Wi-Fi printing.
-- **Event Organizers & Photo Booth Operators**: Operators requiring automated, rapid batch printing from laptops without pairing mobile devices or relying on venue internet.
-- **Hardware Preservationists**: Owners of discontinued legacy Wi-Fi Direct printers (Instax SHARE SP-1, SP-2, SP-3) whose official companion apps have been degraded or abandoned on modern mobile OS versions.
+### 2.2 Supported Features & Functional Matrix
+- **BLE Device Discovery & Pairing**: Scans and discovers Instax BLE Link printers advertising service UUID `70954782-2d83-473d-9e5f-81e1d02d5273` without requiring OS-level system Bluetooth PIN pairing.
+- **Wi-Fi Direct TCP Handshake**: Establishes TCP client socket connections to `192.168.0.251:8080` (or user-defined gateway) and authenticates using 4-digit PIN (default `1111`).
+- **Telemetry Polling**: Queries and displays real-time printer metrics: battery level, AC charging status, and remaining film count (0–10).
+- **0-Film Dry-Run Mode**: Non-destructive verification toggle that validates all packet payload construction, image transformations, and socket transmission while halting before physical ejection.
+- **Planar RGB Scanline Encoding**: For legacy SHARE printers, transforms arbitrary image formats into 90° clockwise scanline-oriented planar RGB bitstreams formatted into 24 segments (SP-1/SP-2) or 32 segments (SP-3).
+- **BLE JPEG Chunking**: For BLE Link printers, encodes images into baseline JPEG structures and chunk payloads into 1024-byte BLE packets with sequential sequence IDs and 8-bit checksums.
+- **Local Wi-Fi Bluetooth Bridge**: Local dual-radio HTTP daemon (`instax_wifi_bridge.py` / `legacy_web_bridge.py`) that serves the canonical offline web studio over LAN and bridges REST print calls to physical hardware.
+- **Artistic Simulation Filters**: Real-time GPU/Canvas canvas filters (Normal, Fujifilm Intelligence Contrast, Rich B&W Monochrome, Vintage Sepia, and Vivid Velvia saturation).
+- **Multi-Photo Collage Engine**: Composes multi-photo layouts (Single, 2-Up Vertical, 2-Up Horizontal, 3-Photo Grid, 4-Photo 2×2 Grid, and 6-Photo Contact Sheet) with adjustable gutter spacing.
+- **Embedded Offline QR Generator**: Generates fully compliant Reed-Solomon QR codes (Error Correction Level M) embedded directly into canvas rendering across 5 positions and 3 card badge styles without network CDNs.
+- **Virtual Hardware Simulator**: Integrated virtual Wi-Fi Direct socket server emulation (`VirtualInstaxShareServer`) on port 18080 for testing and software verification without physical printers.
+- **One-Click Launchers**: Native 1-click launchers for macOS (`.app` and `.command`), Windows (`.vbs` and `.bat`), and Linux (`.sh` and `.desktop`).
+- **Analog Creative FX & Film Emulation Engine**: Renders analog instant film creative effects: color warmth/temperature (-1.0 Cool Blue to +1.0 Golden Amber), radial lens vignette, analog light leaks (Red Film Burn, Golden Sunburst Flare, Sunset Coral & Rose, Prismatic Rainbow Spectrum) with 8-direction placement, silver halide tactile film grain, physical wear (dust motes, curved fibers, hairline scratches, chemical roller pressure mark), vintage glowing LED digital date stamps (Amber Gold, Ruby Red, Emerald Green, Crisp White), and a 1-click "Surprise Me!" retro randomizer.
+- **Instant Film Emulation Presets & Cross-Tab Synchronization**: 13-preset emulation catalog including `Default / Base (No Effects)`, Polaroid (SX-70, 600, I-Type, Spectra), Vintage Eras (1970s Golden Vintage, 1980s Retro Flash Pop, 1990s Point & Shoot, 1960s Monochrome Silver Halide), and Instax Profiles (instax-Rich, instax-Natural 3D-LUT, Instax Monochrome, Instax Warm Sepia). Selecting any preset automatically synchronizes print mode, filter presets, exposure controls, and analog FX across Color/Filters and Analog FX tabs with bi-directional manual customization tracking.
+- **Hand-Drawn Doodle Stickers, Emojis & Procedural Frames**: Complete creative overlays studio including hand-drawn vector doodle stickers (crowns, hats, glasses, arrows, stars, hearts, coffee), standard emoji stamps, user watermark/logo uploads, and 10 procedural decorative frames (Classic White, Obsidian Black, 35mm Sprockets, Gold Foil, Rose Gold, Rainbow, Sunset, Pastel Candy, Postage Stamp) rendered with zero external network or image dependencies.
+- **Custom Banner Maker & Stylized Typography**: Renders custom text/emoji banners in 6 distinct styles (Ribbon, Pennant / Flag, Modern Pill, Vintage Label, Masking Tape, Speech Bubble) across 8 curated palettes with dynamic typography scaling and positioning.
+- **Interactive Canvas Free Move & Target Focus Dragging**: Real-time on-canvas dragging (mouse and touch) for photo panning, sticker placement, and banner movement with smart hit-testing, Drag Target Focus mode selector (`Auto`, `Photo Pan`, `Sticker Move`, `Banner Move`), and bi-directional slider coordinate synchronization.
+- **Headless JSC Engine Test Automation**: Test automation verifies Web Studio JavaScript syntax and runtime execution using headless JavaScriptCore (`jsc`) engine and W3C-compliant `HTMLParser` tokenization to guarantee zero syntax regressions and strict CodeQL compliance.
 
-### 2.3 User Stories
-- **US-1 (Framing & Composition)**: *As a photographer, I want to pan, zoom, rotate, and letterbox my rectangular or panoramic photos with custom borders so that no critical compositional details are cropped.*
-- **US-2 (Dry-Run Verification)**: *As a user with expensive instant film, I want to verify packet formatting and hardware handshake with 0 film dispensed before committing to a physical print.*
-- **US-3 (Mobile Safari via Home Wi-Fi)**: *As an iPhone user, I want to print photos from my Camera Roll directly in regular Safari without installing third-party apps, using my home computer as a secure bridge.*
-- **US-4 (Scannable QR Memories)**: *As a scrapbooking creator, I want to embed scannable QR codes containing audio links, secret notes, or web albums directly onto the instant photo.*
-- **US-5 (Lightroom & Darktable Export)**: *As an editor, I want to right-click an image in Adobe Lightroom Classic or Darktable and beam it straight to my Instax printer with proper color profiling.*
-
-### 2.4 Functional Requirements (FR)
-- **FR-01 (BLE Device Discovery & Pairing)**: System shall scan and discover Instax BLE Link printers advertising service UUID `70954782-2d83-473d-9e5f-81e1d02d5273` without requiring OS-level system Bluetooth PIN pairing.
-- **FR-02 (Wi-Fi Direct TCP Handshake)**: System shall establish TCP client socket connections to `192.168.0.251:8080` (or user-defined gateway) and authenticate using 4-digit PIN (default `1111`).
-- **FR-03 (Telemetry Polling)**: System shall query and display real-time printer metrics: battery level, AC charging status, and remaining film count (0–10).
-- **FR-04 (0-Film Dry-Run Mode)**: System shall offer a non-destructive verification toggle that validates all packet payload construction, image transformations, and socket transmission while halting before physical ejection.
-- **FR-05 (Planar RGB Scanline Encoding)**: For legacy SHARE printers, system shall transform arbitrary image formats into 90° clockwise scanline-oriented planar RGB bitstreams formatted into 24 segments (SP-1/SP-2) or 32 segments (SP-3).
-- **FR-06 (BLE JPEG Chunking)**: For BLE Link printers, system shall encode images into baseline JPEG structures and chunk payloads into 1024-byte BLE packets with sequential sequence IDs and 8-bit checksums.
-- **FR-07 (Local Wi-Fi Bluetooth Bridge)**: System shall provide a local dual-radio HTTP daemon (`instax_wifi_bridge.py` / `legacy_web_bridge.py`) that serves the canonical offline web studio over LAN and bridges REST print calls to physical hardware.
-- **FR-08 (Artistic Simulation Filters)**: System shall render real-time GPU/Canvas canvas filters (Normal, Fujifilm Intelligence Contrast, Rich B&W Monochrome, Vintage Sepia, and Vivid Velvia saturation).
-- **FR-09 (Multi-Photo Collage Engine)**: System shall compose multi-photo layouts (Single, 2-Up Vertical, 2-Up Horizontal, 3-Photo Grid, 4-Photo 2×2 Grid, and 6-Photo Contact Sheet) with adjustable gutter spacing.
-- **FR-10 (Embedded Offline QR Generator)**: System shall generate fully compliant Reed-Solomon QR codes (Error Correction Level M) embedded directly into canvas rendering across 5 positions and 3 card badge styles without network CDNs.
-- **FR-11 (Virtual Hardware Simulator)**: System shall provide an integrated virtual Wi-Fi Direct socket server emulation (`VirtualInstaxShareServer`) on port 18080 for testing and software verification without physical printers.
-- **FR-12 (One-Click Launchers)**: System shall provide native 1-click launchers for macOS (`.app` and `.command`), Windows (`.vbs` and `.bat`), and Linux (`.sh` and `.desktop`).
-- **FR-13 (Analog Creative FX & Film Emulation Engine)**: System shall render analog instant film creative effects ported from PolaroidEngine: color warmth/temperature (-1.0 Cool Blue to +1.0 Golden Amber), radial lens vignette, analog light leaks (Red Film Burn, Golden Sunburst Flare, Sunset Coral & Rose, Prismatic Rainbow Spectrum) with 8-direction placement, silver halide tactile film grain, physical wear (dust motes, curved fibers, hairline scratches, chemical roller pressure mark), vintage glowing LED digital date stamps (Amber Gold, Ruby Red, Emerald Green, Crisp White), and a 1-click "Surprise Me!" retro randomizer.
-- **FR-14 (Instant Film Emulation Presets & Cross-Tab Synchronization)**: System shall provide a 13-preset emulation catalog including `Default / Base (No Effects)`, Polaroid (SX-70, 600, I-Type, Spectra), Vintage Eras (1970s Golden Vintage, 1980s Retro Flash Pop, 1990s Point & Shoot, 1960s Monochrome Silver Halide), and Instax Profiles (instax-Rich, instax-Natural 3D-LUT, Instax Monochrome, Instax Warm Sepia). Selecting any preset shall automatically synchronize print mode, filter presets, exposure controls, and analog FX across Color/Filters and Analog FX tabs with bi-directional manual customization tracking.
-- **FR-15 (Hand-Drawn Doodle Stickers, Emojis & Procedural Frames)**: System shall provide a complete creative overlays studio including hand-drawn vector doodle stickers (crowns, hats, glasses, arrows, stars, hearts, coffee), standard emoji stamps, user watermark/logo uploads, and 10 procedural decorative frames (Classic White, Obsidian Black, 35mm Sprockets, Gold Foil, Rose Gold, Rainbow, Sunset, Pastel Candy, Postage Stamp) rendered with zero external network or image dependencies.
-- **FR-16 (Custom Banner Maker & Stylized Typography)**: System shall render custom text/emoji banners in 6 distinct styles (Ribbon, Pennant / Flag, Modern Pill, Vintage Label, Masking Tape, Speech Bubble) across 8 curated palettes with dynamic typography scaling and positioning.
-- **FR-17 (Interactive Canvas Free Move & Target Focus Dragging)**: System shall support real-time on-canvas dragging (mouse and touch) for photo panning, sticker placement, and banner movement with smart hit-testing, Drag Target Focus mode selector (`Auto`, `Photo Pan`, `Sticker Move`, `Banner Move`), and bi-directional slider coordinate synchronization.
-- **FR-18 (Headless JSC Engine Test Automation)**: Test automation shall verify Web Studio JavaScript syntax and runtime execution using headless JavaScriptCore (`jsc`) engine and W3C-compliant `HTMLParser` tokenization to guarantee zero syntax regressions and strict CodeQL compliance.
-
-### 2.5 Non-Functional Requirements (NFR)
-- **NFR-01 (Zero Network Calls)**: Application binaries and HTML web studios shall make zero HTTP/HTTPS requests to external hosts; all libraries must be bundled inline or locally.
-- **NFR-02 (Low Latency)**: Image processing, resizing, and planar encoding shall complete in under 500ms on modern multicore hardware.
-- **NFR-03 (Memory Footprint)**: GUI applications shall consume under 120 MB RAM during normal operation.
-- **NFR-04 (Portability)**: Core Python engines shall execute identically across Python 3.8+ on macOS (Apple Silicon & Intel), Windows 10/11, and Linux (x86_64, aarch64, Raspberry Pi OS).
-- **NFR-05 (Resilience)**: Network drops or Bluetooth packet timeouts shall trigger automatic socket teardown, clear internal state machines, and notify users via graphical status bars and debug logs.
+### 2.3 Performance & Reliability Targets
+- **Zero Network Calls**: Application binaries and HTML web studios make zero HTTP/HTTPS requests to external hosts; all libraries are bundled inline or locally.
+- **Low Latency**: Image processing, resizing, and planar encoding complete in under 500ms on modern multicore hardware.
+- **Memory Footprint**: GUI applications consume under 120 MB RAM during normal operation.
+- **Cross-Platform Portability**: Core Python engines execute identically across Python 3.8+ on macOS (Apple Silicon & Intel), Windows 10/11, and Linux (x86_64, aarch64, Raspberry Pi OS).
+- **Socket & State Machine Resilience**: Network drops or Bluetooth packet timeouts trigger automatic socket teardown, clear internal state machines, and notify users via graphical status bars and debug logs.
 
 ---
 

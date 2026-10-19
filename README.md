@@ -354,7 +354,7 @@ working directory.
 ---
 
 ## 📖 Software Engineering Documentation & Full Runbook
-For complete architectural specifications, hardware protocol schemas (BLE GATT & Wi-Fi Direct `ISTX` framing), planar RGB scanline math, sequence diagrams, troubleshooting trees, and ISO/IEC/IEEE software engineering standards, see the dedicated:
+For complete architectural specifications, hardware protocol schemas (BLE GATT & Wi-Fi Direct `ISTX` framing), planar RGB scanline math, sequence diagrams, and operational troubleshooting trees, see the dedicated:
 👉 **[Full Software Documentation & Operational Runbook (`DOCUMENTATION.md`)](DOCUMENTATION.md)**  
 👉 **[Developer Code Walkthrough & Annotated Source Guide (`CODE_WALKTHROUGH.md`)](CODE_WALKTHROUGH.md)**
 
