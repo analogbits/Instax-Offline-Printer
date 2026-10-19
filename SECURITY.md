@@ -12,11 +12,12 @@ The **Instax Offline Printer Applications Suite** is engineered with a strict **
 ## 🛡️ Supported Versions
 
 | Version | Supported |
-| :--- | :---: |
-| 1.6.x (Latest) | ✅ |
-| < 1.6.0 | ❌ |
+| :--- | :--- |
+| 2.0.x (Latest) | ✅ Supported |
+| 1.8.x – 1.9.x | ✅ Supported |
+| < 1.8.0 | ❌ End of Life |
 
-We encourage all users to run the latest release tag to ensure all hardware timing and buffer fixes are active.
+We encourage all users to run the latest release tag to ensure all hardware timing, buffer fixes, and security patches are active.
 
 ---
 

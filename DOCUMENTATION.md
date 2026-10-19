@@ -1,6 +1,6 @@
 # 📘 Instax Offline Printer Suite — Comprehensive Software Documentation & Runbook
 **Universal 100% Offline Printing for macOS, Windows, Linux, Web, and iOS**  
-*Document Version: 1.7.0 • Standard: ISO/IEC/IEEE 26511 Software Documentation Specification • Repository Release: v1.7.0*
+*Document Version: 2.0.0 • Standard: ISO/IEC/IEEE 26511 Software Documentation Specification • Repository Release: v2.0.0*
 
 > 🔬 **Developer Notice**: For line-by-line annotated source code breakdowns, reverse-engineered protocol math, and function-level explanations, see the companion document:  
 > 👉 **[Code Walkthrough & Developer Reference Manual (`CODE_WALKTHROUGH.md`)](CODE_WALKTHROUGH.md)**
@@ -100,7 +100,11 @@ The suite provides an independent, reverse-engineered, 100% offline desktop and 
 - **FR-11 (Virtual Hardware Simulator)**: System shall provide an integrated virtual Wi-Fi Direct socket server emulation (`VirtualInstaxShareServer`) on port 18080 for testing and software verification without physical printers.
 - **FR-12 (One-Click Launchers)**: System shall provide native 1-click launchers for macOS (`.app` and `.command`), Windows (`.vbs` and `.bat`), and Linux (`.sh` and `.desktop`).
 - **FR-13 (Analog Creative FX & Film Emulation Engine)**: System shall render analog instant film creative effects ported from PolaroidEngine: color warmth/temperature (-1.0 Cool Blue to +1.0 Golden Amber), radial lens vignette, analog light leaks (Red Film Burn, Golden Sunburst Flare, Sunset Coral & Rose, Prismatic Rainbow Spectrum) with 8-direction placement, silver halide tactile film grain, physical wear (dust motes, curved fibers, hairline scratches, chemical roller pressure mark), vintage glowing LED digital date stamps (Amber Gold, Ruby Red, Emerald Green, Crisp White), and a 1-click "Surprise Me!" retro randomizer.
-- **FR-14 (Instant Film Emulation Presets & Cross-Tab Synchronization)**: System shall provide a 12-preset emulation catalog spanning Polaroid (SX-70, 600, I-Type, Spectra), Vintage Eras (1970s Golden Vintage, 1980s Retro Flash Pop, 1990s Point & Shoot, 1960s Monochrome Silver Halide), and Instax Profiles (instax-Rich, instax-Natural 3D-LUT, Instax Monochrome, Instax Warm Sepia). Selecting any preset shall automatically synchronize print mode, filter presets, exposure controls, and analog FX across Color/Filters and Analog FX tabs with bi-directional manual customization tracking.
+- **FR-14 (Instant Film Emulation Presets & Cross-Tab Synchronization)**: System shall provide a 13-preset emulation catalog including `Default / Base (No Effects)`, Polaroid (SX-70, 600, I-Type, Spectra), Vintage Eras (1970s Golden Vintage, 1980s Retro Flash Pop, 1990s Point & Shoot, 1960s Monochrome Silver Halide), and Instax Profiles (instax-Rich, instax-Natural 3D-LUT, Instax Monochrome, Instax Warm Sepia). Selecting any preset shall automatically synchronize print mode, filter presets, exposure controls, and analog FX across Color/Filters and Analog FX tabs with bi-directional manual customization tracking.
+- **FR-15 (Hand-Drawn Doodle Stickers, Emojis & Procedural Frames)**: System shall provide a complete creative overlays studio including hand-drawn vector doodle stickers (crowns, hats, glasses, arrows, stars, hearts, coffee), standard emoji stamps, user watermark/logo uploads, and 10 procedural decorative frames (Classic White, Obsidian Black, 35mm Sprockets, Gold Foil, Rose Gold, Rainbow, Sunset, Pastel Candy, Postage Stamp) rendered with zero external network or image dependencies.
+- **FR-16 (Custom Banner Maker & Stylized Typography)**: System shall render custom text/emoji banners in 6 distinct styles (Ribbon, Pennant / Flag, Modern Pill, Vintage Label, Masking Tape, Speech Bubble) across 8 curated palettes with dynamic typography scaling and positioning.
+- **FR-17 (Interactive Canvas Free Move & Target Focus Dragging)**: System shall support real-time on-canvas dragging (mouse and touch) for photo panning, sticker placement, and banner movement with smart hit-testing, Drag Target Focus mode selector (`Auto`, `Photo Pan`, `Sticker Move`, `Banner Move`), and bi-directional slider coordinate synchronization.
+- **FR-18 (Headless JSC Engine Test Automation)**: Test automation shall verify Web Studio JavaScript syntax and runtime execution using headless JavaScriptCore (`jsc`) engine and W3C-compliant `HTMLParser` tokenization to guarantee zero syntax regressions and strict CodeQL compliance.
 
 ### 2.5 Non-Functional Requirements (NFR)
 - **NFR-01 (Zero Network Calls)**: Application binaries and HTML web studios shall make zero HTTP/HTTPS requests to external hosts; all libraries must be bundled inline or locally.
@@ -444,16 +448,17 @@ When running `instax_wifi_bridge.py` (`:8765`) or `legacy_web_bridge.py` (`:8089
 The repository contains two continuous verification suites:
 
 #### 1. Unit & Protocol Integrity Test Suite (`test_suite.py`)
-Runs automated non-GUI checks:
-- **Test 1**: Python Syntax Compilation across all 24 source files.
+Runs automated non-GUI checks across 9 critical verification vectors:
+- **Test 1**: Python Syntax Compilation across all 24 source files (`py_compile`).
 - **Test 2**: Shell & `.command` script syntax validation using `bash -n`.
 - **Test 3**: Canonical Web Architecture & MD5 integrity across platform bridge scripts.
-- **Test 4**: Planar RGB Image Encoding math (SP-2 1,440,000 bytes vs SP-3 1,920,000 bytes).
-- **Test 5–7**: Virtual Wi-Fi Direct Simulator socket handshake and 0-film dry-run transmission for SP-1, SP-2, and SP-3.
-- **Test 8**: BLE Link Printer Preview Engine JPEG rendering.
+- **Test 4**: Web Studios JavaScript Syntax & Execution Verification via headless macOS JavaScriptCore (`jsc`) engine using safe W3C-compliant `HTMLParser` tokenization (satisfies CodeQL `py/bad-tag-filter`).
+- **Test 5**: Planar RGB Image Encoding math (SP-2 1,440,000 bytes vs SP-3 1,920,000 bytes).
+- **Test 6–8**: Virtual Wi-Fi Direct Simulator socket handshake and 0-film dry-run transmission for SP-1, SP-2, and SP-3.
+- **Test 9**: BLE Link Printer Preview Engine JPEG rendering.
 
 ```bash
-# Execute Test Suite
+# Execute Test Suite (9/9 Tests Verified)
 python3 test_suite.py
 ```
 

@@ -1,6 +1,6 @@
 # 🔬 Instax Offline Printer Suite — Code Walkthrough & Developer Reference Manual
 **Annotated Source Code Explainer, Protocol Math & Algorithmic Deep-Dive**  
-*Document Version: 1.7.0 • Standard: Literate / Elucidative Code Specification • Target Release: v1.7.0*
+*Document Version: 2.0.0 • Standard: Literate / Elucidative Code Specification • Target Release: v2.0.0*
 
 ---
 
@@ -29,10 +29,13 @@
    - 5.3 [Embedded 100% Offline Reed-Solomon QR Generator](#53-embedded-100-offline-reed-solomon-qr-generator)
    - 5.4 [Analog Creative FX & Film Emulation Engine (HTML5 Canvas)](#54-analog-creative-fx--film-emulation-engine-ported-from-polaroidengine)
    - 5.5 [Web Bluetooth API (`navigator.bluetooth`) Engine](#55-web-bluetooth-api-navigatorbluetooth-engine)
+   - 5.6 [Stickers, Decorative Frames & Custom Overlays Engine](#56-stickers-decorative-frames--custom-overlays-engine)
+   - 5.7 [Custom Banner & Stylized Typography Generator](#57-custom-banner--stylized-typography-generator)
+   - 5.8 [Interactive Canvas Free Move & Target Focus Dragging Engine](#58-interactive-canvas-free-move--target-focus-dragging-engine)
 6. [`test_suite.py` & `test_gui.py` — Automated Verification](#6-test_suitepy--test_guipy--automated-verification)
-   - 6.1 [Protocol Integrity & Planar Encoding Verification (`test_suite.py`)](#61-protocol-integrity--planar-encoding-verification-test_suitepy)
+   - 6.1 [Protocol Integrity, Planar Encoding & JavaScriptCore Engine Verification (`test_suite.py`)](#61-protocol-integrity-planar-encoding--javascriptcore-engine-verification-test_suitepy)
    - 6.2 [Interactive Robot GUI Automation (`test_gui.py`)](#62-interactive-robot-gui-automation-test_guipy)
-7. [macOS Native Swift CoreGraphics Analog FX Engine](#7-macos-native-swift-coregraphics-analog-fx-engine)
+7. [macOS Native Swift CoreGraphics Analog FX & Stickers Engine](#7-macos-native-swift-coregraphics-analog-fx--stickers-engine)
 
 ---
 
@@ -56,7 +59,7 @@ Instax Offline Printer Applications/
 ├── macOS/                           # macOS native Swift app & CLI binary (instax-square)
 ├── Windows/                         # Windows standalone .vbs app & instax_printer.py
 ├── Linux/                           # Linux standalone .sh app & instax_printer.py
-├── test_suite.py                    # 8-point protocol & architecture regression test suite
+├── test_suite.py                    # 9-point protocol, architecture & JSC regression test suite
 └── test_gui.py                      # Headless Tkinter robot GUI test suite
 ```
 
@@ -710,13 +713,131 @@ async function connectBluetooth() {
 
 ---
 
+### 5.6 Stickers, Decorative Frames & Custom Overlays Engine
+
+The v2.0.0 suite introduces a procedural, zero-dependency sticker and frame overlay pipeline:
+* **Procedural Frame Shaders:** Decorative borders (Classic White, Obsidian Black, 35mm Sprockets, Metallic Gold, Rose Gold, Rainbow Gradient, Sunset Ombré, Pastel Candy, Scalloped Postage Stamp) are drawn directly on canvas without external bitmap assets.
+* **Hand-Drawn Vector Doodles:** Pre-compiled vector path functions (crowns, hats, glasses, arrows, sparkles, sunbursts, hearts) render with native anti-aliasing at any canvas scale.
+* **Custom Watermark / Logo Compositing:** Direct file ingestion (`FileReader` / `readAsDataURL`) composites user images with alpha blending, custom rotation (`ctx.rotate`), and scaling.
+
+```javascript
+function drawProceduralFrame(targetCtx, w, h, frameStyle) {
+  if (!frameStyle || frameStyle === 'none') return;
+  targetCtx.save();
+  if (frameStyle === 'white') {
+    // Instant film paper border with classic bottom chin
+    const border = Math.round(w * 0.05);
+    const bottomChin = Math.round(h * 0.14);
+    targetCtx.fillStyle = '#FFFFFF';
+    targetCtx.fillRect(0, 0, w, border); // Top
+    targetCtx.fillRect(0, 0, border, h); // Left
+    targetCtx.fillRect(w - border, 0, border, h); // Right
+    targetCtx.fillRect(0, h - bottomChin, w, bottomChin); // Bottom chin
+  } else if (frameStyle === 'gold') {
+    // Metallic gold foil bevel frame
+    const border = Math.round(w * 0.045);
+    const grad = targetCtx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0.0, '#D4AF37');
+    grad.addColorStop(0.3, '#FFF4B8');
+    grad.addColorStop(0.7, '#AA771C');
+    grad.addColorStop(1.0, '#D4AF37');
+    targetCtx.strokeStyle = grad;
+    targetCtx.lineWidth = border;
+    targetCtx.strokeRect(border / 2, border / 2, w - border, h - border);
+  }
+  targetCtx.restore();
+}
+```
+
+---
+
+### 5.7 Custom Banner & Stylized Typography Generator
+
+The banner generator synthesizes vector banners from dynamic user text, dates, or emojis:
+* **6 Stylistic Treatments:** Ribbon (with swallowtail end notches), Pennant / Flag, Modern Pill (`roundRect`), Vintage Label (double border with corner notches), Masking Tape (semi-translucent with jagged torn edges), and Speech Bubble (with directional tail pointer).
+* **Color Schemes & Contrast Optimization:** Computes contrast ratio to select crisp white or pitch dark typography automatically.
+
+```javascript
+function drawBanner(targetCtx, text, style, colorScheme, x, y, fontSize) {
+  if (!text) return;
+  targetCtx.save();
+  targetCtx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+  const textMetrics = targetCtx.measureText(text);
+  const padX = fontSize * 0.8, padY = fontSize * 0.4;
+  const bannerW = textMetrics.width + padX * 2;
+  const bannerH = fontSize + padY * 2;
+  const bx = x - bannerW / 2, by = y - bannerH / 2;
+
+  // Render stylized background shape
+  targetCtx.fillStyle = getPaletteColor(colorScheme);
+  if (style === 'pill') {
+    targetCtx.beginPath();
+    targetCtx.roundRect(bx, by, bannerW, bannerH, bannerH / 2);
+    targetCtx.fill();
+  } else if (style === 'tape') {
+    targetCtx.globalAlpha = 0.85;
+    drawJaggedTapeRect(targetCtx, bx, by, bannerW, bannerH);
+    targetCtx.fill();
+  }
+  // Draw centered typography with subtle drop shadow
+  targetCtx.fillStyle = getContrastingTextColor(colorScheme);
+  targetCtx.textAlign = 'center';
+  targetCtx.textBaseline = 'middle';
+  targetCtx.fillText(text, x, y);
+  targetCtx.restore();
+}
+```
+
+---
+
+### 5.8 Interactive Canvas Free Move & Target Focus Dragging Engine
+
+Provides real-time direct manipulation for mouse on desktop and touch on mobile:
+* **Direct Hit-Testing:** Compares pointer coordinates against sticker and banner bounding boxes:
+  $$\text{Hit} \iff |x - x_0| \le \frac{W}{2} \land |y - y_0| \le \frac{H}{2}$$
+* **Drag Target Focus Modes:**
+  - `Auto`: Hit-tests sticker first, then banner, falling back to photo pan if pointer is on background.
+  - `Photo Pan`, `Sticker Move`, `Banner Move`: Explicit locks guaranteeing that adjusting one layer never moves the other layers unintentionally.
+* **Bi-Directional Coordinate Synchronization:** Dispatches change events back to range sliders (`sliderPanX`, `sliderPanY`, etc.) keeping GUI state and Canvas render state in lockstep.
+
+---
+
 ## 6. `test_suite.py` & `test_gui.py` — Automated Verification
 
-### 6.1 Protocol Integrity & Planar Encoding Verification (`test_suite.py`)
-`test_suite.py` provides continuous regression testing without external dependencies:
+### 6.1 Protocol Integrity, Planar Encoding & JavaScriptCore Engine Verification (`test_suite.py`)
+`test_suite.py` provides continuous regression testing without external dependencies across 9 comprehensive tests:
+* **Test 4 — Headless JavaScriptCore (`jsc`) Execution:**
+  To guarantee that modern Web Studio JavaScript code never regresses with parser syntax errors (such as duplicate `let` declarations) or runtime exceptions, `test_suite.py` extracts the `<script>` blocks and executes them in Apple's headless JavaScriptCore engine (`/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc`).
+* **CodeQL Safe Tokenization (`HTMLParser`):**
+  Avoids naive regular expressions like `<script>(.*?)</script>` that trigger GitHub CodeQL alert `py/bad-tag-filter`. Instead, a W3C-compliant `ScriptExtractor` class subclassing Python's standard `html.parser.HTMLParser` safely isolates client-side JavaScript.
 
 ```python
-    # TEST 4: Planar RGB Encoding (Mini vs SQUARE)
+class ScriptExtractor(HTMLParser):
+    """Safe HTML script block extractor replacing regex to satisfy CodeQL py/bad-tag-filter."""
+    def __init__(self):
+        super().__init__()
+        self.scripts = []
+        self._in_script = False
+        self._current_script = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() == "script":
+            self._in_script = True
+            self._current_script = []
+
+    def handle_endtag(self, tag):
+        if tag.lower() == "script":
+            self._in_script = False
+            self.scripts.append("".join(self._current_script))
+            self._current_script = []
+
+    def handle_data(self, data):
+        if self._in_script:
+            self._current_script.append(data)
+```
+
+```python
+    # TEST 5: Planar RGB Encoding (Mini vs SQUARE)
     sample_img = Image.new("RGB", (1000, 1000), color=(255, 0, 128))
     
     # Mini SP-2 (600x800 -> 1,440,000 bytes)
@@ -750,9 +871,9 @@ async function connectBluetooth() {
 
 ---
 
-## 7. macOS Native Swift CoreGraphics Analog FX Engine
+## 7. macOS Native Swift CoreGraphics Analog FX & Stickers Engine
 
-In the macOS native Swift desktop applications (`InstaxSquareCore.swift` and `LegacyInstaxCore.swift`), Analog Creative FX are implemented natively using Apple's high-performance `CoreGraphics` and `Accelerate` frameworks:
+In the macOS native Swift desktop applications (`InstaxSquareCore.swift` and `LegacyInstaxCore.swift`), Analog Creative FX, procedural frames, doodle stickers, and custom banners are implemented natively using Apple's high-performance `CoreGraphics` and `Accelerate` frameworks:
 
 ```swift
 // Lens Vignette via CoreGraphics Radial Shading
@@ -784,7 +905,8 @@ static func drawLightLeakEffect(in ctx: CGContext, rect: CGRect, type: String, p
 #### macOS Architectural Highlights:
 1. **Hardware-Accelerated Compositing**: CoreGraphics renders directly on macOS Quartz compositor with metal backends, ensuring instantaneous 60 FPS previews even when scrubbing sliders.
 2. **Strict Paper Boundary Letterboxing**: When letterboxing rectangular images on square or wide film, all analog effects, wear, grain, and leaks are clipped strictly to the active photo rect (`ctx.clip(to: drawRect)`), keeping pristine white or black film borders completely untouched.
-3. **Typography & Glow Simulation**: Date stamps utilize `CTFont` / `NSFont.monospacedDigitSystemFont` with `ctx.setShadow(offset: .zero, blur: 6.0, color: glowColor)` for authentic 1990s LED display reproduction.
+3. **Typography & Glow Simulation**: Date stamps and custom banner text utilize `CTFont` / `NSFont.monospacedDigitSystemFont` with `ctx.setShadow(offset: .zero, blur: 6.0, color: glowColor)` for authentic 1990s LED display and banner reproduction.
+4. **Vector Path Doodles & Procedural Frames**: Pre-compiled CoreGraphics bezier path sequences (`CGMutablePath`) render vector doodle crowns, party hats, and frames smoothly at retina resolution without loading raster assets.
 
 ---
 
