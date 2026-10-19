@@ -499,7 +499,12 @@ python3 test_gui.py
    
    # Legacy SHARE Wi-Fi series
    ./Legacy-Instax-Printer/macOS/legacy-instax print ~/Desktop/photo.jpg --model SP-2
+
+   # Remotely power off printer hardware
+   ./macOS/instax-square off
    ```
+6. **Remote Disconnect & Turn Off Controls**:
+   - In both native macOS apps and Web Studios, the connection toolbar provides instant **Disconnect** and **Turn Off (Sleep)** buttons to cleanly release sessions or command printer hardware to power down immediately.
 
 #### 5.2.2 Windows Zero-Install Desktop App & Python GUI
 1. **Modern BLE Zero-Install App**: Double-click `Windows/Instax-Printer.vbs` for Link series.

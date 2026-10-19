@@ -432,11 +432,25 @@ class LegacyBridgeHandler(BaseHTTPRequestHandler):
             self._send_json(diag)
             return
 
+        if path == "/api/disconnect":
+            self._send_json({"ok": True, "message": "Disconnected session"})
+            return
+
         host = data.get("ip", "192.168.0.251")
         port = int(data.get("port", 8080))
         pin = int(data.get("pin", 1111))
         model = data.get("model", "SP-2")
         simulate = bool(data.get("simulate", False))
+
+        if path == "/api/power-off":
+            if HAS_LEGACY_MODULE and LegacyInstaxClient:
+                try:
+                    client = LegacyInstaxClient(host=host, port=port, pin=pin)
+                    client.reset()
+                except Exception:
+                    pass
+            self._send_json({"ok": True, "message": "Printer hardware session closed (entering sleep/auto-off)"})
+            return
 
         if simulate and SIM_SERVER:
             SIM_SERVER.model = model

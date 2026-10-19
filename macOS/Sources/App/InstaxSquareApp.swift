@@ -640,6 +640,25 @@ final class InstaxAppViewModel: ObservableObject {
         statusBanner = "Disconnected from printer."
     }
 
+    func powerOffPrinter() {
+        guard isConnected else { return }
+        addLog(category: .ble, text: "Sending remote power-off command to printer...")
+        statusBanner = "Powering off printer..."
+        Task {
+            do {
+                try await ble.shutDownPrinter()
+            } catch {
+                // Expected disconnect on hardware power down
+            }
+            await MainActor.run {
+                self.isConnected = false
+                self.connectedDeviceName = ""
+                self.statusBanner = "Printer powered off."
+                self.addLog(category: .ble, text: "Printer powered off successfully.")
+            }
+        }
+    }
+
     func scanForNearbyPrinters() {
         guard !isScanningPrinters else { return }
         isScanningPrinters = true
@@ -2034,6 +2053,18 @@ struct InstaxMainView: View {
             .fixedSize(horizontal: true, vertical: false)
             .disabled(vm.isConnecting || vm.isPrinting)
 
+            if vm.isConnected {
+                Button(role: .destructive, action: { vm.powerOffPrinter() }) {
+                    Label("Turn Off", systemImage: "power")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .controlSize(.regular)
+                .fixedSize(horizontal: true, vertical: false)
+                .disabled(vm.isConnecting || vm.isPrinting)
+                .help("Command printer hardware to immediately shut down and power off")
+            }
+
             Button(action: { vm.refreshStatus() }) {
                 Label("Status", systemImage: "arrow.clockwise")
             }
@@ -2075,6 +2106,10 @@ struct InstaxMainView: View {
                     Button { vm.flashLEDOnce() } label: { Label("Flash LED Once", systemImage: "sparkles") }
                     Button { vm.stopLEDNow() } label: { Label("Stop LED", systemImage: "lightbulb.slash") }
                     Button { vm.ejectFilmCoverNow() } label: { Label("Eject Film Cover", systemImage: "eject.circle") }
+                    if vm.isConnected {
+                        Divider()
+                        Button(role: .destructive) { vm.powerOffPrinter() } label: { Label("Turn Off Printer", systemImage: "power") }
+                    }
                     Divider()
                     Button { vm.showHelpSheet = true } label: { Label("Help Guide (⌘?)", systemImage: "questionmark.circle") }
                 } label: {

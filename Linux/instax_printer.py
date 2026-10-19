@@ -337,6 +337,13 @@ class InstaxBLE:
             raise RuntimeError(f"REJECT_FILM_COVER failed: code 0x{r['res_code']:02X}")
         await asyncio.sleep(8.0)
 
+    async def power_off(self):
+        try:
+            await self.send_command(SID_SHUTDOWN, b"", timeout=3.0)
+        except Exception:
+            pass
+        await self.disconnect()
+
     async def print_jpeg(
         self,
         jpeg_data: bytes,
@@ -1662,6 +1669,12 @@ async def main_cli():
     p_eject = subparsers.add_parser("eject-cover", help="Eject protective dark slide")
     p_eject.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
 
+    # off / poweroff
+    p_off = subparsers.add_parser("off", help="Remotely power off the Instax printer")
+    p_off.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
+    p_poweroff = subparsers.add_parser("poweroff", help="Remotely power off the Instax printer")
+    p_poweroff.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
+
     # preview
     p_prev = subparsers.add_parser("preview", help="Render preview JPEG locally without printer")
     p_prev.add_argument("images", nargs="+")
@@ -1837,6 +1850,12 @@ async def main_cli():
             await ble.connect(args.device)
             await ble.eject_film_cover()
             await ble.disconnect()
+
+        elif args.command in ("off", "poweroff"):
+            await ble.connect(args.device)
+            print("Sending remote shutdown command to printer...")
+            await ble.power_off()
+            print("Done! Printer hardware powered off.")
 
         elif args.command == "print":
             await ble.connect(args.device)

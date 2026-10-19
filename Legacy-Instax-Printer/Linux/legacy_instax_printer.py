@@ -937,6 +937,13 @@ class LegacyInstaxClient:
                 "total_prints": total_prints,
             }
 
+    def reset(self):
+        try:
+            with self._open_session() as s:
+                self._send_and_recv(s, CMD_RESET)
+        except Exception:
+            pass
+
     def print_planar_rgb(
         self,
         planar_bytes: bytes,

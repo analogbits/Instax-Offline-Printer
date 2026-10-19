@@ -345,6 +345,10 @@
     <!-- Primary Connect Button -->
     <button id="connectBtn" class="primary-btn" onclick="connectPrinter()" style="padding:6px 14px; font-weight:700;">📡 Connect Printer</button>
 
+    <!-- Disconnect & Turn Off (Sleep) Buttons -->
+    <button id="disconnectBtn" class="secondary" onclick="disconnectPrinter()" style="display:none; padding:6px 10px;" title="Disconnect TCP connection from printer">🔌 Disconnect</button>
+    <button id="turnOffBtn" class="secondary" onclick="turnOffPrinter()" style="display:none; padding:6px 10px; background:rgba(239,68,68,0.2); border-color:#ef4444; color:#fca5a5;" title="Put printer into sleep mode to auto-power off">⏻ Turn Off (Sleep)</button>
+
     <!-- Network Settings & Diagnostics Button -->
     <button class="secondary" id="btnTest" onclick="openWiFiDiagnostics()" title="Configure custom IP/PIN, scan nearby Wi-Fi airwaves, or test TCP 8080 reachability">⚙️ Network &amp; Diagnostics</button>
 
@@ -1365,6 +1369,10 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         if (btn) btn.textContent = '🔄 Refresh Status';
         sEl.textContent = `✅ Connected to ${data.status.model} (${data.status.width}×${data.status.height}) • ${filmLeft}/10 Film • Batt ${batteryLevel}/4`;
         log(`✅ Status Received: ${data.status.model} • Film: ${filmLeft}/10 • Battery: ${batteryLevel}/4 • Total Prints: ${totalPrints}`);
+        const dBtn = document.getElementById('disconnectBtn');
+        const tBtn = document.getElementById('turnOffBtn');
+        if (dBtn) dBtn.style.display = 'inline-flex';
+        if (tBtn) tBtn.style.display = 'inline-flex';
         return;
       }
     } catch (_) {}
@@ -1378,12 +1386,16 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       const dot = document.getElementById('connDot');
       const txt = document.getElementById('connText');
       const btn = document.getElementById('connectBtn');
+      const dBtn = document.getElementById('disconnectBtn');
+      const tBtn = document.getElementById('turnOffBtn');
       if (dot) dot.style.background = '#22c55e';
       if (txt) {
         txt.textContent = `Simulator (${m})`;
         txt.style.color = '#4ade80';
       }
       if (btn) btn.textContent = '🔄 Refresh Status';
+      if (dBtn) dBtn.style.display = 'inline-flex';
+      if (tBtn) tBtn.style.display = 'inline-flex';
       sEl.textContent = `✅ Connected to Browser Virtual SP Simulator (${m}) • 8/10 Film • Batt 4/4`;
       log(`Connected to Virtual SP Simulator (${m}).`);
     } else {
@@ -1395,15 +1407,64 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       const dot = document.getElementById('connDot');
       const txt = document.getElementById('connText');
       const btn = document.getElementById('connectBtn');
+      const dBtn = document.getElementById('disconnectBtn');
+      const tBtn = document.getElementById('turnOffBtn');
       if (dot) dot.style.background = '#71717a';
       if (txt) {
         txt.textContent = 'Wi-Fi: Join INSTAX-XXXXXXXX';
         txt.style.color = 'var(--muted)';
       }
       if (btn) btn.textContent = '📡 Connect Printer';
+      if (dBtn) dBtn.style.display = 'none';
+      if (tBtn) tBtn.style.display = 'none';
       sEl.textContent = `❌ Could not reach Instax SHARE at ${document.getElementById('printerIp').value}:${document.getElementById('printerPort').value}. Join INSTAX-XXXXXXXX Wi-Fi & click Connect.`;
       log(`Failed to connect to ${document.getElementById('printerIp').value}:${document.getElementById('printerPort').value}.`);
     }
+  }
+
+  async function disconnectPrinter() {
+    isConnected = false;
+    filmLeft = null;
+    batteryLevel = null;
+    totalPrints = null;
+    renderLEDs();
+    const dot = document.getElementById('connDot');
+    const txt = document.getElementById('connText');
+    const btn = document.getElementById('connectBtn');
+    const dBtn = document.getElementById('disconnectBtn');
+    const tBtn = document.getElementById('turnOffBtn');
+    if (dot) dot.style.background = '#71717a';
+    if (txt) {
+      txt.textContent = 'Wi-Fi: Join INSTAX-XXXXXXXX';
+      txt.style.color = 'var(--muted)';
+    }
+    if (btn) btn.textContent = '📡 Connect Printer';
+    if (dBtn) dBtn.style.display = 'none';
+    if (tBtn) tBtn.style.display = 'none';
+    document.getElementById('statusText').textContent = 'Disconnected.';
+    log('🔌 Disconnected from printer.');
+  }
+
+  async function turnOffPrinter() {
+    if (!confirm("Are you sure you want to disconnect and put the Instax SHARE printer into sleep mode? (It will auto-power off after idle timeout)")) return;
+    try {
+      const m = document.getElementById('modelSelect').value;
+      const sim = document.getElementById('simToggle').checked;
+      await fetch(`${getBridgeBase()}/api/power-off`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ip: document.getElementById('printerIp').value,
+          port: parseInt(document.getElementById('printerPort').value, 10),
+          pin: parseInt(document.getElementById('printerPin').value, 10),
+          model: m,
+          simulate: sim
+        })
+      }).catch(() => {});
+    } catch (_) {}
+    disconnectPrinter();
+    document.getElementById('statusText').textContent = '⏻ Disconnected • Printer entered sleep mode and will auto-power off.';
+    log('⏻ Disconnected. Instax SHARE entered sleep mode and will auto-power off.');
   }
 
   function getLayoutRects(layout) {

@@ -437,6 +437,29 @@ struct LegacyMainStudioView: View {
             .tint(printer.isConnected ? .green : .blue)
             .disabled(printer.isBusy)
 
+            if printer.isConnected {
+                Button {
+                    printer.disconnect()
+                } label: {
+                    Label("Disconnect", systemImage: "personalhotspot.slash")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .disabled(printer.isBusy)
+                .help("Disconnect active session with Instax SHARE printer")
+
+                Button(role: .destructive) {
+                    printer.turnOffOrSleep()
+                } label: {
+                    Label("Turn Off (Sleep)", systemImage: "power")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .controlSize(.regular)
+                .disabled(printer.isBusy)
+                .help("Send hardware reset command to printer to release lock and allow sleep/power off")
+            }
+
             Spacer()
 
             // Network Settings & Diagnostics Popover/Sheet Button
