@@ -442,16 +442,6 @@ class LegacyBridgeHandler(BaseHTTPRequestHandler):
         model = data.get("model", "SP-2")
         simulate = bool(data.get("simulate", False))
 
-        if path == "/api/power-off":
-            if HAS_LEGACY_MODULE and LegacyInstaxClient:
-                try:
-                    client = LegacyInstaxClient(host=host, port=port, pin=pin)
-                    client.reset()
-                except Exception:
-                    pass
-            self._send_json({"ok": True, "message": "Printer hardware session closed (entering sleep/auto-off)"})
-            return
-
         if simulate and SIM_SERVER:
             SIM_SERVER.model = model
             SIM_SERVER.pin = pin

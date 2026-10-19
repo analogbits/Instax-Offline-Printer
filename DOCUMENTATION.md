@@ -1,6 +1,6 @@
 # 📘 Instax Offline Printer Suite — Comprehensive Software Documentation & Runbook
 **Universal 100% Offline Printing for macOS, Windows, Linux, Web, and iOS**  
-*Document Version: 2.0.0 • Repository Release: v2.0.0*
+*Document Version: 2.1.0 • Repository Release: v2.1.0*
 
 > 🔬 **Developer Notice**: For line-by-line annotated source code breakdowns, reverse-engineered protocol math, and function-level explanations, see the companion document:  
 > 👉 **[Code Walkthrough & Developer Reference Manual (`CODE_WALKTHROUGH.md`)](CODE_WALKTHROUGH.md)**
@@ -499,12 +499,9 @@ python3 test_gui.py
    
    # Legacy SHARE Wi-Fi series
    ./Legacy-Instax-Printer/macOS/legacy-instax print ~/Desktop/photo.jpg --model SP-2
-
-   # Remotely power off printer hardware
-   ./macOS/instax-square off
    ```
-6. **Remote Disconnect & Turn Off Controls**:
-   - In both native macOS apps and Web Studios, the connection toolbar provides instant **Disconnect** and **Turn Off (Sleep)** buttons to cleanly release sessions or command printer hardware to power down immediately.
+6. **Remote Disconnect Controls**:
+   - In both native macOS apps and Web Studios, the connection toolbar provides an instant **Disconnect** button to cleanly release active Bluetooth Low Energy GATT sessions or Wi-Fi Direct TCP sockets.
 
 #### 5.2.2 Windows Zero-Install Desktop App & Python GUI
 1. **Modern BLE Zero-Install App**: Double-click `Windows/Instax-Printer.vbs` for Link series.

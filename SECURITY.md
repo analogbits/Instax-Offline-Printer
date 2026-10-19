@@ -13,9 +13,9 @@ The **Instax Offline Printer Applications Suite** is engineered with a strict **
 
 | Version | Supported |
 | :--- | :--- |
-| 2.0.x (Latest) | ✅ Supported |
-| 1.8.x – 1.9.x | ✅ Supported |
-| < 1.8.0 | ❌ End of Life |
+| 2.1.x (Latest) | ✅ Supported |
+| 2.0.x | ✅ Supported |
+| < 2.0.0 | ❌ End of Life |
 
 We encourage all users to run the latest release tag to ensure all hardware timing, buffer fixes, and security patches are active.
 

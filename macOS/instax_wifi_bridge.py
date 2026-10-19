@@ -273,16 +273,6 @@ class InstaxWiFiBridgeHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": False, "error": str(e)}, status_code=500)
             return
 
-        if path == "/api/power-off":
-            device = data.get("device") or "INSTAX-"
-            try:
-                cmd = find_cli_command(["off", "--device", device])
-                subprocess.run(cmd, capture_output=True, text=True, timeout=12)
-                self._send_json({"ok": True, "message": "Printer powered off"})
-            except Exception as e:
-                self._send_json({"ok": False, "error": str(e)}, status_code=500)
-            return
-
         if path == "/api/disconnect":
             self._send_json({"ok": True, "message": "Disconnected"})
             return

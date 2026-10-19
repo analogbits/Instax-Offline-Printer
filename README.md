@@ -231,6 +231,26 @@ Bring the nostalgic warmth, chemical quirks, and physical characteristics of vin
 * **🎲 "Surprise Me!" & ↺ "Reset":** One-click retro vibe randomizer that automatically styles your photo with a unique vintage combination.
 * **Frame-Aware Clipping:** Automatically clips all analog effects to the photo inside the paper border when using **Letterbox (Fit)** mode, keeping white/black card borders clean.
 
+### 🔮 12 Advanced Visual Manipulation Filters (v2.1.0)
+Expand your creative expression with analog darkroom accidents, retro digital hardware simulations, and mathematical matrix convolutions across all web and desktop apps:
+* **Optical & Chemical Darkroom Processes:**
+  * **Solarisation (Sabattier Effect):** Partial tone reversal with distinctive thin white Mackie line boundaries around high-contrast edges.
+  * **False-Colour Infrared (Aerochrome):** Living foliage chlorophyll turns vivid crimson, magenta, or bubblegum pink, while sky and water remain deep cyan.
+  * **Cross-Processing (X-Pro):** Simulates cross-bath chemistry processing with pushed contrast, crushed blacks, lime-green shadows, and magenta highlights.
+  * **Duotone & Split-Toning:** Prussian Blue & paper white (Cyanotype), or warm amber highlights with cool teal shadows (Cinema split-tone).
+* **Digital Hardware & Scan Artifacts:**
+  * **Dithering:** Tactile 1-bit Macintosh and retro Game Boy aesthetics using Floyd-Steinberg error diffusion and Bayer ordered matrices.
+  * **Chromatic Aberration (Prism Split):** Radial and horizontal lens dispersion prismatic color fringing.
+  * **Scanline Glitch:** CRT monitor scanline rasterization with horizontal CRT sync phase jitter.
+  * **Pixelation / Retro 8-Bit:** Downsampled mosaic pixel grid for low-resolution digital aesthetic.
+* **Mathematical Matrix Convolutions:**
+  * **Edge Detection / Neon Glow:** Sobel gradient edge isolation with vibrant neon highlight luminescence.
+  * **Emboss / Bas-Relief:** 3D directional light bevel extrusion mapping surfaces into physical metallic relief.
+* **🔌 Direct Disconnect Controls & Connection Toolbar:**
+  * Dedicated **Disconnect** buttons across Web Studios and native desktop apps.
+  * Interactive nearby printer and Wi-Fi network discovery dropdowns.
+  * One-click **Flash LED** and **Stop LED** hardware identification controls.
+
 ---
 
 ## 🎨 Hand-Drawn Doodle Stickers, Artistic Frames & Custom Banner Maker

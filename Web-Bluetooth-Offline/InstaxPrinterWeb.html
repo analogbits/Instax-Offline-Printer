@@ -319,7 +319,6 @@
         <div style="display: flex; gap: 6px;">
           <button id="btnConnect" onclick="connectBluetooth()" style="flex: 1;">📡 Connect Instax</button>
           <button class="secondary" id="btnDisconnect" onclick="disconnectBluetooth()" style="display: none; padding: 6px 10px;" title="Disconnect Bluetooth connection">🔌 Disconnect</button>
-          <button class="secondary" id="btnPowerOff" onclick="powerOffPrinter()" style="display: none; padding: 6px 10px; background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #fca5a5;" title="Turn off physical printer hardware remotely">⏻ Turn Off</button>
         </div>
 
         <div style="display: flex; gap: 6px; margin-top: 6px;">
@@ -4174,7 +4173,6 @@ function buildPacket(sidHi, sidLo, payload = new Uint8Array(0)) {
 function updateConnectionUI(connected, deviceName = "") {
   const btnConnect = document.getElementById('btnConnect');
   const btnDisconnect = document.getElementById('btnDisconnect');
-  const btnPowerOff = document.getElementById('btnPowerOff');
   const btStatusText = document.getElementById('btStatusText');
 
   if (connected) {
@@ -4183,7 +4181,6 @@ function updateConnectionUI(connected, deviceName = "") {
       btnConnect.disabled = false;
     }
     if (btnDisconnect) btnDisconnect.style.display = "inline-flex";
-    if (btnPowerOff) btnPowerOff.style.display = "inline-flex";
     if (btStatusText) {
       btStatusText.innerHTML = `<b style='color:#4ade80;'>Connected (${deviceName || 'Instax'})</b>`;
     }
@@ -4194,7 +4191,6 @@ function updateConnectionUI(connected, deviceName = "") {
       btnConnect.disabled = false;
     }
     if (btnDisconnect) btnDisconnect.style.display = "none";
-    if (btnPowerOff) btnPowerOff.style.display = "none";
     if (btStatusText) {
       btStatusText.innerHTML = `<b style='color:#ef4444;'>Disconnected</b>`;
     }
@@ -4228,36 +4224,6 @@ async function disconnectBluetooth() {
     notifyChar = null;
     updateConnectionUI(false);
     log("🔌 Disconnected from printer.");
-  }
-}
-
-async function powerOffPrinter() {
-  if (!confirm("Are you sure you want to turn off the physical Instax printer remotely?")) return;
-  try {
-    log("⏻ Sending remote power-off command (SID_SHUTDOWN)...");
-    if (bridgeConnected) {
-      const dev = getSelectedDeviceName();
-      await fetch(`${getBridgeBase()}/api/power-off`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ device: dev })
-      }).catch(() => {});
-      bridgeConnected = false;
-    } else if (btDevice && btDevice.gatt && btDevice.gatt.connected) {
-      try {
-        await sendCmd(0x01, 0x00, new Uint8Array(0), 3000);
-      } catch (e) {
-        // Printer cuts connection immediately upon executing shutdown
-      }
-      btDevice.gatt.disconnect();
-    }
-    log("⏻ Remote power-off command sent. Physical printer hardware is shutting down.");
-  } catch (err) {
-    log("Power-off notice: " + (err.message || err));
-  } finally {
-    writeChar = null;
-    notifyChar = null;
-    updateConnectionUI(false);
   }
 }
 

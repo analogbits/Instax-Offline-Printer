@@ -3679,31 +3679,6 @@ public final class LegacyPrinterManager: ObservableObject {
         statusHeadline = "Disconnected — Select or scan Wi-Fi to reconnect"
         appendLog("🔌 Disconnected from printer.")
     }
-
-    /// Issues hardware reset command to clear session state, disconnects, and lets the printer sleep/auto-power off.
-    public func turnOffOrSleep() {
-        let host = printerIP.trimmingCharacters(in: .whitespacesAndNewlines)
-        let port = UInt16(printerPort.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 8080
-        let pin = UInt16(pinCode.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 1111
-        let sessionTime = UInt32(truncatingIfNeeded: Int64(Date().timeIntervalSince1970 * 1000))
-
-        appendLog("⏻ Sending session reset to release hardware lock and allow printer auto-power-off/sleep...")
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let session = LegacyTCPSession(host: host, port: port, pinCode: pin, sessionTime: sessionTime)
-                try session.connect(timeoutSeconds: 2.0, retries: 1)
-                _ = try? session.sendAndReceive(type: .reset)
-                session.close()
-            } catch {
-                // Ignore disconnect or timeout errors
-            }
-            DispatchQueue.main.async {
-                self.isConnected = false
-                self.telemetry = LegacyPrinterTelemetry()
-                self.statusHeadline = "Printer session closed (Entering sleep/power-off mode)"
-                self.appendLog("⏻ Hardware session released. Instax SHARE is now entering low-power sleep / auto-power-off.")
-            }
-        }
-    }
 }
+
 

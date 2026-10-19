@@ -15,19 +15,19 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			yLqAYoYs2aMrQH+ynspP3X3dk9s=
+			VvZ8WdBJwYt6SuvTBz4WcFJN1Ck=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"c8ba8062862cd9a32b407fb29eca4fdd7ddd93db"</string>
+			<string>cdhash H"56f67c59d049c18b7a4aebd3073e1670524dd429"</string>
 		</dict>
 		<key>PlugIns/Legacy Instax Share.appex</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			U4W/j7S1eHd1vT/pNm3PRGRQEF8=
+			P+5LadgnPv7o4+a3PXHagylsNVY=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"5385bf8fb4b5787775bd3fe9366dcf446450105f"</string>
+			<string>cdhash H"3fee4b69d8273efee8e3e6b73d71da83296c3556"</string>
 		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>

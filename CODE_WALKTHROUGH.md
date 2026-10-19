@@ -1,6 +1,6 @@
 # 🔬 Instax Offline Printer Suite — Code Walkthrough & Developer Reference Manual
 **Annotated Source Code Explainer, Protocol Math & Algorithmic Deep-Dive**  
-*Document Version: 2.0.0 • Standard: Literate / Elucidative Code Specification • Target Release: v2.0.0*
+*Document Version: 2.1.0 • Standard: Literate / Elucidative Code Specification • Target Release: v2.1.0*
 
 ---
 

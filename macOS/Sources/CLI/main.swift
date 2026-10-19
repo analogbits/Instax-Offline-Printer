@@ -26,7 +26,6 @@ func printUsage() {
       instax-square ping [--device <name>]
       instax-square eject-cover [--device <name>]
       instax-square led [--off] [--device <name>]
-      instax-square off [--device <name>]
       instax-square preview <image_path> -o <out.jpg> [--model square|wide|mini] [IMAGE_OPTIONS]
       instax-square print <image1> [image2 ...] [--device <name>] [--dry-run] [--model auto|square|wide|mini] [--mode none|rich|natural] [IMAGE_OPTIONS]
 
@@ -352,16 +351,6 @@ Task {
             try await Task.sleep(nanoseconds: 300_000_000)
             ble.disconnect()
             print("Done!")
-            exit(0)
-
-        case "off", "poweroff", "shutdown":
-            let ble = InstaxBLEController()
-            print("Connecting to \(deviceTarget)...")
-            try await ble.connect(targetNameOrPrefix: deviceTarget, timeout: 8.0)
-            print("Sending remote shutdown command to \(deviceTarget)...")
-            try await ble.shutDownPrinter()
-            ble.disconnect()
-            print("Done! Printer hardware powered off.")
             exit(0)
 
         case "preview":

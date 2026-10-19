@@ -3151,12 +3151,6 @@ public final class InstaxBLEController: NSObject, CBCentralManagerDelegate, CBPe
         }
     }
 
-    public func shutDownPrinter() async throws {
-        log("[BLE] Sending ShutDown command (SID_SHUTDOWN)...")
-        _ = try? await sendCommand(sid: .shutDown, timeout: 3.0)
-        disconnect()
-    }
-
     public func sendCommand(
         sid: InstaxSID,
         payload: Data = Data(),

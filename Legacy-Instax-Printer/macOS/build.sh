@@ -43,7 +43,10 @@ cp Resources/ShareExtension-Info.plist "$EXT_BUNDLE/Contents/Info.plist"
     -o "$EXT_BUNDLE/Contents/MacOS/LegacyInstaxShare"
 
 find "$APP_BUNDLE" -name "._*" -delete 2>/dev/null || true
-xattr -cr "$APP_BUNDLE" Resources Sources 2>/dev/null || true
+xattr -cr "$APP_BUNDLE" 2>/dev/null || true
+xattr -cr "$EXT_BUNDLE" 2>/dev/null || true
+xattr -cr Resources 2>/dev/null || true
+xattr -cr Sources 2>/dev/null || true
 /usr/bin/codesign --force --sign - --entitlements Resources/ShareExtension.entitlements "$EXT_BUNDLE"
 
 echo "🔨 [4/4] Compiling Legacy Instax Printer macOS SwiftUI Application..."

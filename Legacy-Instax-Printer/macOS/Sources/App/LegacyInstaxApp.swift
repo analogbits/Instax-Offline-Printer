@@ -447,17 +447,6 @@ struct LegacyMainStudioView: View {
                 .controlSize(.regular)
                 .disabled(printer.isBusy)
                 .help("Disconnect active session with Instax SHARE printer")
-
-                Button(role: .destructive) {
-                    printer.turnOffOrSleep()
-                } label: {
-                    Label("Turn Off (Sleep)", systemImage: "power")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-                .controlSize(.regular)
-                .disabled(printer.isBusy)
-                .help("Send hardware reset command to printer to release lock and allow sleep/power off")
             }
 
             Spacer()
