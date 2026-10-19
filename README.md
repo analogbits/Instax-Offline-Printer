@@ -168,8 +168,17 @@ Embed high-resolution, scannable QR codes onto your physical prints—just like 
 * **3 Badge Styles:** Translucent Glass, Solid White, or Dark Vignette.
 * **Available Across All Apps:** Native Swift macOS apps, Windows/Linux GUIs, Lightroom Classic & Darktable plugins, CLI (`--qr <text>`), and Web apps!
 
-### ✨ Stickers, Decorative Frames & Custom Image Overlays Studio (v1.9.0)
-Customize your prints with decorative frames, emoji stickers, and personal logo watermarks—100% royalty-free with zero proprietary asset dependencies:
+### ✨ Stickers, Decorative Frames & Custom Overlays Studio (v2.0.0)
+Customize your prints with decorative frames, hand-drawn doodles, emoji stickers, custom text banners, and personal logo watermarks—100% royalty-free with zero proprietary asset dependencies:
+* **✋ Interactive Free Move & Canvas Dragging:** Drag stickers, custom banners, or pan the underlying photo directly on the canvas with touch (iPhone/iPad) or mouse drag. Choose your focus with the **Drag Target Focus** mode (`Auto`, `Photo Pan`, `Sticker Move`, `Banner Move`) with real-time coordinate slider synchronization.
+* **🏷 Custom Banner & Text Maker:** Create stylized banners with your own custom text, dates, or emojis. Choose from 6 banner styles (**Ribbon**, **Pennant / Flag**, **Modern Pill**, **Vintage Label**, **Masking Tape**, **Speech Bubble**) across 8 curated color harmonies.
+* **🎨 Hand-Drawn Doodle & Vector Stickers:**
+  * **Hand-Drawn Doodles:** Doodle Crown, Sunglasses, Party Hat, Arrows, Sunburst, Sparkles, Coffee Mug, and Love Hearts.
+  * **Party & Celebration:** 🎉 Party Popper, 🎂 Birthday Cake, ✨ Sparkles, 🥂 Cheers, 🎈 Balloon, 🎁 Gift Box.
+  * **Travel & Outdoors:** 📸 Camera, ✈️ Airplane, 🌴 Palm Tree, ⛺️ Camping Tent, ⛰️ Mountain, ☀️ Sun, 🌊 Ocean Wave.
+  * **Love & Affection:** ❤️ Classic Red Heart, 💖 Sparkle Heart, 💕 Two Hearts, 💌 Love Letter, 🌹 Rose, 💐 Floral Bouquet.
+  * **Nature & Pets:** 🐾 Paw Print, 🐶 Puppy, 🐱 Kitten, 🌸 Cherry Blossom, ☕️ Coffee, 🍀 Four-Leaf Clover.
+  * **Retro & Vibes:** 📼 Vintage Cassette Tape, 🕶️ Cool Sunglasses, ✌️ Peace Sign, ⚡️ Lightning Bolt, 🎵 Musical Note, 🔥 Fire / Lit.
 * **🖼 10 Procedural Decorative Film Frame Styles:**
   * **Classic White Film Border:** Nostalgic instant paper card frame with bottom caption chin.
   * **Obsidian Black Matte:** Dramatic deep charcoal border with fine edge relief.
@@ -181,16 +190,10 @@ Customize your prints with decorative frames, emoji stickers, and personal logo 
   * **Pastel Candy Geometric:** Playful soft pastel quad-color frame (sky blue, candy pink, mint green, and pale yellow).
   * **Scalloped Postage Stamp:** Vintage perforated postage stamp edge perforation cutouts.
   * **None (Standard Borderless):** Edge-to-edge full bleed printing.
-* **🎨 30+ Unicode Emoji Standard Stickers:**
-  * **Party & Celebration:** 🎉 Party Popper, 🎂 Birthday Cake, ✨ Sparkles, 🥂 Cheers, 🎈 Balloon, 🎁 Gift Box.
-  * **Travel & Outdoors:** 📸 Camera, ✈️ Airplane, 🌴 Palm Tree, ⛺️ Camping Tent, ⛰️ Mountain, ☀️ Sun, 🌊 Ocean Wave.
-  * **Love & Affection:** ❤️ Classic Red Heart, 💖 Sparkle Heart, 💕 Two Hearts, 💌 Love Letter, 🌹 Rose, 💐 Floral Bouquet.
-  * **Nature & Pets:** 🐾 Paw Print, 🐶 Puppy, 🐱 Kitten, 🌸 Cherry Blossom, ☕️ Coffee, 🍀 Four-Leaf Clover.
-  * **Retro & Vibes:** 📼 Vintage Cassette Tape, 🕶️ Cool Sunglasses, ✌️ Peace Sign, ⚡️ Lightning Bolt, 🎵 Musical Note, 🔥 Fire / Lit.
 * **🖼 Custom Image & Logo Watermarks ("Other Images"):** Select any custom PNG, JPG, or WebP graphic from your device (personal signatures, company logos, cartoon stickers, or graphic emblems) to overlay directly onto the photo.
 * **🎛 Complete Placement, Scaling & Rotation Controls:**
-  * **7 Anchor Positions:** Top-Right (default), Top-Left, Bottom-Right, Bottom-Left, Center, Top-Center, Bottom-Center.
-  * **Live Sliders:** Scale Multiplier (`0.10x` to `0.60x`), Opacity (`10%` to `100%`), and Rotation Angle (`-180°` to `+180°`).
+  * **Direct Canvas Hit-Testing:** Click and drag any sticker or banner directly on screen.
+  * **Live Sliders:** X/Y Position, Scale Multiplier (`0.10x` to `0.60x`), Opacity (`10%` to `100%`), and Rotation Angle (`-180°` to `+180°`).
 * **💻 Universal Cross-Platform Support:** Available in Web Bluetooth (`InstaxPrinterWeb.html`), Legacy Web Wi-Fi (`LegacyInstaxPrinterWeb.html`), native macOS Swift apps (`Instax Printer.app` & `Legacy Instax Printer.app`), Windows/Linux desktop GUIs, and command-line interfaces (`--frame-style`, `--sticker`, `--sticker-image`, `--sticker-pos`, `--sticker-scale`, `--sticker-opacity`, `--sticker-rot`).
 
 ### 🎞️ Analog Creative FX & Film Emulation Studio (Ported from PolaroidEngine)
