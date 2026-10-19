@@ -27,13 +27,13 @@ func printUsage() {
       instax-square eject-cover [--device <name>]
       instax-square led [--off] [--device <name>]
       instax-square preview <image_path> -o <out.jpg> [--model square|wide|mini] [IMAGE_OPTIONS]
-      instax-square print <image1> [image2 ...] [--device <name>] [--dry-run] [--model auto|square|wide|mini] [--mode rich|natural] [IMAGE_OPTIONS]
+      instax-square print <image1> [image2 ...] [--device <name>] [--dry-run] [--model auto|square|wide|mini] [--mode none|rich|natural] [IMAGE_OPTIONS]
 
     OPTIONS:
       --dry-run                       Simulate full transmission & buffer validation (0 film used)
       --model <auto|square|wide|mini> Target printer format (default: auto)
       --device, -d <name>             Printer Bluetooth name or prefix (e.g. INSTAX-2, INSTAX-5)
-      --mode, -m <rich|natural>       Film rendering profile (default: rich)
+      --mode, -m <none|rich|natural>  Film rendering profile (default: none / neutral pass-through)
 
     IMAGE OPTIONS:
       --fit <crop|fit|stretch>   How to fit image into print canvas (default: crop)
@@ -84,7 +84,7 @@ var outputJSON = false
 var ledOff = false
 var outputPath: String?
 var inputImagePaths: [String] = []
-var printMode: InstaxPrintMode = .rich
+var printMode: InstaxPrintMode = .none
 var imgOptions = InstaxImageOptions()
 var targetModel: String = "auto"
 var isDryRun: Bool = false
@@ -116,8 +116,13 @@ while i < args.count {
         if i < args.count { outputPath = args[i] }
     case "--mode", "-m":
         i += 1
-        if i < args.count, let m = InstaxPrintMode(rawValue: args[i].lowercased()) {
-            printMode = m
+        if i < args.count {
+            let mStr = args[i].lowercased()
+            if mStr == "none" || mStr == "neutral" || mStr == "standard" {
+                printMode = .none
+            } else if let m = InstaxPrintMode(rawValue: mStr) {
+                printMode = m
+            }
         }
     case "--fit", "-f":
         i += 1

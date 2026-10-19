@@ -396,6 +396,7 @@
           <div class="field-row">
             <div class="field-label"><span>Print Mode</span></div>
             <select id="printModeSelect" onchange="markManualAdjustment(); renderCanvas()">
+              <option value="none">Standard / Neutral (No Profile)</option>
               <option value="rich">instax-Rich Mode (Vibrant Pop)</option>
               <option value="natural">instax-Natural Mode (Classic 3D-LUT)</option>
             </select>
@@ -1325,7 +1326,8 @@ function applySoftwareFilters(pixels, opts) {
     totalContrast *= 1.08;
   } else if (opts.printMode === 'natural') {
     sepiaK = Math.max(sepiaK, 0.10);
-    totalContrast *= 0.98;
+    totalContrast *= 0.96;
+    totalSat *= 0.98;
     totalBright *= 1.02;
   }
 
@@ -1453,7 +1455,7 @@ function getFilteredSource(img, opts) {
 // ==========================================
 const FILM_PRESETS = {
   default: {
-    printMode: 'rich',
+    printMode: 'none',
     filter: 'none',
     brightness: 0.00,
     contrast: 1.00,
@@ -1609,14 +1611,14 @@ const FILM_PRESETS = {
     printMode: 'rich',
     filter: 'none',
     brightness: 0.00,
-    contrast: 1.15,
-    saturation: 1.20,
+    contrast: 1.00,
+    saturation: 1.00,
     warmth: 0.00,
     vignette: 0.00,
     lightLeak: 'none',
     leakPlacement: 'auto',
     leakIntensity: 0.70,
-    filmGrain: 0.05,
+    filmGrain: 0.00,
     analogWear: 0.00,
     showDate: false,
     dateColor: 'amber',
@@ -1628,12 +1630,12 @@ const FILM_PRESETS = {
     brightness: 0.00,
     contrast: 1.00,
     saturation: 1.00,
-    warmth: 0.10,
-    vignette: 0.10,
+    warmth: 0.00,
+    vignette: 0.00,
     lightLeak: 'none',
     leakPlacement: 'auto',
     leakIntensity: 0.70,
-    filmGrain: 0.10,
+    filmGrain: 0.00,
     analogWear: 0.00,
     showDate: false,
     dateColor: 'amber',
@@ -3608,11 +3610,11 @@ function renderCanvas() {
 
   // 1. Film Mode Emulation
   if (printMode === 'rich') {
-    // Rich Mode: Boost saturation (+18%) and subtle contrast pop
+    // Rich Mode: Boost saturation (+18%) and subtle contrast pop (+8%)
     filterStr += "saturate(118%) contrast(108%) ";
-  } else {
+  } else if (printMode === 'natural') {
     // Natural Mode: Soft analog instant film highlights with 3D-LUT warmth
-    filterStr += "sepia(10%) contrast(98%) brightness(102%) ";
+    filterStr += "sepia(10%) contrast(96%) brightness(102%) saturate(98%) ";
   }
 
   // 2. Artistic Filter Presets

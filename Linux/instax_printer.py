@@ -340,7 +340,7 @@ class InstaxBLE:
     async def print_jpeg(
         self,
         jpeg_data: bytes,
-        mode: str = "rich",
+        mode: str = "none",
         dry_run: bool = False,
         progress_cb: Optional[Callable[[str, float], None]] = None
     ) -> InstaxPrinterStatus:
@@ -532,7 +532,7 @@ def _compress_pil_to_jpeg(canvas: Image.Image, max_bytes: int = 60 * 1024) -> by
 
 FILM_PRESETS = {
     "default": {
-        "print_mode": "rich", "filter": "none", "brightness": 0.00, "contrast": 1.00,
+        "print_mode": "none", "filter": "none", "brightness": 0.00, "contrast": 1.00,
         "saturation": 1.00, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
         "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.00,
         "analog_wear": 0.00, "show_date": False, "date_color": "amber",
@@ -586,15 +586,15 @@ FILM_PRESETS = {
         "analog_wear": 0.20, "show_date": False, "date_color": "white",
     },
     "instax_rich": {
-        "print_mode": "rich", "filter": "none", "brightness": 0.00, "contrast": 1.15,
-        "saturation": 1.20, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
-        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.05,
+        "print_mode": "rich", "filter": "none", "brightness": 0.00, "contrast": 1.00,
+        "saturation": 1.00, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.00,
         "analog_wear": 0.00, "show_date": False, "date_color": "amber",
     },
     "instax_natural": {
         "print_mode": "natural", "filter": "none", "brightness": 0.00, "contrast": 1.00,
-        "saturation": 1.00, "warmth": 0.10, "vignette": 0.10, "light_leak": "none",
-        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.10,
+        "saturation": 1.00, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.00,
         "analog_wear": 0.00, "show_date": False, "date_color": "amber",
     },
     "instax_mono": {
@@ -1667,7 +1667,7 @@ async def main_cli():
     p_prev.add_argument("images", nargs="+")
     p_prev.add_argument("-o", "--output", default="instax_preview.jpg")
     p_prev.add_argument("--model", default="square")
-    p_prev.add_argument("--mode", default="rich")
+    p_prev.add_argument("--mode", default="none")
     p_prev.add_argument("--fit", default="crop")
     p_prev.add_argument("--bg", default="#FFFFFF")
     p_prev.add_argument("--collage", default=None)
@@ -1680,7 +1680,7 @@ async def main_cli():
     p_print.add_argument("images", nargs="+")
     p_print.add_argument("--device", "-d", default=DEFAULT_DEVICE_NAME)
     p_print.add_argument("--model", default="auto")
-    p_print.add_argument("--mode", choices=["rich", "natural"], default="rich")
+    p_print.add_argument("--mode", choices=["none", "rich", "natural", "neutral", "standard"], default="none")
     p_print.add_argument("--fit", choices=["crop", "fit", "stretch"], default="crop")
     p_print.add_argument("--bg", default="#FFFFFF")
     p_print.add_argument("--dry-run", action="store_true", help="Verify full transfer with 0 film used")
@@ -1771,8 +1771,10 @@ async def main_cli():
 
     render_kwargs = {**analog_kwargs, **decorate_kwargs}
 
-    if hasattr(args, "mode") and "print_mode" in preset_data and args.mode == "rich":
+    if hasattr(args, "mode") and "print_mode" in preset_data and args.mode in ("none", "rich"):
         args.mode = preset_data["print_mode"]
+    if hasattr(args, "mode") and args.mode in ("neutral", "standard"):
+        args.mode = "none"
 
     if args.command == "preview":
         m = (args.model or "square").lower()

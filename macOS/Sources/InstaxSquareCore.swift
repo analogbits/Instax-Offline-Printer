@@ -91,6 +91,7 @@ public enum InstaxFitMode: String, CaseIterable, Identifiable {
 }
 
 public enum InstaxPrintMode: String, CaseIterable, Identifiable {
+    case none = "none"
     case rich = "rich"
     case natural = "natural"
 
@@ -98,13 +99,15 @@ public enum InstaxPrintMode: String, CaseIterable, Identifiable {
 
     public var title: String {
         switch self {
-        case .rich: return "instax-Rich Mode (Vibrant)"
-        case .natural: return "instax-Natural Mode (Classic)"
+        case .none: return "Standard / Neutral (No Profile)"
+        case .rich: return "instax-Rich Mode (Vibrant Pop)"
+        case .natural: return "instax-Natural Mode (Classic 3D-LUT)"
         }
     }
 
     public var optionByte: UInt8 {
         switch self {
+        case .none: return 0x00
         case .rich: return 0x00
         case .natural: return 0x08
         }
@@ -201,7 +204,7 @@ public struct InstaxFilmCatalog {
             id: "default",
             title: "Default / Base (No Effects)",
             category: "Base",
-            printMode: .rich,
+            printMode: .none,
             filter: .none,
             brightness: 0.0,
             contrast: 1.0,
@@ -387,14 +390,14 @@ public struct InstaxFilmCatalog {
             printMode: .rich,
             filter: .none,
             brightness: 0.00,
-            contrast: 1.15,
-            saturation: 1.20,
+            contrast: 1.00,
+            saturation: 1.00,
             warmth: 0.00,
             vignette: 0.00,
             lightLeak: "none",
             leakPlacement: "auto",
             leakIntensity: 0.70,
-            filmGrain: 0.05,
+            filmGrain: 0.00,
             analogWear: 0.00,
             showVintageDate: false,
             vintageDateColor: "amber",
@@ -409,12 +412,12 @@ public struct InstaxFilmCatalog {
             brightness: 0.00,
             contrast: 1.00,
             saturation: 1.00,
-            warmth: 0.10,
-            vignette: 0.10,
+            warmth: 0.00,
+            vignette: 0.00,
             lightLeak: "none",
             leakPlacement: "auto",
             leakIntensity: 0.70,
-            filmGrain: 0.10,
+            filmGrain: 0.00,
             analogWear: 0.00,
             showVintageDate: false,
             vintageDateColor: "amber",
@@ -643,7 +646,7 @@ public struct InstaxImageOptions {
     public var brightness: Double = 0.0   // [-0.5, 0.5]
     public var contrast: Double = 1.0     // [0.5, 1.8]
     public var saturation: Double = 1.0   // [0.0, 2.0]
-    public var printMode: InstaxPrintMode = .rich
+    public var printMode: InstaxPrintMode = .none
     public var filter: InstaxFilterPreset = .none
     public var filmPreset: String = "none"
     public var borderColor: InstaxBorderColor = .white
@@ -892,8 +895,9 @@ public enum InstaxImageRenderer {
 
         let deg = ((options.rotationDegrees % 360) + 360) % 360
         let isNaturalMode = (options.printMode == .natural)
+        let isRichMode = (options.printMode == .rich)
         let hasFilter = (options.filter != .none)
-        let needsColorFilter = abs(options.brightness) > 0.001 || abs(options.contrast - 1.0) > 0.001 || abs(options.saturation - 1.0) > 0.001 || isNaturalMode || hasFilter
+        let needsColorFilter = abs(options.brightness) > 0.001 || abs(options.contrast - 1.0) > 0.001 || abs(options.saturation - 1.0) > 0.001 || isNaturalMode || isRichMode || hasFilter
 
         let processedCG: CGImage
         if deg != 0 || needsColorFilter {
@@ -938,11 +942,12 @@ public enum InstaxImageRenderer {
                 break
             }
 
-            // In natural mode, simulate Fujifilm's 3D-LUT analog instant film curve:
-            // softer contrast, subtle warm organic highlights, and gently lifted shadow roll-off
-            let effectiveBrightness = options.brightness + (isNaturalMode ? 0.03 : 0.0)
-            let effectiveContrast = options.contrast * (isNaturalMode ? 0.92 : 1.0)
-            let effectiveSaturation = options.saturation * (isNaturalMode ? 0.96 : 1.0)
+            // In rich mode: punchy saturation (+18%) and subtle contrast pop (+8%)
+            // In natural mode: simulate Fujifilm's 3D-LUT analog instant film curve:
+            // softer contrast (-4%), subtle warm organic highlights, and gentle shadow roll-off
+            let effectiveBrightness = options.brightness + (isNaturalMode ? 0.02 : 0.0)
+            let effectiveContrast = options.contrast * (isRichMode ? 1.08 : (isNaturalMode ? 0.96 : 1.0))
+            let effectiveSaturation = options.saturation * (isRichMode ? 1.18 : (isNaturalMode ? 0.98 : 1.0))
 
             if let filter = CIFilter(name: "CIColorControls") {
                 filter.setValue(ciImage, forKey: kCIInputImageKey)
@@ -3034,7 +3039,7 @@ public final class InstaxBLEController: NSObject, CBCentralManagerDelegate, CBPe
 
     public func printJPEG(
         _ jpegData: Data,
-        mode: InstaxPrintMode = .rich,
+        mode: InstaxPrintMode = .none,
         dryRun: Bool = false,
         progress: ((String, Double) -> Void)? = nil
     ) async throws -> PrinterStatus {

@@ -210,9 +210,10 @@ Bring the nostalgic warmth, chemical quirks, and physical characteristics of vin
     * **1980s Retro Flash Pop:** Vibrant saturation, cool-balanced highlights, diagonal rainbow prism leak, and glowing red LED date stamp.
     * **1990s Point & Shoot / Disposable:** Flash pop, moderate edge burn leak, tactile grain, and classic amber LED date stamp.
     * **1960s Monochrome Silver Halide:** Dense silver halide crystals, rich black-and-white tonal contrast, and subtle darkroom wear.
-  * **Instax Film Profiles:**
-    * **🌈 instax-Rich (Vibrant High Contrast):** Maximizes dynamic range and color saturation for vivid landscapes and portraits.
-    * **📷 instax-Natural (3D-LUT Fuji Emulation):** Fujifilm's signature 3D-LUT profile with soft analog instant film highlights.
+  * **Instax Film Profiles & Print Modes:**
+    * **⚪ Standard / Neutral (No Profile):** Pure 1:1 image pass-through with zero simulation applied (default base preset). Hardware option byte `0x00`.
+    * **🌈 instax-Rich (Vibrant High Contrast):** Maximizes dynamic range, vivid saturation (+18%), and dynamic contrast pop (+8%) for vivid landscapes and portraits. Hardware option byte `0x00`.
+    * **📷 instax-Natural (3D-LUT Fuji Emulation):** Fujifilm's signature 3D-LUT profile with soft analog instant film highlights (-4% contrast rolloff, +2% brightness, warm highlights). Hardware option byte `0x08`.
     * **Instax Monochrome (B&W Street Film):** High-contrast street documentary black-and-white emulsion.
     * **Instax Warm Sepia (Nostalgic Tea Wash):** Warm tea-toned monochrome wash with gentle vintage vignette.
 * **🔄 Bi-Directional Cross-Tab Synchronization:** Selecting any film preset automatically synchronizes settings across **both** the Color/Filters tab (print mode, filter preset, brightness, contrast, saturation) and Analog FX tab (warmth, vignette, light leak, intensity, grain, wear, date stamp). Fine-tuning any individual slider or combobox automatically switches the preset dropdown to `Custom / Manual (Unsaved)`.

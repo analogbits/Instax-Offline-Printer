@@ -170,7 +170,7 @@ class InstaxPacket:
 ### 2.4 Image Chunking & 0-Film Dry-Run Transmission Loop
 
 ```python
-    async def print_image(self, jpeg_data: bytes, mode: str = "rich", dry_run: bool = False, progress_cb = None):
+    async def print_image(self, jpeg_data: bytes, mode: str = "none", dry_run: bool = False, progress_cb = None):
         st = await self.fetch_status()
         if not dry_run and st.film_remaining <= 0:
             raise RuntimeError("No film remaining (0/10) in printer cartridge.")
@@ -179,7 +179,9 @@ class InstaxPacket:
         frame_sz = st.chunk_size if st.chunk_size > 0 else 1808
 
         # 1. Initiate download handshake declaring total file byte length
-        start_payload = struct.pack(">BBBB I", 0x02, 0x00, 0x00, 0x00, total_bytes)
+        # Option byte: 0x08 triggers printer hardware ASIC 3D-LUT (natural mode); 0x00 for standard neutral or rich pop
+        opt_byte = 0x08 if (mode == "natural" and st.supports_3d_lut) else 0x00
+        start_payload = struct.pack(">BBBB I", 0x02, opt_byte, 0x00, 0x00, total_bytes)
         r = await self.send_command(SID_PRINT_START, start_payload, timeout=12.0)
         if r["res_code"] != 0:
             raise RuntimeError(f"PRINT_IMAGE_DOWNLOAD_START rejected: code 0x{r['res_code']:02X}")

@@ -113,7 +113,7 @@ exportServiceProvider.canExportVideo = false
 
 exportServiceProvider.exportPresetFields = {
 	{ key = 'printerModel',   default = 'auto' },
-	{ key = 'printMode',      default = 'rich' },
+	{ key = 'printMode',      default = 'none' },
 	{ key = 'fitMode',        default = 'crop' },
 	{ key = 'bgColor',        default = '#FFFFFF' },
 	{ key = 'collageLayout',  default = 'single' },
@@ -165,8 +165,9 @@ function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
 					f:popup_menu {
 						value = bind 'printMode',
 						items = {
-							{ title = "instax-Rich Mode (Vivid & saturated)", value = "rich" },
-							{ title = "instax-Natural Mode (Classic analog soft tone)", value = "natural" },
+							{ title = "Standard / Neutral (No Profile - Clean Raw)", value = "none" },
+							{ title = "instax-Rich Mode (Vivid pop & saturated)", value = "rich" },
+							{ title = "instax-Natural Mode (Classic analog 3D-LUT tone)", value = "natural" },
 						},
 						width = 340,
 					},
@@ -339,7 +340,7 @@ local function buildPrintArguments(model, imagePaths, params)
 	table.insert(cmdArgs, "--model")
 	table.insert(cmdArgs, model or "auto")
 	table.insert(cmdArgs, "--mode")
-	table.insert(cmdArgs, params.printMode or "rich")
+	table.insert(cmdArgs, params.printMode or "none")
 	table.insert(cmdArgs, "--fit")
 	table.insert(cmdArgs, params.fitMode or "crop")
 	table.insert(cmdArgs, "--bg")

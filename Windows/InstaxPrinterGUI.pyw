@@ -88,7 +88,7 @@ FILM_PRESET_OPTIONS = [
 
 FILM_PRESETS = {
     "default": {
-        "print_mode": "rich", "filter": "none", "brightness": 0.00, "contrast": 1.00,
+        "print_mode": "none", "filter": "none", "brightness": 0.00, "contrast": 1.00,
         "saturation": 1.00, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
         "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.00,
         "analog_wear": 0.00, "show_date": False, "date_color": "amber",
@@ -142,15 +142,15 @@ FILM_PRESETS = {
         "analog_wear": 0.20, "show_date": False, "date_color": "white",
     },
     "instax_rich": {
-        "print_mode": "rich", "filter": "none", "brightness": 0.00, "contrast": 1.15,
-        "saturation": 1.20, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
-        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.05,
+        "print_mode": "rich", "filter": "none", "brightness": 0.00, "contrast": 1.00,
+        "saturation": 1.00, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.00,
         "analog_wear": 0.00, "show_date": False, "date_color": "amber",
     },
     "instax_natural": {
         "print_mode": "natural", "filter": "none", "brightness": 0.00, "contrast": 1.00,
-        "saturation": 1.00, "warmth": 0.10, "vignette": 0.10, "light_leak": "none",
-        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.10,
+        "saturation": 1.00, "warmth": 0.00, "vignette": 0.00, "light_leak": "none",
+        "leak_placement": "auto", "leak_intensity": 0.70, "film_grain": 0.00,
         "analog_wear": 0.00, "show_date": False, "date_color": "amber",
     },
     "instax_mono": {
@@ -214,7 +214,7 @@ class InstaxDesktopApp(tk.Tk):
         self.pan_x = tk.DoubleVar(value=0.0)
         self.pan_y = tk.DoubleVar(value=0.0)
         self.rotation = tk.IntVar(value=0)
-        self.print_mode = tk.StringVar(value="rich")
+        self.print_mode = tk.StringVar(value="none")
         self.brightness = tk.DoubleVar(value=0.0)
         self.contrast = tk.DoubleVar(value=1.0)
         self.saturation = tk.DoubleVar(value=1.0)
@@ -415,7 +415,8 @@ class InstaxDesktopApp(tk.Tk):
         cb_preset_col.pack(fill=tk.X, pady=(0, 8))
 
         ttk.Label(tab_color, text="Print Mode:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(0, 4))
-        ttk.Radiobutton(tab_color, text="instax-Rich Mode (Vibrant)", value="rich", variable=self.print_mode, command=self.on_control_adjusted).pack(anchor=tk.W)
+        ttk.Radiobutton(tab_color, text="Standard / Neutral (No Profile)", value="none", variable=self.print_mode, command=self.on_control_adjusted).pack(anchor=tk.W)
+        ttk.Radiobutton(tab_color, text="instax-Rich Mode (Vibrant Pop)", value="rich", variable=self.print_mode, command=self.on_control_adjusted).pack(anchor=tk.W)
         ttk.Radiobutton(tab_color, text="instax-Natural (Classic 3D-LUT)", value="natural", variable=self.print_mode, command=self.on_control_adjusted).pack(anchor=tk.W)
 
         ttk.Label(tab_color, text="Filter Preset:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(10, 4))
@@ -937,10 +938,15 @@ class InstaxDesktopApp(tk.Tk):
             enh = ImageEnhance.Color(img)
             img = enh.enhance(1.4)
 
-        if self.print_mode.get() == "natural":
+        if self.print_mode.get() == "rich":
+            # Rich Mode: saturation (+18%) and subtle contrast pop (+8%)
+            img = ImageEnhance.Color(img).enhance(1.18)
+            img = ImageEnhance.Contrast(img).enhance(1.08)
+        elif self.print_mode.get() == "natural":
             # Soft analog instant film highlights with 3D-LUT emulation
             img = ImageEnhance.Brightness(img).enhance(1.02)
-            img = ImageEnhance.Contrast(img).enhance(0.98)
+            img = ImageEnhance.Contrast(img).enhance(0.96)
+            img = ImageEnhance.Color(img).enhance(0.98)
 
         if self.brightness.get() != 0:
             enh = ImageEnhance.Brightness(img)

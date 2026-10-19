@@ -30,6 +30,7 @@ local model_widget = dt.new_widget("combobox") {
 local mode_widget = dt.new_widget("combobox") {
   label = "Color Mode",
   value = 1,
+  "Standard / Neutral (No Profile)",
   "instax-Rich (Vivid)",
   "instax-Natural (Classic)",
 }
@@ -88,7 +89,12 @@ dt.register_storage(
   end,
   function(storage, image_table, extra_data)
     local model_code, is_legacy = resolve_model_code(model_widget.value)
-    local color_mode = (mode_widget.value == "instax-Natural (Classic)") and "natural" or "rich"
+    local color_mode = "none"
+    if mode_widget.value == "instax-Natural (Classic)" then
+      color_mode = "natural"
+    elseif mode_widget.value == "instax-Rich (Vivid)" then
+      color_mode = "rich"
+    end
     local fit_mode = fit_widget.value or "crop"
     local qr_val = qr_widget.text or ""
     local cap_val = caption_widget.text or ""

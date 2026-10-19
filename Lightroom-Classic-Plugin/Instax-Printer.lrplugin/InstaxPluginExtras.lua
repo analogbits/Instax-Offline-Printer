@@ -143,7 +143,7 @@ local function buildPrintArguments(model, imagePaths, props)
 	table.insert(cmdArgs, "--model")
 	table.insert(cmdArgs, model or "auto")
 	table.insert(cmdArgs, "--mode")
-	table.insert(cmdArgs, props.printMode or "rich")
+	table.insert(cmdArgs, props.printMode or "none")
 	table.insert(cmdArgs, "--fit")
 	table.insert(cmdArgs, props.fitMode or "crop")
 	table.insert(cmdArgs, "--bg")
@@ -187,7 +187,7 @@ LrTasks.startAsyncTask(function()
 		local f = LrView.osFactory()
 		local props = LrBinding.makePropertyTable(context)
 		props.printerModel = "auto"
-		props.printMode = "rich"
+		props.printMode = "none"
 		props.fitMode = "crop"
 		props.bgColor = "#FFFFFF"
 		props.collageLayout = (#targetPhotos == 2 and "split2V") or (#targetPhotos == 4 and "grid4") or "single"
@@ -224,8 +224,9 @@ LrTasks.startAsyncTask(function()
 				f:popup_menu {
 					value = LrView.bind { key = 'printMode', object = props },
 					items = {
-						{ title = "instax-Rich Mode (Vivid & punchy)", value = "rich" },
-						{ title = "instax-Natural Mode (Classic soft analog)", value = "natural" },
+						{ title = "Standard / Neutral (No Profile - Clean Raw)", value = "none" },
+						{ title = "instax-Rich Mode (Vivid pop & punchy)", value = "rich" },
+						{ title = "instax-Natural Mode (Classic soft analog 3D-LUT)", value = "natural" },
 					},
 					width = 330,
 				},

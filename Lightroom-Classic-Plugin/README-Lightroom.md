@@ -63,7 +63,7 @@ Since Adobe does not release Lightroom Classic natively for Linux, we include a 
 2. In the top menu bar, click **File $\to$ Plug-in Extras $\to$ Print to Instax...** (or **Library $\to$ Plug-in Extras $\to$ Print to Instax...**).
 3. Choose:
    - **Target Printer:** *⚡ Auto-Detect BLE Printer*, *WIDE*, *SQUARE*, *Mini*, or *Legacy SHARE SP-1 / SP-2 / SP-3*
-   - **Color Mode:** *instax-Rich Mode* or *instax-Natural Mode*
+   - **Color Mode:** *Standard / Neutral (No Profile)*, *instax-Rich Mode*, or *instax-Natural Mode*
    - **Framing & Matte Border Color:** *Fill / Crop*, *Fit (Letterbox)*, or *Stretch*
    - **Collage Layout:** Print multiple selected photos individually or combine 2–9 selected Lightroom photos into a single Instax Collage!
    - **QR Code & Bottom Caption:** Optional scannable QR badge and text caption

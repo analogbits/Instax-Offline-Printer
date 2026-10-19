@@ -368,7 +368,7 @@ final class InstaxAppViewModel: ObservableObject {
     }
 
     // Color & Filters Options
-    @Published var printMode: InstaxPrintMode = .rich { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
+    @Published var printMode: InstaxPrintMode = .none { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
     @Published var filterPreset: InstaxFilterPreset = .none { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
     @Published var brightness: Double = 0.0 { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
     @Published var contrast: Double = 1.0 { didSet { markCustomAdjustment(); if !isLoadingSelection { updatePreview() } } }
@@ -2304,9 +2304,9 @@ struct InstaxMainView: View {
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
                     Text("•")
                         .foregroundColor(.secondary)
-                    Text(vm.printMode == .rich ? "🌈 instax-Rich" : "📷 instax-Natural (3D-LUT)")
+                    Text(vm.printMode == .none ? "⚪ Standard / Neutral" : (vm.printMode == .rich ? "🌈 instax-Rich" : "📷 instax-Natural (3D-LUT)"))
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(vm.printMode == .rich ? .blue : .purple)
+                        .foregroundColor(vm.printMode == .none ? .secondary : (vm.printMode == .rich ? .blue : .purple))
                     if vm.filterPreset != .none {
                         Text("•")
                             .foregroundColor(.secondary)
@@ -2746,17 +2746,22 @@ struct InstaxMainView: View {
             GroupBox(label: Label("Instax Film Profile (3D-LUT)", systemImage: "camera.filters")) {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("Profile", selection: $vm.printMode) {
+                        Text("⚪ Neutral").tag(InstaxPrintMode.none)
                         Text("🌈 instax-Rich").tag(InstaxPrintMode.rich)
                         Text("📷 instax-Natural").tag(InstaxPrintMode.natural)
                     }
                     .pickerStyle(.segmented)
 
-                    if vm.printMode == .rich {
-                        Text("• Rich Mode: Deep vibrant colors with modern contrast.")
+                    if vm.printMode == .none {
+                        Text("• Standard / Neutral: Pure raw 1:1 image pass-through with zero simulation applied.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    } else if vm.printMode == .rich {
+                        Text("• Rich Mode: Deep vibrant colors with modern contrast and vivid saturation (+18%).")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     } else {
-                        Text("• Natural Mode: Soft vintage analog tones via printer 3D-LUT.")
+                        Text("• Natural Mode: Soft vintage analog tones, highlight roll-off and warm chemistry via printer 3D-LUT.")
                             .font(.caption2)
                             .foregroundColor(.purple)
                     }
@@ -4523,17 +4528,23 @@ struct HelpGuideSheetView: View {
 
     private var printModesContent: some View {
         VStack(alignment: .leading, spacing: 14) {
-            topicHeader(title: "Rich vs. Natural Print Modes", icon: "paintpalette.fill", subtitle: "Fujifilm hardware color simulation and 3D-LUTs")
+            topicHeader(title: "Print Modes: Neutral, Rich & Natural", icon: "paintpalette.fill", subtitle: "Fujifilm hardware color simulation and 3D-LUTs")
+
+            guideBox("Standard / Neutral (No Profile)", icon: "circle.slash") {
+                Text("• Pure 1:1 raw image pass-through with zero film emulation or color alterations.")
+                Text("• Ideal when you have already color-graded your photo in Lightroom, Photoshop, or capture software.")
+                Text("• Sets the printer hardware option byte to `0x00` without software color shifts.")
+            }
 
             guideBox("instax-Rich Mode (Vibrant Pop)", icon: "sparkles") {
-                Text("• Enhances color saturation, contrast, and highlights.")
+                Text("• Enhances color saturation (+18%), dynamic contrast pop (+8%), and highlights.")
                 Text("• Ideal for sunny outdoor landscapes, vibrant food, sunsets, and smartphone captures.")
                 Text("• Sets the printer hardware option byte to `0x00`.")
             }
 
             guideBox("instax-Natural Mode (Classic Film 3D-LUT)", icon: "camera.filters") {
                 Text("• Emulates traditional classic analog Fujifilm instant film tones.")
-                Text("• Employs the printer's onboard 3D-LUT color table (`0x08`) for softer highlights and natural skin tones.")
+                Text("• Employs the printer's onboard 3D-LUT color table (`0x08`) for softer contrast (-4%), subtle warm highlights, and natural skin tones.")
                 Text("• Ideal for portraits, candid moments, indoor ambient lighting, and moody scenes.")
             }
 
