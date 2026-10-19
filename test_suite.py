@@ -12,7 +12,7 @@ Runs comprehensive diagnostic tests with debug tracing across:
 
 import hashlib
 import os
-import re
+from html.parser import HTMLParser
 import subprocess
 import sys
 import tempfile
@@ -45,6 +45,30 @@ def pass_test(msg):
 def fail_test(msg):
     print(f"  ❌ FAIL: {msg}")
     sys.exit(1)
+
+class ScriptExtractor(HTMLParser):
+    """Safe HTML script block extractor replacing regex to satisfy CodeQL py/bad-tag-filter."""
+    def __init__(self):
+        super().__init__()
+        self.scripts = []
+        self._in_script = False
+        self._current_script = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() == "script":
+            self._in_script = True
+            self._current_script = []
+
+    def handle_endtag(self, tag):
+        if tag.lower() == "script":
+            self._in_script = False
+            self.scripts.append("".join(self._current_script))
+            self._current_script = []
+
+    def handle_data(self, data):
+        if self._in_script:
+            self._current_script.append(data)
+
 
 def run_tests():
     total_tests = 0
@@ -132,7 +156,11 @@ def run_tests():
         for html_path, model_val in [(ble_html, "SQUARE"), (legacy_html, "SP-2")]:
             with open(html_path, "r", encoding="utf-8") as f:
                 html_content = f.read()
-            scripts = re.findall(r"<script(?:\s+[^>]*)?>(.*?)</script>", html_content, re.DOTALL | re.IGNORECASE)
+            extractor = ScriptExtractor()
+            extractor.feed(html_content)
+            scripts = extractor.scripts
+            if not scripts:
+                fail_test(f"No <script> tags found in {os.path.basename(html_path)}")
             mock = f"""
 const mockCanvas = {{
   getContext: () => ({{
@@ -178,7 +206,7 @@ const navigator = {{ bluetooth: {{}} }};
         pass_test("Skipped JSC engine test (jsc helper not present on this host).")
         passed_tests += 1
 
-    # TEST 4: Planar RGB Encoding (SP-1 / SP-2 Mini vs SP-3 SQUARE)
+    # TEST 5: Planar RGB Encoding (SP-1 / SP-2 Mini vs SP-3 SQUARE)
     total_tests += 1
     log_test("Planar RGB Image Encoding (Mini vs SQUARE)")
     sample_img = Image.new("RGB", (1000, 1000), color=(255, 0, 128))
@@ -198,7 +226,7 @@ const navigator = {{ bluetooth: {{}} }};
     pass_test(f"SP-2 ({len(planar_sp2)} bytes) & SP-3 ({len(planar_sp3)} bytes) planar RGB generated correctly.")
     passed_tests += 1
 
-    # TEST 5: Virtual Simulator Handshake & 0-Film Dry Run (SP-1, SP-2, SP-3)
+    # TEST 6-8: Virtual Simulator Handshake & 0-Film Dry Run (SP-1, SP-2, SP-3)
     for model in ["SP-1", "SP-2", "SP-3"]:
         total_tests += 1
         log_test(f"Virtual Wi-Fi Direct Simulator Test ({model})")
@@ -225,7 +253,7 @@ const navigator = {{ bluetooth: {{}} }};
         finally:
             sim.stop()
 
-    # TEST 6: BLE Link CLI Preview Engine
+    # TEST 9: BLE Link CLI Preview Engine
     total_tests += 1
     log_test("BLE Link Printer Preview Engine")
     test_out = os.path.join(tempfile.gettempdir(), "test_preview_ci.jpg")
