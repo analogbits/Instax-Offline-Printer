@@ -4,6 +4,7 @@ set -e
 cd "$(dirname "$0")"
 CACHE_DIR="/tmp/swift-module-cache"
 mkdir -p "$CACHE_DIR"
+xattr -cr Resources Sources 2>/dev/null || true
 
 echo "🔨 [1/4] Building legacy-instax CLI..."
 /usr/bin/swiftc \

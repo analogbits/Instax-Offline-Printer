@@ -77,6 +77,7 @@ final class LegacyStudioViewModel: ObservableObject {
     @Published var photoPickerItems: [PhotosPickerItem] = []
     @Published var collagePickerItems: [PhotosPickerItem] = []
     @Published var showProtocolConsole: Bool = false
+    @Published var showNetworkDiagnosticsSheet: Bool = false
 
     @Published var canvasDragMode: CanvasDragMode = .auto
     var activeDragTarget: CanvasDragMode = .photo
@@ -311,6 +312,9 @@ struct LegacyMainStudioView: View {
             Divider()
             bottomStatusBar
         }
+        .sheet(isPresented: $vm.showNetworkDiagnosticsSheet) {
+            LegacyNetworkDiagnosticsSheet(printer: printer, vm: vm)
+        }
         .onChange(of: vm.photoPickerItems) { newItems in
             Task {
                 for item in newItems {
@@ -355,63 +359,33 @@ struct LegacyMainStudioView: View {
         }
     }
 
-    // MARK: - Top Wi-Fi Direct Discovery & Connection Bar
+    // MARK: - Top Wi-Fi Direct Discovery & Connection Bar (Streamlined & Clean)
 
     private var topWiFiConnectionBar: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 10) {
-                HStack(spacing: 8) {
-                    Image(systemName: printer.isConnected ? "wifi.circle.fill" : "wifi.exclamationmark")
-                        .font(.system(size: 22))
+        HStack(spacing: 12) {
+            // Brand & Wi-Fi status indicator
+            HStack(spacing: 8) {
+                Image(systemName: printer.isConnected ? "wifi.circle.fill" : "wifi.exclamationmark")
+                    .font(.system(size: 20))
+                    .foregroundColor(printer.isConnected ? .green : .secondary)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Legacy Instax Printer")
+                        .font(.system(size: 13, weight: .bold))
+                    Text(printer.isConnected ? (printer.detectedWiFiSSID.isEmpty ? "Connected" : printer.detectedWiFiSSID) : "Join INSTAX-XXXXXXXX Wi-Fi")
+                        .font(.system(size: 10))
                         .foregroundColor(printer.isConnected ? .green : .secondary)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Legacy Instax Printer")
-                            .font(.system(size: 13, weight: .bold))
-                        Text(printer.detectedWiFiSSID)
-                            .font(.system(size: 10))
-                            .foregroundColor(printer.isConnected ? .green : .secondary)
-                            .lineLimit(1)
-                    }
+                        .lineLimit(1)
                 }
-                .frame(width: 195, alignment: .leading)
+            }
+            .frame(minWidth: 175, alignment: .leading)
 
-                Divider().frame(height: 26)
+            Divider().frame(height: 24)
 
-                // Wi-Fi / Printer Search Dropdown
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Picker("Wi-Fi / Printer", selection: Binding(
-                        get: { printer.selectedDiscoveryID },
-                        set: { newID in
-                            printer.applyDiscoverySelection(newID) { detected in
-                                vm.options.model = detected
-                                vm.refreshPreview()
-                            }
-                        }
-                    )) {
-                        ForEach(printer.discoveryItems) { item in
-                            Text(item.title).tag(item.id)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(width: 260)
-
-                    Button {
-                        printer.scanWiFiAndPrinters(autoConnectIfFound: true) { detected in
-                            vm.options.model = detected
-                            vm.refreshPreview()
-                        }
-                    } label: {
-                        Label(printer.isScanningWiFi ? "Scanning..." : "Scan Wi-Fi", systemImage: "dot.radiowaves.left.and.right")
-                    }
-                    .disabled(printer.isScanningWiFi || printer.isBusy)
-                    .help("Scan nearby Wi-Fi networks for INSTAX-XXXXXXXX hotspots and probe subnet for active SP-1/SP-2/SP-3 printers")
-                }
-
-                Divider().frame(height: 26)
-
+            // Model Selection
+            HStack(spacing: 5) {
+                Text("Model:")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 Picker("Model", selection: Binding(
                     get: { vm.options.model },
                     set: { newModel in
@@ -425,58 +399,68 @@ struct LegacyMainStudioView: View {
                     }
                 }
                 .labelsHidden()
-                .frame(width: 195)
-
-                HStack(spacing: 4) {
-                    Text("IP:")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    TextField("192.168.0.251", text: $printer.printerIP)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 102)
-                        .disabled(printer.useVirtualSimulator)
-
-                    Text("PIN:")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    TextField("1111", text: $printer.pinCode)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 52)
-                }
-
-                Button {
-                    printer.queryPrinterStatus { detected in
-                        vm.options.model = detected
-                        vm.refreshPreview()
-                    }
-                } label: {
-                    Label(printer.isConnected ? "Refresh" : "Connect", systemImage: "bolt.horizontal.circle.fill")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(printer.isConnected ? .green : .blue)
-                .disabled(printer.isBusy)
-
-                Spacer()
-
-                Toggle(isOn: $printer.useVirtualSimulator) {
-                    Text("Simulator")
-                        .font(.system(size: 11, weight: .medium))
-                }
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .help("Test locally against the built-in virtual SP-1/2/3 server (127.0.0.1:18080)")
-
-                Toggle(isOn: $printer.dryRunMode) {
-                    Text("Dry Run (0-Film)")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(printer.dryRunMode ? .orange : .primary)
-                }
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .help("Send 100% of planar RGB image segments to verify Wi-Fi & PIN, then skip physical print trigger so 0 film is used")
+                .frame(width: 175)
             }
+
+            // Connection Target Dropdown
+            HStack(spacing: 5) {
+                Text("Target:")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Picker("Target", selection: Binding(
+                    get: { printer.selectedDiscoveryID },
+                    set: { newID in
+                        printer.applyDiscoverySelection(newID) { detected in
+                            vm.options.model = detected
+                            vm.refreshPreview()
+                        }
+                    }
+                )) {
+                    ForEach(printer.discoveryItems) { item in
+                        Text(item.title).tag(item.id)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 220)
+            }
+
+            // Primary Connect Button
+            Button {
+                printer.queryPrinterStatus { detected in
+                    vm.options.model = detected
+                    vm.refreshPreview()
+                }
+            } label: {
+                Label(printer.isConnected ? "Refresh" : "Connect", systemImage: "bolt.horizontal.circle.fill")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(printer.isConnected ? .green : .blue)
+            .disabled(printer.isBusy)
+
+            Spacer()
+
+            // Network Settings & Diagnostics Popover/Sheet Button
+            Button {
+                vm.showNetworkDiagnosticsSheet = true
+            } label: {
+                Label("Network & Diagnostics", systemImage: "gearshape")
+            }
+            .buttonStyle(.bordered)
+            .help("Configure custom IP/PIN, scan nearby Wi-Fi airwaves, or test TCP 8080 reachability")
+
+            Divider().frame(height: 24)
+
+            // Dry Run (0-Film) Toggle Switch
+            Toggle(isOn: $printer.dryRunMode) {
+                Text("Dry Run (0-Film)")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(printer.dryRunMode ? .orange : .primary)
+            }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .help("Send 100% of planar RGB image segments to verify Wi-Fi & PIN, then skip physical print trigger so 0 film is used")
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .background(Color(NSColor.windowBackgroundColor))
     }
@@ -2082,3 +2066,184 @@ struct LegacyMainStudioView: View {
         return false
     }
 }
+
+// MARK: - Wi-Fi Network Settings & Diagnostics Sheet
+
+struct LegacyNetworkDiagnosticsSheet: View {
+    @ObservedObject var printer: LegacyPrinterManager
+    @ObservedObject var vm: LegacyStudioViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.title2)
+                        .foregroundColor(.blue)
+                    Text("Wi-Fi Network Settings & Diagnostics")
+                        .font(.headline)
+                }
+                Spacer()
+                Button("Done") {
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+            .padding()
+            .background(Color(NSColor.windowBackgroundColor))
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    // Connection Guide Banner
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: "info.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("How to Connect to Instax SHARE (SP-1 / SP-2 / SP-3)")
+                                .font(.subheadline.bold())
+                            Text("1. Turn on your printer.\n2. Open your Mac's Wi-Fi menu and connect to INSTAX-XXXXXXXX (default password: 11111111).\n3. Return to the app and click Connect!\n\n💡 Note: Running Wi-Fi airwave scans or modifying IP settings is only necessary if you are troubleshooting reachability or using a custom Wi-Fi router bridge.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(12)
+                    .background(Color.blue.opacity(0.08))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.blue.opacity(0.25), lineWidth: 1)
+                    )
+
+                    // Network Configuration Settings
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Printer Connection Settings")
+                            .font(.subheadline.bold())
+
+                        HStack(spacing: 16) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Printer IP Address")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                TextField("192.168.0.251", text: $printer.printerIP)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 130)
+                                    .disabled(printer.useVirtualSimulator)
+                            }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Port")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                TextField("8080", text: $printer.printerPort)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 65)
+                                    .disabled(printer.useVirtualSimulator)
+                            }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("PIN Code")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                TextField("1111", text: $printer.pinCode)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 65)
+                            }
+
+                            Spacer()
+
+                            Toggle(isOn: $printer.useVirtualSimulator) {
+                                VStack(alignment: .leading) {
+                                    Text("Virtual SP Simulator")
+                                        .font(.subheadline.bold())
+                                    Text("127.0.0.1:18080")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .toggleStyle(.switch)
+                        }
+                    }
+                    .padding(14)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .cornerRadius(8)
+
+                    // Wi-Fi Airwaves Scan & Discovery
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Nearby Wi-Fi Airwaves & Printers")
+                                    .font(.subheadline.bold())
+                                Text("Scans 2.4GHz spectrum for INSTAX-XXXXXXXX SSIDs and probes TCP 8080")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Button {
+                                printer.scanWiFiAndPrinters(autoConnectIfFound: true) { detected in
+                                    vm.options.model = detected
+                                    vm.refreshPreview()
+                                }
+                            } label: {
+                                Label(printer.isScanningWiFi ? "Scanning..." : "Scan Wi-Fi Airwaves", systemImage: "arrow.clockwise")
+                            }
+                            .disabled(printer.isScanningWiFi || printer.isBusy)
+                        }
+
+                        if printer.discoveryItems.isEmpty {
+                            Text("No printers or Wi-Fi points scanned yet.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .padding(.vertical, 8)
+                        } else {
+                            VStack(spacing: 4) {
+                                ForEach(printer.discoveryItems) { item in
+                                    HStack {
+                                        Image(systemName: item.kind == .virtualSimulator ? "laptopcomputer" : (item.kind == .instaxWiFiSSID || item.kind == .reachablePrinterEndpoint ? "printer.fill" : "wifi"))
+                                            .foregroundColor(item.kind == .instaxWiFiSSID || item.kind == .reachablePrinterEndpoint ? .green : .secondary)
+                                        Text(item.title)
+                                            .font(.system(size: 12, weight: item.kind == .instaxWiFiSSID || item.kind == .reachablePrinterEndpoint ? .bold : .regular))
+                                        Spacer()
+                                        if item.id == printer.selectedDiscoveryID {
+                                            Text("Selected")
+                                                .font(.caption2.bold())
+                                                .foregroundColor(.blue)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.blue.opacity(0.12))
+                                                .cornerRadius(4)
+                                        } else {
+                                            Button("Select") {
+                                                printer.selectedDiscoveryID = item.id
+                                                printer.applyDiscoverySelection(item.id) { detected in
+                                                    vm.options.model = detected
+                                                    vm.refreshPreview()
+                                                }
+                                            }
+                                            .buttonStyle(.bordered)
+                                            .controlSize(.mini)
+                                        }
+                                    }
+                                    .padding(.vertical, 5)
+                                    .padding(.horizontal, 8)
+                                    .background(item.id == printer.selectedDiscoveryID ? Color.blue.opacity(0.06) : Color.clear)
+                                    .cornerRadius(6)
+                                }
+                            }
+                        }
+                    }
+                    .padding(14)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .cornerRadius(8)
+                }
+                .padding()
+            }
+            .frame(width: 580, height: 490)
+        }
+    }
+}
+

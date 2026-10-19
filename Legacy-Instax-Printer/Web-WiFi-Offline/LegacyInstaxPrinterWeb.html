@@ -36,11 +36,13 @@
   header {
     background: #1f1f26;
     border-bottom: 1px solid var(--border);
-    padding: 10px 16px;
+    padding: 8px 16px;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    white-space: nowrap;
+    overflow-x: auto;
   }
   .brand {
     display: flex;
@@ -307,48 +309,47 @@
 </head>
 <body>
 
-  <!-- Top Wi-Fi Direct Connection Bar (matching Legacy Instax Printer application) -->
+  <!-- Top Wi-Fi Direct Connection Bar (Streamlined, Non-Wrapping, Professional) -->
   <header>
     <div class="brand">
       <span class="brand-badge">SP-1 • SP-2 • SP-3</span>
       <span>Legacy Instax Printer</span>
     </div>
 
-    <!-- Wi-Fi Direct Selector & Scanner -->
-    <div style="display: flex; align-items: center; gap: 5px;">
-      <select id="wifiSelect" style="min-width: 240px;" onchange="actionWifiSelectChange()">
-        <option value="default-sp">🎯 Default Instax SHARE (192.168.0.251:8080)</option>
-        <option value="alt-gw">📡 Alternate Router Gateway (192.168.0.1:8080)</option>
-        <option value="simulator">🧪 Virtual SP-1/2/3 Simulator (127.0.0.1:18080)</option>
-      </select>
-      <button class="secondary" id="btnScan" onclick="scanWiFi()">🔍 Scan Wi-Fi</button>
-      <button class="secondary" id="btnTest" onclick="openWiFiDiagnostics()" title="View all detected Wi-Fi points & probe results">📶 Wi-Fi Test / Points</button>
+    <!-- Live Wi-Fi Connection Status Pill -->
+    <div id="connStatusPill" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--muted);">
+      <span id="connDot" style="width:7px; height:7px; border-radius:50%; background:#71717a; display:inline-block;"></span>
+      <span id="connText">Wi-Fi: Join INSTAX-XXXXXXXX</span>
     </div>
 
     <!-- Model Selector -->
-    <select id="modelSelect" onchange="actionModelChange()">
-      <option value="SP-2" selected>Instax SHARE SP-2 (Mini HD • 600×800)</option>
-      <option value="SP-1">Instax SHARE SP-1 (Mini • 600×800)</option>
-      <option value="SP-3">Instax SHARE SP-3 (SQUARE • 800×800)</option>
-    </select>
+    <div style="display:flex; align-items:center; gap:5px;">
+      <label for="modelSelect" style="font-size:11px; color:var(--muted); font-weight:600;">Model</label>
+      <select id="modelSelect" onchange="actionModelChange()">
+        <option value="SP-2" selected>Instax SHARE SP-2 (Mini HD • 600×800)</option>
+        <option value="SP-1">Instax SHARE SP-1 (Mini • 600×800)</option>
+        <option value="SP-3">Instax SHARE SP-3 (SQUARE • 800×800)</option>
+      </select>
+    </div>
 
-    <!-- IP, Port & PIN -->
-    <label style="font-size:12px; display:flex; align-items:center; gap:3px;">
-      IP <input type="text" id="printerIp" value="192.168.0.251" style="width:105px;" />
-    </label>
-    <label style="font-size:12px; display:flex; align-items:center; gap:3px;">
-      Port <input type="number" id="printerPort" value="8080" style="width:60px;" />
-    </label>
-    <label style="font-size:12px; display:flex; align-items:center; gap:3px;">
-      PIN <input type="text" id="printerPin" value="1111" style="width:50px;" />
-    </label>
+    <!-- Quick Target / Mode Dropdown -->
+    <div style="display:flex; align-items:center; gap:5px;">
+      <label for="wifiSelect" style="font-size:11px; color:var(--muted); font-weight:600;">Target</label>
+      <select id="wifiSelect" style="min-width: 220px;" onchange="actionWifiSelectChange()">
+        <option value="default-sp">🎯 Direct Wi-Fi (192.168.0.251:8080)</option>
+        <option value="simulator">🧪 Virtual SP Simulator (127.0.0.1:18080)</option>
+        <option value="alt-gw">📡 Alternate Gateway (192.168.0.1:8080)</option>
+      </select>
+    </div>
 
-    <button id="connectBtn" onclick="connectPrinter()">📡 Connect / Status</button>
+    <!-- Primary Connect Button -->
+    <button id="connectBtn" class="primary-btn" onclick="connectPrinter()" style="padding:6px 14px; font-weight:700;">📡 Connect Printer</button>
 
-    <label style="font-size:12px; display:flex; align-items:center; gap:5px; margin-left:auto; cursor:pointer;">
-      <input type="checkbox" id="simToggle" onchange="actionSimToggleChange()" /> Virtual SP Simulator
-    </label>
-    <label style="font-size:12px; display:flex; align-items:center; gap:5px; color:var(--amber); cursor:pointer;">
+    <!-- Network Settings & Diagnostics Button -->
+    <button class="secondary" id="btnTest" onclick="openWiFiDiagnostics()" title="Configure custom IP/PIN, scan nearby Wi-Fi airwaves, or test TCP 8080 reachability">⚙️ Network &amp; Diagnostics</button>
+
+    <!-- Dry Run Toggle -->
+    <label style="font-size:11px; display:flex; align-items:center; gap:5px; color:var(--amber); cursor:pointer; margin-left:auto;">
       <input type="checkbox" id="dryRunToggle" /> Dry Run (0-Film)
     </label>
   </header>
@@ -371,11 +372,15 @@
       <button class="secondary" style="width:100%; justify-content:center; padding:7px; margin-bottom:12px;" onclick="actionRotate(90)">🔄 Rotate 90°</button>
 
       <div class="section-title">Wi-Fi Direct Guide</div>
-      <div style="font-size:11px; line-height:1.45; color:var(--muted); background:var(--card-inner); padding:10px; border-radius:6px; border:1px solid var(--border);">
+      <div style="font-size:11px; line-height:1.5; color:var(--muted); background:var(--card-inner); padding:10px; border-radius:6px; border:1px solid var(--border);">
+        <b style="color:#fff;">Quick 3-Step Connect:</b><br>
         1. Power on your <b>Instax SHARE SP-1, SP-2 or SP-3</b>.<br>
-        2. Open Wi-Fi settings on your device and join <b>INSTAX-XXXXXXXX</b>.<br>
-        3. Factory default Wi-Fi password is <code>11111111</code>, default PIN is <code>1111</code>.<br>
-        4. Tap <b>Connect / Status</b> or <b>Print Over Wi-Fi Direct</b>!
+        2. Join Wi-Fi: <b>INSTAX-XXXXXXXX</b> (pw: <code>11111111</code>).<br>
+        3. Click <b>📡 Connect Printer</b> (default IP: <code>192.168.0.251</code>, PIN: <code>1111</code>).<br>
+        <div style="margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.08); font-size:10px; color:#9ca3af;">
+          <i>💡 Note: Wi-Fi scans &amp; diagnostics are <b>not</b> needed to connect — only open them if troubleshooting reachability.</i>
+        </div>
+        <button class="secondary" style="width:100%; margin-top:8px; font-size:11px; padding:5px; justify-content:center;" onclick="openWiFiDiagnostics()">⚙️ Network &amp; Diagnostics...</button>
       </div>
     </aside>
 
@@ -968,18 +973,49 @@
   <!-- Protocol Console Drawer -->
   <div id="protocolConsoleDrawer" style="display:none; background:#09090c; border-top:1px solid var(--border); padding:10px 16px; max-height:140px; overflow-y:auto; font-family:monospace; font-size:11px; color:#4ade80; white-space:pre-wrap;"></div>
 
-  <!-- Dedicated Wi-Fi Diagnostics & Test Modal -->
+  <!-- Dedicated Wi-Fi Network Settings & Diagnostics Modal -->
   <div class="modal-overlay" id="wifiModal" onclick="if(event.target===this) closeWiFiDiagnostics()">
     <div class="modal-card">
       <div class="modal-header">
         <div style="font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;">
-          <span>📶 Wi-Fi Access Points &amp; Diagnostics</span>
+          <span>⚙️ Wi-Fi Network Settings &amp; Diagnostics</span>
           <span id="diagConnectedBadge" style="font-size:11px; padding:2px 7px; border-radius:5px; background:rgba(34,197,94,0.2); color:#4ade80;">Checking...</span>
         </div>
         <button class="secondary" onclick="closeWiFiDiagnostics()" style="padding:3px 8px;">✕</button>
       </div>
 
       <div class="modal-body">
+        <!-- How Connection Works Guide -->
+        <div style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:12px 14px; margin-bottom:14px; font-size:12px; color:#dbeafe; line-height:1.5;">
+          <div style="font-weight:700; margin-bottom:4px; font-size:13px; color:#93c5fd; display:flex; align-items:center; gap:6px;">
+            <span>💡</span><span>How Connection to Instax SHARE Works</span>
+          </div>
+          <div><b>1.</b> Turn on your printer (SP-1, SP-2, or SP-3).<br>
+          <b>2.</b> Open your device's Wi-Fi menu and connect to <b>INSTAX-XXXXXXXX</b> (default password: <code>11111111</code>).<br>
+          <b>3.</b> Return to the studio and click <b>📡 Connect Printer</b>!<br>
+          <span style="font-size:11px; color:#93c5fd; opacity:0.85;">*Note: Running Wi-Fi airwave scans or modifying IP settings is <b>only</b> required for troubleshooting reachability or custom network bridges.*</span></div>
+        </div>
+
+        <!-- Connection Settings Grid -->
+        <div style="background:var(--card-inner); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin-bottom:14px;">
+          <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Printer Connection Settings</div>
+          <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px; font-size:12px;">
+            <label style="display:flex; align-items:center; gap:5px;">
+              IP: <input type="text" id="printerIp" value="192.168.0.251" style="width:115px;" />
+            </label>
+            <label style="display:flex; align-items:center; gap:5px;">
+              Port: <input type="number" id="printerPort" value="8080" style="width:70px;" />
+            </label>
+            <label style="display:flex; align-items:center; gap:5px;">
+              PIN: <input type="text" id="printerPin" value="1111" style="width:55px;" />
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+              <input type="checkbox" id="simToggle" onchange="actionSimToggleChange()" /> Virtual SP Simulator
+            </label>
+            <button class="primary-btn" onclick="connectPrinter(); closeWiFiDiagnostics();" style="margin-left:auto; padding:6px 14px; font-size:11px; font-weight:700;">Apply &amp; Connect</button>
+          </div>
+        </div>
+
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
           <div style="background:var(--card-inner); padding:10px; border-radius:6px; border:1px solid var(--border);">
             <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700;">Host Network IP</div>
@@ -993,7 +1029,7 @@
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
           <div style="font-weight:700; font-size:12px; color:var(--muted); text-transform:uppercase;">Nearby Wi-Fi Networks Found</div>
-          <button class="secondary" onclick="runDiagnosticsNow()" style="padding:4px 8px; font-size:11px;">🔄 Re-Scan Now</button>
+          <button class="secondary" id="btnScan" onclick="scanWiFi(); runDiagnosticsNow();" style="padding:4px 10px; font-size:11px;">🔍 Re-Scan Airwaves</button>
         </div>
 
         <table class="wifi-table" id="wifiTable">
@@ -1297,6 +1333,15 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         batteryLevel = data.status.battery;
         totalPrints = data.status.print_count;
         renderLEDs();
+        const dot = document.getElementById('connDot');
+        const txt = document.getElementById('connText');
+        const btn = document.getElementById('connectBtn');
+        if (dot) dot.style.background = '#22c55e';
+        if (txt) {
+          txt.textContent = `${data.status.model} (Ready)`;
+          txt.style.color = '#4ade80';
+        }
+        if (btn) btn.textContent = '🔄 Refresh Status';
         sEl.textContent = `✅ Connected to ${data.status.model} (${data.status.width}×${data.status.height}) • ${filmLeft}/10 Film • Batt ${batteryLevel}/4`;
         log(`✅ Status Received: ${data.status.model} • Film: ${filmLeft}/10 • Battery: ${batteryLevel}/4 • Total Prints: ${totalPrints}`);
         return;
@@ -1309,6 +1354,15 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       batteryLevel = 4;
       totalPrints = 42;
       renderLEDs();
+      const dot = document.getElementById('connDot');
+      const txt = document.getElementById('connText');
+      const btn = document.getElementById('connectBtn');
+      if (dot) dot.style.background = '#22c55e';
+      if (txt) {
+        txt.textContent = `Simulator (${m})`;
+        txt.style.color = '#4ade80';
+      }
+      if (btn) btn.textContent = '🔄 Refresh Status';
       sEl.textContent = `✅ Connected to Browser Virtual SP Simulator (${m}) • 8/10 Film • Batt 4/4`;
       log(`Connected to Virtual SP Simulator (${m}).`);
     } else {
@@ -1317,6 +1371,15 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       batteryLevel = null;
       totalPrints = null;
       renderLEDs();
+      const dot = document.getElementById('connDot');
+      const txt = document.getElementById('connText');
+      const btn = document.getElementById('connectBtn');
+      if (dot) dot.style.background = '#71717a';
+      if (txt) {
+        txt.textContent = 'Wi-Fi: Join INSTAX-XXXXXXXX';
+        txt.style.color = 'var(--muted)';
+      }
+      if (btn) btn.textContent = '📡 Connect Printer';
       sEl.textContent = `❌ Could not reach Instax SHARE at ${document.getElementById('printerIp').value}:${document.getElementById('printerPort').value}. Join INSTAX-XXXXXXXX Wi-Fi & click Connect.`;
       log(`Failed to connect to ${document.getElementById('printerIp').value}:${document.getElementById('printerPort').value}.`);
     }
