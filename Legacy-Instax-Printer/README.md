@@ -65,8 +65,9 @@ Unlike web browsers, all **native desktop applications** in this suite connect *
   3. Select your model (**SP-2**, **SP-1**, or **SP-3**) in the top toolbar.
   4. Click **`📡 Connect`**. The top indicator turns green, displaying your printer's model, and the authentic 10-LED gauge reflects your remaining film sheets.
   5. Drag-and-drop any photo into the window (or click **`📂 Open Image File...`**).
-  6. *(Optional)* Apply filters, add light leaks, date stamps, or build a collage in the right-hand Creative Inspector.
+  6. *(Optional)* Apply filters (including the 12 new optical, digital, and structural matrix effects like Solarisation, Aerochrome, Cross-Processing, Duotone Cyanotype, Split-Toning, 1-bit Dithering, Chromatic Aberration, CRT Scanlines, and Pixel Sorting), add light leaks, date stamps, or build a collage in the right-hand Creative Inspector.
   7. Click **`🖨 Print Over Wi-Fi Direct`**!
+* **13-Inch Laptop Screen Support:** The native window dynamically adapts with a flexible minimum size (1040×680, ideal 1240×840) and responsive scrollable sidebars, preventing any clipping or off-screen overflow on compact MacBook displays.
 * **Built-in Safe Testing:**
   - Toggle **`🧪 Dry Run (0-Film)`** to transmit 100% of the image data over Wi-Fi and verify PIN authentication without dispensing physical film.
   - Switch the target to **`Virtual SP Simulator`** to practice framing and collages completely offline on your Mac even when away from your physical printer.

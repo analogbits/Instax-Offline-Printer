@@ -425,12 +425,33 @@
           <div class="field-row">
             <div class="field-label"><span>Artistic Filter</span></div>
             <select id="filterPresetSelect" onchange="markManualAdjustment(); renderCanvas()">
-              <option value="none">Original (No Filter)</option>
-              <option value="mono">B&W Monochrome</option>
-              <option value="sepia">Warm Sepia</option>
-              <option value="vintage">Vintage Film</option>
-              <option value="cool">Cool Fade</option>
-              <option value="vivid">Vivid Pop</option>
+              <optgroup label="Standard &amp; Film Tones">
+                <option value="none">Original (No Filter)</option>
+                <option value="mono">B&amp;W Monochrome</option>
+                <option value="sepia">Warm Sepia</option>
+                <option value="vintage">Vintage Film</option>
+                <option value="cool">Cool Fade</option>
+                <option value="vivid">Vivid Pop</option>
+              </optgroup>
+              <optgroup label="Optical &amp; Chemical Processes">
+                <option value="solarize">Solarisation (Sabattier Effect)</option>
+                <option value="aerochrome">False-Colour Infrared (Aerochrome EIR)</option>
+                <option value="cross_process">Cross-Processing (X-Pro Lime/Magenta)</option>
+                <option value="duotone_cyan">Duotone Cyanotype (Prussian Blue)</option>
+                <option value="split_tone">Split-Toning (Cinema Amber &amp; Teal)</option>
+              </optgroup>
+              <optgroup label="Digital Hardware &amp; Scan Artifacts">
+                <option value="dither">1-Bit Ordered Dithering (Bayer Matrix)</option>
+                <option value="chromatic">Chromatic Aberration (RGB Prism Split)</option>
+                <option value="crt_scanlines">CRT Scanlines &amp; Phosphor Mask</option>
+                <option value="pixel_sort">Pixel Sorting (Glitch Melt)</option>
+              </optgroup>
+              <optgroup label="Algorithmic &amp; Structural Filters">
+                <option value="posterize">Posterisation (Screen Print / 4-Tone)</option>
+                <option value="edge_detect">Sobel Edge Detection (Neon Blueprint)</option>
+                <option value="threshold">Binarised Thresholding (High-Contrast Stencil)</option>
+                <option value="emboss">Embossing (Bas-Relief Stamped Metal)</option>
+              </optgroup>
             </select>
           </div>
 
@@ -1814,6 +1835,283 @@ function onLeakTypeChange() {
     analogRandomSeed = Math.floor(Math.random() * 900000) + 10000;
   }
   renderCanvas();
+}
+
+const ADVANCED_ARTISTIC_FILTERS = new Set([
+  'solarize', 'aerochrome', 'cross_process', 'duotone_cyan', 'split_tone',
+  'dither', 'chromatic', 'crt_scanlines', 'pixel_sort',
+  'posterize', 'edge_detect', 'threshold', 'emboss'
+]);
+
+function applyAdvancedArtisticFilter(targetCtx, x, y, w, h, filterName) {
+  if (!filterName || !ADVANCED_ARTISTIC_FILTERS.has(filterName)) return;
+  const rx = Math.max(0, Math.floor(x));
+  const ry = Math.max(0, Math.floor(y));
+  const rw = Math.min(targetCtx.canvas.width - rx, Math.floor(w));
+  const rh = Math.min(targetCtx.canvas.height - ry, Math.floor(h));
+  if (rw <= 2 || rh <= 2) return;
+
+  const imgData = targetCtx.getImageData(rx, ry, rw, rh);
+  const data = imgData.data;
+
+  switch (filterName) {
+    case 'solarize': {
+      const orig = new Uint8ClampedArray(data);
+      for (let py = 0; py < rh; py++) {
+        for (let px = 0; px < rw; px++) {
+          const idx = (py * rw + px) * 4;
+          for (let c = 0; c < 3; c++) {
+            const v = orig[idx + c];
+            orig[idx + c] = v < 128 ? (255 - 2 * v) : Math.min(255, 2 * (v - 128));
+          }
+        }
+      }
+      for (let py = 1; py < rh - 1; py++) {
+        for (let px = 1; px < rw - 1; px++) {
+          const idx = (py * rw + px) * 4;
+          const leftIdx = (py * rw + (px - 1)) * 4;
+          const upIdx = ((py - 1) * rw + px) * 4;
+          const diff = Math.abs(orig[idx] - orig[leftIdx]) + Math.abs(orig[idx + 1] - orig[leftIdx + 1]) +
+                       Math.abs(orig[idx] - orig[upIdx]) + Math.abs(orig[idx + 1] - orig[upIdx + 1]);
+          if (diff > 120) {
+            data[idx] = Math.min(255, orig[idx] + 75);
+            data[idx + 1] = Math.min(255, orig[idx + 1] + 75);
+            data[idx + 2] = Math.min(255, orig[idx + 2] + 75);
+          } else {
+            data[idx] = orig[idx];
+            data[idx + 1] = orig[idx + 1];
+            data[idx + 2] = orig[idx + 2];
+          }
+        }
+      }
+      break;
+    }
+
+    case 'aerochrome': {
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        if (g > b * 0.95 && g > 40 && (g >= r * 0.75 || (r > b && g > b * 1.1))) {
+          const greenExcess = Math.max(0, g - Math.max(r, b) * 0.5);
+          data[i] = Math.min(255, Math.round(g * 1.35 + greenExcess * 0.8 + 25));
+          data[i + 1] = Math.min(255, Math.max(0, Math.round(b * 0.35 + r * 0.15)));
+          data[i + 2] = Math.min(255, Math.round(g * 0.65 + b * 0.55 + 20));
+        } else if (b > r * 1.15 && b > g) {
+          data[i] = Math.max(0, Math.round(r * 0.55));
+          data[i + 1] = Math.min(255, Math.round(g * 0.95 + b * 0.25));
+          data[i + 2] = Math.min(255, Math.round(b * 1.25));
+        } else {
+          data[i] = Math.min(255, Math.round(r * 1.15 + g * 0.1));
+          data[i + 1] = Math.round(g * 0.85);
+          data[i + 2] = Math.min(255, Math.round(b * 0.9 + 10));
+        }
+      }
+      break;
+    }
+
+    case 'cross_process': {
+      for (let i = 0; i < data.length; i += 4) {
+        let r = data[i] / 255.0;
+        let g = data[i + 1] / 255.0;
+        let b = data[i + 2] / 255.0;
+
+        r = r < 0.5 ? 2 * r * r : 1.0 - 2 * (1.0 - r) * (1.0 - r);
+        r = Math.min(1.0, Math.max(0.0, r * 1.12));
+
+        if (g < 0.5) {
+          g = Math.min(1.0, Math.pow(g, 0.82) * 1.10);
+        } else {
+          g = Math.min(1.0, Math.pow(g, 1.05));
+        }
+
+        b = Math.min(1.0, Math.max(0.0, Math.pow(b, 1.28) * 0.92));
+
+        data[i] = Math.round(r * 255);
+        data[i + 1] = Math.round(g * 255);
+        data[i + 2] = Math.round(b * 255);
+      }
+      break;
+    }
+
+    case 'duotone_cyan': {
+      for (let i = 0; i < data.length; i += 4) {
+        const lum = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255.0;
+        data[i] = Math.round(11 + lum * (250 - 11));
+        data[i + 1] = Math.round(37 + lum * (248 - 37));
+        data[i + 2] = Math.round(69 + lum * (245 - 69));
+      }
+      break;
+    }
+
+    case 'split_tone': {
+      for (let i = 0; i < data.length; i += 4) {
+        const lum = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255.0;
+        const t = lum < 0.5 ? 2 * lum * lum : 1.0 - 2 * (1.0 - lum) * (1.0 - lum);
+        data[i] = Math.round(0 * (1.0 - t) + 255 * t);
+        data[i + 1] = Math.round(72 * (1.0 - t) + 183 * t);
+        data[i + 2] = Math.round(92 * (1.0 - t) + 77 * t);
+      }
+      break;
+    }
+
+    case 'dither': {
+      const bayer4x4 = [
+        [ 0,  8,  2, 10],
+        [12,  4, 14,  6],
+        [ 3, 11,  1,  9],
+        [15,  7, 13,  5]
+      ];
+      for (let py = 0; py < rh; py++) {
+        for (let px = 0; px < rw; px++) {
+          const idx = (py * rw + px) * 4;
+          const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+          const threshold = (bayer4x4[py % 4][px % 4] + 0.5) * (255.0 / 16.0);
+          const val = lum >= threshold ? 255 : 0;
+          data[idx] = val;
+          data[idx + 1] = val;
+          data[idx + 2] = val;
+        }
+      }
+      break;
+    }
+
+    case 'chromatic': {
+      const orig = new Uint8ClampedArray(data);
+      const shift = 5;
+      for (let py = 0; py < rh; py++) {
+        for (let px = 0; px < rw; px++) {
+          const idx = (py * rw + px) * 4;
+          const rxPos = Math.max(0, Math.min(rw - 1, px - shift));
+          const bxPos = Math.max(0, Math.min(rw - 1, px + shift));
+          data[idx] = orig[(py * rw + rxPos) * 4];
+          data[idx + 1] = orig[idx + 1];
+          data[idx + 2] = orig[(py * rw + bxPos) * 4 + 2];
+        }
+      }
+      break;
+    }
+
+    case 'crt_scanlines': {
+      for (let py = 0; py < rh; py++) {
+        const isScanline = (py % 2 === 1);
+        const scanDim = isScanline ? 0.68 : 1.0;
+        for (let px = 0; px < rw; px++) {
+          const idx = (py * rw + px) * 4;
+          const phosphor = px % 3;
+          const pr = scanDim * (phosphor === 0 ? 1.25 : 0.85);
+          const pg = scanDim * (phosphor === 1 ? 1.25 : 0.85);
+          const pb = scanDim * (phosphor === 2 ? 1.25 : 0.85);
+          data[idx] = Math.min(255, Math.round(data[idx] * pr));
+          data[idx + 1] = Math.min(255, Math.round(data[idx + 1] * pg));
+          data[idx + 2] = Math.min(255, Math.round(data[idx + 2] * pb));
+        }
+      }
+      break;
+    }
+
+    case 'pixel_sort': {
+      for (let py = 0; py < rh; py++) {
+        let px = 0;
+        while (px < rw) {
+          let idx = (py * rw + px) * 4;
+          let lum = (0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]) / 255.0;
+          if (lum >= 0.28 && lum <= 0.80) {
+            const startX = px;
+            const span = [];
+            while (px < rw) {
+              idx = (py * rw + px) * 4;
+              lum = (0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]) / 255.0;
+              if (lum < 0.28 || lum > 0.80) break;
+              span.push({
+                r: data[idx], g: data[idx + 1], b: data[idx + 2], a: data[idx + 3],
+                lum: lum
+              });
+              px++;
+            }
+            if (span.length > 2) {
+              span.sort((a, b) => a.lum - b.lum);
+              for (let k = 0; k < span.length; k++) {
+                const widx = (py * rw + (startX + k)) * 4;
+                data[widx] = span[k].r;
+                data[widx + 1] = span[k].g;
+                data[widx + 2] = span[k].b;
+                data[widx + 3] = span[k].a;
+              }
+            }
+          } else {
+            px++;
+          }
+        }
+      }
+      break;
+    }
+
+    case 'posterize': {
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] = Math.min(255, Math.round(Math.round(data[i] / 85.0) * 85.0));
+        data[i + 1] = Math.min(255, Math.round(Math.round(data[i + 1] / 85.0) * 85.0));
+        data[i + 2] = Math.min(255, Math.round(Math.round(data[i + 2] / 85.0) * 85.0));
+      }
+      break;
+    }
+
+    case 'edge_detect': {
+      const orig = new Uint8ClampedArray(data);
+      const lum = new Float32Array(rw * rh);
+      for (let i = 0; i < rw * rh; i++) {
+        lum[i] = 0.299 * orig[i * 4] + 0.587 * orig[i * 4 + 1] + 0.114 * orig[i * 4 + 2];
+      }
+      for (let py = 1; py < rh - 1; py++) {
+        for (let px = 1; px < rw - 1; px++) {
+          const idx = (py * rw + px) * 4;
+          const gx = (-1 * lum[(py - 1) * rw + (px - 1)] + 1 * lum[(py - 1) * rw + (px + 1)]
+                      -2 * lum[py * rw + (px - 1)]       + 2 * lum[py * rw + (px + 1)]
+                      -1 * lum[(py + 1) * rw + (px - 1)] + 1 * lum[(py + 1) * rw + (px + 1)]);
+          const gy = (-1 * lum[(py - 1) * rw + (px - 1)] - 2 * lum[(py - 1) * rw + px] - 1 * lum[(py - 1) * rw + (px + 1)]
+                      +1 * lum[(py + 1) * rw + (px - 1)] + 2 * lum[(py + 1) * rw + px] + 1 * lum[(py + 1) * rw + (px + 1)]);
+          const mag = Math.min(255, Math.hypot(gx, gy));
+          const edgeNorm = mag / 255.0;
+          data[idx] = Math.round(8 * (1.0 - edgeNorm) + mag * 0.15);
+          data[idx + 1] = Math.round(13 * (1.0 - edgeNorm) + mag * 0.90);
+          data[idx + 2] = Math.round(26 * (1.0 - edgeNorm) + mag * 1.0);
+        }
+      }
+      break;
+    }
+
+    case 'threshold': {
+      for (let i = 0; i < data.length; i += 4) {
+        const l = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        const val = l >= 128 ? 255 : 0;
+        data[i] = val;
+        data[i + 1] = val;
+        data[i + 2] = val;
+      }
+      break;
+    }
+
+    case 'emboss': {
+      const orig = new Uint8ClampedArray(data);
+      const lum = new Float32Array(rw * rh);
+      for (let i = 0; i < rw * rh; i++) {
+        lum[i] = 0.299 * orig[i * 4] + 0.587 * orig[i * 4 + 1] + 0.114 * orig[i * 4 + 2];
+      }
+      for (let py = 1; py < rh - 1; py++) {
+        for (let px = 1; px < rw - 1; px++) {
+          const idx = (py * rw + px) * 4;
+          const val = (-2 * lum[(py - 1) * rw + (px - 1)] - 1 * lum[(py - 1) * rw + px]
+                       -1 * lum[py * rw + (px - 1)]       + 1 * lum[py * rw + px]       + 1 * lum[py * rw + (px + 1)]
+                                                          + 1 * lum[(py + 1) * rw + px] + 2 * lum[(py + 1) * rw + (px + 1)]);
+          const clamped = Math.min(255, Math.max(0, Math.round(val + 128)));
+          data[idx] = clamped;
+          data[idx + 1] = clamped;
+          data[idx + 2] = clamped;
+        }
+      }
+      break;
+    }
+  }
+
+  targetCtx.putImageData(imgData, rx, ry);
 }
 
 function applyAnalogWarmth(targetCtx, x, y, w, h, warmth) {
@@ -3710,6 +4008,9 @@ function renderCanvas() {
     photoW = Math.round(drawW);
     photoH = Math.round(drawH);
   }
+
+  // Advanced Visual Manipulation Filters
+  applyAdvancedArtisticFilter(ctx, photoX, photoY, photoW, photoH, filter);
 
   // Analog FX Pipeline (Ported from PolaroidEngine)
   applyAnalogWarmth(ctx, photoX, photoY, photoW, photoH, warmth);

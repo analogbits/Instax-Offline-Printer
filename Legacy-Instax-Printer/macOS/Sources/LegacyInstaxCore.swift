@@ -131,6 +131,19 @@ public enum LegacyPhotoFilter: String, CaseIterable, Identifiable {
     case sepia = "Sepia"
     case vivid = "Vivid Velvia"
     case vintage = "Classic Chrome"
+    case solarize = "Solarisation"
+    case aerochrome = "False-Colour Infrared"
+    case crossProcess = "Cross-Processing"
+    case duotoneCyan = "Duotone Cyanotype"
+    case splitTone = "Split-Toning"
+    case dither = "1-Bit Dithering"
+    case chromaticAberration = "Chromatic Aberration"
+    case crtScanlines = "CRT Scanlines"
+    case pixelSort = "Pixel Sorting"
+    case posterize = "Posterisation"
+    case edgeDetect = "Sobel Edge Detection"
+    case threshold = "Binarised Stencil"
+    case emboss = "Embossing"
 
     public var id: String { rawValue }
 }
@@ -789,6 +802,10 @@ public enum LegacyImageProcessor {
                 chrome.setValue(ciImage, forKey: kCIInputImageKey)
                 if let out = chrome.outputImage { ciImage = out }
             }
+        case .solarize, .aerochrome, .crossProcess, .duotoneCyan, .splitTone,
+             .dither, .chromaticAberration, .crtScanlines, .pixelSort,
+             .posterize, .edgeDetect, .threshold, .emboss:
+            break
         }
 
         if options.brightness != 0.0 || options.contrast != 1.0 || options.saturation != 1.0 {
@@ -801,7 +818,304 @@ public enum LegacyImageProcessor {
             }
         }
 
-        return ciContext.createCGImage(ciImage, from: ciImage.extent) ?? cgImage
+        var outCG = ciContext.createCGImage(ciImage, from: ciImage.extent) ?? cgImage
+        let advKey: String? = {
+            switch options.filter {
+            case .solarize: return "solarize"
+            case .aerochrome: return "aerochrome"
+            case .crossProcess: return "cross_process"
+            case .duotoneCyan: return "duotone_cyan"
+            case .splitTone: return "split_tone"
+            case .dither: return "dither"
+            case .chromaticAberration: return "chromatic"
+            case .crtScanlines: return "crt_scanlines"
+            case .pixelSort: return "pixel_sort"
+            case .posterize: return "posterize"
+            case .edgeDetect: return "edge_detect"
+            case .threshold: return "threshold"
+            case .emboss: return "emboss"
+            default: return nil
+            }
+        }()
+        if let key = advKey {
+            outCG = applyAdvancedPixelFilter(outCG, filter: key)
+        }
+        return outCG
+    }
+
+    public static func applyAdvancedPixelFilter(_ cgImage: CGImage, filter: String) -> CGImage {
+        let width = cgImage.width
+        let height = cgImage.height
+        let bytesPerPixel = 4
+        let bytesPerRow = width * bytesPerPixel
+        let bitsPerComponent = 8
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: bitsPerComponent,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        ) else {
+            return cgImage
+        }
+
+        let rect = CGRect(x: 0, y: 0, width: width, height: height)
+        context.draw(cgImage, in: rect)
+
+        guard let data = context.data else {
+            return cgImage
+        }
+
+        let buffer = data.bindMemory(to: UInt8.self, capacity: width * height * 4)
+
+        switch filter {
+        case "solarize":
+            let orig = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height * 4)
+            orig.initialize(from: buffer, count: width * height * 4)
+            for py in 0..<height {
+                for px in 0..<width {
+                    let idx = (py * width + px) * 4
+                    for c in 0..<3 {
+                        let v = Int(orig[idx + c])
+                        orig[idx + c] = UInt8(clamping: v < 128 ? (255 - 2 * v) : (2 * (v - 128)))
+                    }
+                }
+            }
+            for py in 1..<(height - 1) {
+                for px in 1..<(width - 1) {
+                    let idx = (py * width + px) * 4
+                    let leftIdx = (py * width + (px - 1)) * 4
+                    let upIdx = ((py - 1) * width + px) * 4
+                    let diff = abs(Int(orig[idx]) - Int(orig[leftIdx])) + abs(Int(orig[idx + 1]) - Int(orig[leftIdx + 1])) +
+                               abs(Int(orig[idx]) - Int(orig[upIdx])) + abs(Int(orig[idx + 1]) - Int(orig[upIdx + 1]))
+                    if diff > 120 {
+                        buffer[idx] = UInt8(clamping: Int(orig[idx]) + 75)
+                        buffer[idx + 1] = UInt8(clamping: Int(orig[idx + 1]) + 75)
+                        buffer[idx + 2] = UInt8(clamping: Int(orig[idx + 2]) + 75)
+                    } else {
+                        buffer[idx] = orig[idx]
+                        buffer[idx + 1] = orig[idx + 1]
+                        buffer[idx + 2] = orig[idx + 2]
+                    }
+                }
+            }
+            orig.deallocate()
+
+        case "aerochrome":
+            for i in stride(from: 0, to: width * height * 4, by: 4) {
+                let r = Double(buffer[i])
+                let g = Double(buffer[i + 1])
+                let b = Double(buffer[i + 2])
+                if g > b * 0.95 && g > 40.0 && (g >= r * 0.75 || (r > b && g > b * 1.1)) {
+                    let greenExcess = max(0.0, g - max(r, b) * 0.5)
+                    buffer[i] = UInt8(clamping: Int(g * 1.35 + greenExcess * 0.8 + 25.0))
+                    buffer[i + 1] = UInt8(clamping: max(0, Int(b * 0.35 + r * 0.15)))
+                    buffer[i + 2] = UInt8(clamping: Int(g * 0.65 + b * 0.55 + 20.0))
+                } else if b > r * 1.15 && b > g {
+                    buffer[i] = UInt8(clamping: max(0, Int(r * 0.55)))
+                    buffer[i + 1] = UInt8(clamping: Int(g * 0.95 + b * 0.25))
+                    buffer[i + 2] = UInt8(clamping: Int(b * 1.25))
+                } else {
+                    buffer[i] = UInt8(clamping: Int(r * 1.15 + g * 0.1))
+                    buffer[i + 1] = UInt8(clamping: Int(g * 0.85))
+                    buffer[i + 2] = UInt8(clamping: Int(b * 0.9 + 10.0))
+                }
+            }
+
+        case "cross_process":
+            for i in stride(from: 0, to: width * height * 4, by: 4) {
+                var r = Double(buffer[i]) / 255.0
+                var g = Double(buffer[i + 1]) / 255.0
+                var b = Double(buffer[i + 2]) / 255.0
+
+                r = r < 0.5 ? 2.0 * r * r : 1.0 - 2.0 * (1.0 - r) * (1.0 - r)
+                r = min(1.0, max(0.0, r * 1.12))
+
+                if g < 0.5 {
+                    g = min(1.0, pow(g, 0.82) * 1.10)
+                } else {
+                    g = min(1.0, pow(g, 1.05))
+                }
+
+                b = min(1.0, max(0.0, pow(b, 1.28) * 0.92))
+
+                buffer[i] = UInt8(clamping: Int(r * 255.0))
+                buffer[i + 1] = UInt8(clamping: Int(g * 255.0))
+                buffer[i + 2] = UInt8(clamping: Int(b * 255.0))
+            }
+
+        case "duotone_cyan":
+            for i in stride(from: 0, to: width * height * 4, by: 4) {
+                let lum = (0.299 * Double(buffer[i]) + 0.587 * Double(buffer[i + 1]) + 0.114 * Double(buffer[i + 2])) / 255.0
+                buffer[i] = UInt8(clamping: Int(11.0 + lum * (250.0 - 11.0)))
+                buffer[i + 1] = UInt8(clamping: Int(37.0 + lum * (248.0 - 37.0)))
+                buffer[i + 2] = UInt8(clamping: Int(69.0 + lum * (245.0 - 69.0)))
+            }
+
+        case "split_tone":
+            for i in stride(from: 0, to: width * height * 4, by: 4) {
+                let lum = (0.299 * Double(buffer[i]) + 0.587 * Double(buffer[i + 1]) + 0.114 * Double(buffer[i + 2])) / 255.0
+                let t = lum < 0.5 ? 2.0 * lum * lum : 1.0 - 2.0 * (1.0 - lum) * (1.0 - lum)
+                buffer[i] = UInt8(clamping: Int(0.0 * (1.0 - t) + 255.0 * t))
+                buffer[i + 1] = UInt8(clamping: Int(72.0 * (1.0 - t) + 183.0 * t))
+                buffer[i + 2] = UInt8(clamping: Int(92.0 * (1.0 - t) + 77.0 * t))
+            }
+
+        case "dither":
+            let bayer: [[Double]] = [
+                [0.0, 8.0, 2.0, 10.0],
+                [12.0, 4.0, 14.0, 6.0],
+                [3.0, 11.0, 1.0, 9.0],
+                [15.0, 7.0, 13.0, 5.0]
+            ]
+            for py in 0..<height {
+                for px in 0..<width {
+                    let idx = (py * width + px) * 4
+                    let lum = 0.299 * Double(buffer[idx]) + 0.587 * Double(buffer[idx + 1]) + 0.114 * Double(buffer[idx + 2])
+                    let threshold = (bayer[py % 4][px % 4] + 0.5) * (255.0 / 16.0)
+                    let val: UInt8 = lum >= threshold ? 255 : 0
+                    buffer[idx] = val
+                    buffer[idx + 1] = val
+                    buffer[idx + 2] = val
+                }
+            }
+
+        case "chromatic":
+            let orig = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height * 4)
+            orig.initialize(from: buffer, count: width * height * 4)
+            let shift = 5
+            for py in 0..<height {
+                for px in 0..<width {
+                    let idx = (py * width + px) * 4
+                    let rxPos = max(0, min(width - 1, px - shift))
+                    let bxPos = max(0, min(width - 1, px + shift))
+                    buffer[idx] = orig[(py * width + rxPos) * 4]
+                    buffer[idx + 1] = orig[idx + 1]
+                    buffer[idx + 2] = orig[(py * width + bxPos) * 4 + 2]
+                }
+            }
+            orig.deallocate()
+
+        case "crt_scanlines":
+            for py in 0..<height {
+                let isScanline = (py % 2 == 1)
+                let scanDim = isScanline ? 0.68 : 1.0
+                for px in 0..<width {
+                    let idx = (py * width + px) * 4
+                    let phosphor = px % 3
+                    let pr = scanDim * (phosphor == 0 ? 1.25 : 0.85)
+                    let pg = scanDim * (phosphor == 1 ? 1.25 : 0.85)
+                    let pb = scanDim * (phosphor == 2 ? 1.25 : 0.85)
+                    buffer[idx] = UInt8(clamping: Int(Double(buffer[idx]) * pr))
+                    buffer[idx + 1] = UInt8(clamping: Int(Double(buffer[idx + 1]) * pg))
+                    buffer[idx + 2] = UInt8(clamping: Int(Double(buffer[idx + 2]) * pb))
+                }
+            }
+
+        case "pixel_sort":
+            for py in 0..<height {
+                var px = 0
+                while px < width {
+                    var idx = (py * width + px) * 4
+                    var lum = (0.299 * Double(buffer[idx]) + 0.587 * Double(buffer[idx + 1]) + 0.114 * Double(buffer[idx + 2])) / 255.0
+                    if lum >= 0.28 && lum <= 0.80 {
+                        let startX = px
+                        var span: [(r: UInt8, g: UInt8, b: UInt8, a: UInt8, lum: Double)] = []
+                        while px < width {
+                            idx = (py * width + px) * 4
+                            lum = (0.299 * Double(buffer[idx]) + 0.587 * Double(buffer[idx + 1]) + 0.114 * Double(buffer[idx + 2])) / 255.0
+                            if lum < 0.28 || lum > 0.80 { break }
+                            span.append((buffer[idx], buffer[idx + 1], buffer[idx + 2], buffer[idx + 3], lum))
+                            px += 1
+                        }
+                        if span.count > 2 {
+                            span.sort { $0.lum < $1.lum }
+                            for k in 0..<span.count {
+                                let widx = (py * width + (startX + k)) * 4
+                                buffer[widx] = span[k].r
+                                buffer[widx + 1] = span[k].g
+                                buffer[widx + 2] = span[k].b
+                                buffer[widx + 3] = span[k].a
+                            }
+                        }
+                    } else {
+                        px += 1
+                    }
+                }
+            }
+
+        case "posterize":
+            for i in stride(from: 0, to: width * height * 4, by: 4) {
+                buffer[i] = UInt8(clamping: Int(round(Double(buffer[i]) / 85.0) * 85.0))
+                buffer[i + 1] = UInt8(clamping: Int(round(Double(buffer[i + 1]) / 85.0) * 85.0))
+                buffer[i + 2] = UInt8(clamping: Int(round(Double(buffer[i + 2]) / 85.0) * 85.0))
+            }
+
+        case "edge_detect":
+            let orig = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height * 4)
+            orig.initialize(from: buffer, count: width * height * 4)
+            let lum = UnsafeMutablePointer<Double>.allocate(capacity: width * height)
+            for i in 0..<(width * height) {
+                lum[i] = 0.299 * Double(orig[i * 4]) + 0.587 * Double(orig[i * 4 + 1]) + 0.114 * Double(orig[i * 4 + 2])
+            }
+            for py in 1..<(height - 1) {
+                for px in 1..<(width - 1) {
+                    let idx = (py * width + px) * 4
+                    let gx = -1.0 * lum[(py - 1) * width + (px - 1)] + 1.0 * lum[(py - 1) * width + (px + 1)] -
+                             2.0 * lum[py * width + (px - 1)]       + 2.0 * lum[py * width + (px + 1)] -
+                             1.0 * lum[(py + 1) * width + (px - 1)] + 1.0 * lum[(py + 1) * width + (px + 1)]
+                    let gy = -1.0 * lum[(py - 1) * width + (px - 1)] - 2.0 * lum[(py - 1) * width + px] - 1.0 * lum[(py - 1) * width + (px + 1)] +
+                              1.0 * lum[(py + 1) * width + (px - 1)] + 2.0 * lum[(py + 1) * width + px] + 1.0 * lum[(py + 1) * width + (px + 1)]
+                    let mag = min(255.0, Double(Darwin.hypot(gx, gy)))
+                    let edgeNorm = mag / 255.0
+                    buffer[idx] = UInt8(clamping: Int(8.0 * (1.0 - edgeNorm) + mag * 0.15))
+                    buffer[idx + 1] = UInt8(clamping: Int(13.0 * (1.0 - edgeNorm) + mag * 0.90))
+                    buffer[idx + 2] = UInt8(clamping: Int(26.0 * (1.0 - edgeNorm) + mag * 1.0))
+                }
+            }
+            orig.deallocate()
+            lum.deallocate()
+
+        case "threshold":
+            for i in stride(from: 0, to: width * height * 4, by: 4) {
+                let l = 0.299 * Double(buffer[i]) + 0.587 * Double(buffer[i + 1]) + 0.114 * Double(buffer[i + 2])
+                let val: UInt8 = l >= 128.0 ? 255 : 0
+                buffer[i] = val
+                buffer[i + 1] = val
+                buffer[i + 2] = val
+            }
+
+        case "emboss":
+            let orig = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height * 4)
+            orig.initialize(from: buffer, count: width * height * 4)
+            let lum = UnsafeMutablePointer<Double>.allocate(capacity: width * height)
+            for i in 0..<(width * height) {
+                lum[i] = 0.299 * Double(orig[i * 4]) + 0.587 * Double(orig[i * 4 + 1]) + 0.114 * Double(orig[i * 4 + 2])
+            }
+            for py in 1..<(height - 1) {
+                for px in 1..<(width - 1) {
+                    let idx = (py * width + px) * 4
+                    let val = -2.0 * lum[(py - 1) * width + (px - 1)] - 1.0 * lum[(py - 1) * width + px] -
+                              1.0 * lum[py * width + (px - 1)]       + 1.0 * lum[py * width + px]       + 1.0 * lum[py * width + (px + 1)] +
+                              1.0 * lum[(py + 1) * width + px]       + 2.0 * lum[(py + 1) * width + (px + 1)]
+                    let clamped = UInt8(clamping: Int(val + 128.0))
+                    buffer[idx] = clamped
+                    buffer[idx + 1] = clamped
+                    buffer[idx + 2] = clamped
+                }
+            }
+            orig.deallocate()
+            lum.deallocate()
+
+        default:
+            break
+        }
+
+        return context.makeImage() ?? cgImage
     }
 
     public static func rotateCGImage(_ cgImage: CGImage, degrees: Int) -> CGImage? {

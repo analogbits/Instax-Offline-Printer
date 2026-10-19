@@ -11,7 +11,7 @@ struct LegacyInstaxPrinterApp: App {
     var body: some Scene {
         WindowGroup("Legacy Instax Printer — Wi-Fi Direct Studio (SP-1 • SP-2 • SP-3)") {
             LegacyMainStudioView()
-                .frame(minWidth: 1220, idealWidth: 1300, maxWidth: .infinity, minHeight: 840, idealHeight: 900, maxHeight: .infinity)
+                .frame(minWidth: 1040, idealWidth: 1240, maxWidth: .infinity, minHeight: 680, idealHeight: 840, maxHeight: .infinity)
         }
         .windowStyle(.titleBar)
     }
