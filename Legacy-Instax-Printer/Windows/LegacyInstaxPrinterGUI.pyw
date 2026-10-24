@@ -37,6 +37,8 @@ from legacy_instax_printer import (
     VirtualInstaxShareServer,
     encode_planar_rgb,
     STICKER_MAP,
+    LEGACY_FILTER_NAMES,
+    apply_visual_filter,
     draw_decorative_frame,
     draw_sticker_overlay,
     draw_custom_banner,
@@ -550,7 +552,8 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         tk.Label(top, text="PIN:", fg=self.fg_dim, bg=self.bg_top).pack(side=tk.LEFT, padx=(6, 2))
         tk.Entry(top, textvariable=self.pin_var, width=5).pack(side=tk.LEFT, padx=2)
 
-        tk.Button(top, text="Connect", bg="#2563EB", fg="white", relief=tk.FLAT, padx=10, command=self.query_status).pack(side=tk.LEFT, padx=8)
+        tk.Button(top, text="Connect", bg="#2563EB", fg="white", relief=tk.FLAT, padx=10, command=self.query_status).pack(side=tk.LEFT, padx=(8, 3))
+        tk.Button(top, text="Disconnect", bg="#4B5563" if self.is_mac else "#52525B", fg="white", relief=tk.FLAT, padx=8, command=self.disconnect_printer).pack(side=tk.LEFT, padx=(0, 6))
 
         tk.Checkbutton(
             top,
@@ -636,7 +639,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         ttk.Combobox(
             tab_filters,
             textvariable=self.filter_var,
-            values=["Normal", "Fujifilm Intelligence", "Monochrome", "Sepia", "Vintage Film", "Vivid Velvia"],
+            values=LEGACY_FILTER_NAMES,
             state="readonly",
         ).pack(fill=tk.X, pady=4)
         self.filter_var.trace_add("write", lambda *_: (self.mark_manual_adjustment(), self.refresh_preview()))
@@ -1119,23 +1122,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
         if self.rotation_deg:
             out = out.rotate(-self.rotation_deg, expand=True)
         flt = self.filter_var.get()
-        if flt == "Fujifilm Intelligence":
-            out = ImageEnhance.Contrast(out).enhance(1.12)
-            out = ImageEnhance.Color(out).enhance(1.15)
-        elif flt in ("Monochrome", "mono"):
-            out = ImageOps.grayscale(out).convert("RGB")
-        elif flt in ("Sepia", "sepia"):
-            g = ImageOps.grayscale(out)
-            out = ImageOps.colorize(g, "#2B1B0E", "#F5E1C0")
-        elif flt in ("Vintage Film", "vintage"):
-            g = ImageOps.grayscale(out)
-            sepia_layer = ImageOps.colorize(g, "#3D2714", "#F5ECD0")
-            out = Image.blend(out, sepia_layer, 0.35)
-            out = ImageEnhance.Contrast(out).enhance(0.95)
-            out = ImageEnhance.Brightness(out).enhance(1.05)
-        elif flt in ("Vivid Velvia", "vivid"):
-            out = ImageEnhance.Color(out).enhance(1.4)
-        return out
+        return apply_visual_filter(out, flt)
 
     def reset_analog_fx(self):
         self.warmth_var.set(0.0)
@@ -1500,6 +1487,16 @@ class LegacyInstaxPrinterGUI(tk.Tk):
                 self.safe_after(on_err)
 
         threading.Thread(target=worker, daemon=True).start()
+
+    def disconnect_printer(self):
+        self.is_connected = False
+        self.film_remaining = None
+        self.battery_level = None
+        if self.sim_var.get():
+            self.sim_var.set(False)
+            self.sim_server.stop()
+        self.update_led_display()
+        self.status_var.set("Disconnected from printer.")
 
     def start_print(self, force_dry_run: bool = False):
         if self.rendered_image is None:

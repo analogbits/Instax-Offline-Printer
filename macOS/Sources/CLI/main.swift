@@ -45,6 +45,9 @@ func printUsage() {
       --brightness <float>       Brightness adjustment in [-0.5, 0.5] (default: 0.0)
       --contrast <float>         Contrast multiplier in [0.5, 1.8] (default: 1.0)
       --saturation <float>       Saturation multiplier in [0.0, 2.0] (default: 1.0)
+      --filter <preset>          Color/artistic filter: none, monochrome, sepia, vintage, cool, vivid,
+                                 solarize, aerochrome, cross_process, duotone_cyan, split_tone, dither,
+                                 chromatic, crt_scanlines, pixel_sort, posterize, edge_detect, threshold, emboss
 
     RICH QR CODE & OVERLAYS:
       --qr <text|url>            Embed high-resolution scannable QR badge onto print
@@ -153,6 +156,14 @@ while i < args.count {
     case "--saturation":
         i += 1
         if i < args.count, let v = Double(args[i]) { imgOptions.saturation = v }
+    case "--filter":
+        i += 1
+        if i < args.count {
+            let fVal = args[i].lowercased()
+            if let f = InstaxFilterPreset(rawValue: fVal) {
+                imgOptions.filter = f
+            }
+        }
     case "--qr":
         i += 1
         if i < args.count { imgOptions.qrContent = args[i] }

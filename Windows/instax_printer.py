@@ -53,7 +53,6 @@ DEFAULT_DEVICE_NAME = "INSTAX-"
 SID_VERSION_INFO = (0x00, 0x00)
 SID_DEVICE_INFO = (0x00, 0x01)
 SID_SUPPORT_INFO = (0x00, 0x02)
-SID_SHUTDOWN = (0x01, 0x00)
 SID_RESET = (0x01, 0x01)
 SID_PRINT_START = (0x10, 0x00)
 SID_PRINT_DATA = (0x10, 0x01)
@@ -610,6 +609,121 @@ FILM_PRESETS = {
         "analog_wear": 0.05, "show_date": False, "date_color": "amber",
     },
 }
+
+FILTER_CHOICES = [
+    "none", "monochrome", "sepia", "vintage", "cool", "vivid",
+    "solarize", "aerochrome", "cross_process", "duotone_cyan", "split_tone",
+    "dither", "chromatic", "crt_scanlines", "pixel_sort",
+    "posterize", "edge_detect", "threshold", "emboss",
+]
+
+
+def apply_visual_filter(img: Image.Image, flt: str = "none") -> Image.Image:
+    """Apply classic or advanced optical/digital/algorithmic visual filter to a PIL RGB image."""
+    f = (flt or "none").strip().lower()
+    if f in ("", "none", "normal", "original"):
+        return img.convert("RGB")
+    out = img.convert("RGB")
+    if f in ("monochrome", "mono", "b&w mono"):
+        return ImageOps.grayscale(out).convert("RGB")
+    if f in ("sepia", "warm sepia"):
+        return ImageOps.colorize(ImageOps.grayscale(out), "#2e1a0b", "#f5e6cc")
+    if f in ("vintage", "vintage film", "classic chrome"):
+        g = ImageOps.grayscale(out)
+        sepia_layer = ImageOps.colorize(g, "#3d2714", "#f5ecd0")
+        out = Image.blend(out, sepia_layer, 0.35)
+        out = ImageEnhance.Contrast(out).enhance(0.95)
+        return ImageEnhance.Brightness(out).enhance(1.05)
+    if f in ("cool", "cool fade"):
+        cool_tint = Image.new("RGB", out.size, (185, 215, 245))
+        out = Image.blend(out, cool_tint, 0.16)
+        return ImageEnhance.Contrast(out).enhance(0.92)
+    if f in ("vivid", "vivid pop", "vivid velvia"):
+        return ImageEnhance.Color(out).enhance(1.4)
+    if f in ("solarize", "solarisation"):
+        return ImageOps.solarize(out, threshold=128)
+    if f in ("posterize", "posterisation"):
+        return ImageOps.posterize(out, bits=2)
+    if f in ("threshold", "binarised stencil"):
+        g = ImageOps.grayscale(out)
+        return g.point(lambda p: 255 if p >= 128 else 0).convert("RGB")
+    if f in ("duotone_cyan", "duotone cyanotype"):
+        g = ImageOps.grayscale(out)
+        return ImageOps.colorize(g, "#082545", "#F0F8FF")
+    if f in ("split_tone", "split-toning"):
+        g = ImageOps.grayscale(out)
+        return ImageOps.colorize(g, "#0D3B4C", "#FFBF69")
+    if f in ("aerochrome", "false-colour infrared"):
+        r, g, b = out.split()
+        # Map green foliage luminance into vivid crimson/magenta R, R->G, G/B->deep cyan/navy
+        new_r = ImageChops.lighter(g, r)
+        new_g = b
+        new_b = g.point(lambda p: int(p * 0.55))
+        merged = Image.merge("RGB", (new_r, new_g, new_b))
+        return ImageEnhance.Color(merged).enhance(1.35)
+    if f in ("cross_process", "cross-processing"):
+        r, g, b = out.split()
+        r = r.point(lambda p: min(255, int(((p / 255.0) ** 0.85) * 255)))
+        g = g.point(lambda p: min(255, max(0, int((p - 128) * 1.25 + 134))))
+        b = b.point(lambda p: min(255, int(p * 0.82 + 24)))
+        return ImageEnhance.Contrast(Image.merge("RGB", (r, g, b))).enhance(1.2)
+    if f in ("dither", "1-bit dithering"):
+        bayer = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
+        g = ImageOps.grayscale(out)
+        w, h = g.size
+        pix = g.load()
+        res = Image.new("L", (w, h))
+        rpix = res.load()
+        for y in range(h):
+            row_m = bayer[y & 3]
+            for x in range(w):
+                thresh = (row_m[x & 3] + 0.5) * 16.0
+                rpix[x, y] = 255 if pix[x, y] >= thresh else 0
+        return res.convert("RGB")
+    if f in ("chromatic", "chromatic aberration"):
+        r, g, b = out.split()
+        shift = max(3, out.width // 90)
+        r_s = ImageChops.offset(r, -shift, 0)
+        b_s = ImageChops.offset(b, shift, 0)
+        return Image.merge("RGB", (r_s, g, b_s))
+    if f in ("crt_scanlines", "crt scanlines"):
+        w, h = out.size
+        pix = out.load()
+        for y in range(0, h, 3):
+            for x in range(w):
+                pr, pg, pb = pix[x, y]
+                pix[x, y] = (int(pr * 0.55), int(pg * 0.58), int(pb * 0.62))
+        return out
+    if f in ("pixel_sort", "pixel sorting"):
+        w, h = out.size
+        pix = out.load()
+        for y in range(h):
+            row = [pix[x, y] for x in range(w)]
+            x = 0
+            while x < w:
+                lum = 0.299 * row[x][0] + 0.587 * row[x][1] + 0.114 * row[x][2]
+                if 75 <= lum <= 215:
+                    start = x
+                    while x < w:
+                        l2 = 0.299 * row[x][0] + 0.587 * row[x][1] + 0.114 * row[x][2]
+                        if not (75 <= l2 <= 215) or (x - start) >= 48:
+                            break
+                        x += 1
+                    span = sorted(row[start:x], key=lambda c: c[0] + c[1] + c[2])
+                    for k, val in enumerate(span):
+                        pix[start + k, y] = val
+                else:
+                    x += 1
+        return out
+    if f in ("edge_detect", "sobel edge detection"):
+        from PIL import ImageFilter
+        edges = out.convert("L").filter(ImageFilter.FIND_EDGES)
+        edges = ImageEnhance.Contrast(edges).enhance(2.2)
+        return ImageOps.colorize(edges, "#040814", "#38BDF8")
+    if f in ("emboss", "embossing"):
+        from PIL import ImageFilter
+        return out.convert("L").filter(ImageFilter.EMBOSS).convert("RGB")
+    return out
 
 
 def apply_analog_fx(
@@ -1431,12 +1545,16 @@ def render_image(
     banner_y: float = 0.68,
     banner_scale: float = 1.0,
     banner_rot: float = 0.0,
+    filter_preset: str = "none",
 ) -> bytes:
     with Image.open(src_path) as raw:
         img = ImageOps.exif_transpose(raw).convert("RGB")
 
     if rotation != 0:
         img = img.rotate(-rotation, expand=True, resample=Image.BICUBIC)
+
+    if filter_preset and filter_preset != "none":
+        img = apply_visual_filter(img, filter_preset)
 
     canvas = _fit_single_pil(img, target_width, target_height, fit_mode, bg_color, zoom, pan_x, pan_y)
     canvas = apply_analog_fx(
@@ -1524,6 +1642,7 @@ def render_collage(
     banner_y: float = 0.68,
     banner_scale: float = 1.0,
     banner_rot: float = 0.0,
+    filter_preset: str = "none",
 ) -> bytes:
     canvas = Image.new("RGB", (target_width, target_height), bg_color)
     W, H = float(target_width), float(target_height)
@@ -1573,7 +1692,10 @@ def render_collage(
     imgs = []
     for p in src_paths:
         with Image.open(p) as raw:
-            imgs.append(ImageOps.exif_transpose(raw).convert("RGB"))
+            im = ImageOps.exif_transpose(raw).convert("RGB")
+            if filter_preset and filter_preset != "none":
+                im = apply_visual_filter(im, filter_preset)
+            imgs.append(im)
 
     for idx, (sx, sy, sw, sh) in enumerate(slots):
         iw = max(4, int(round(sw)))
@@ -1692,6 +1814,7 @@ async def main_cli():
     p_print.add_argument("--height", type=int, default=0)
 
     for p in (p_prev, p_print):
+        p.add_argument("--filter", choices=FILTER_CHOICES, default="none", help="Color or artistic visual manipulation filter")
         p.add_argument("--film-preset", choices=["none"] + list(FILM_PRESETS.keys()), default="none", help="Film preset emulation (Polaroid SX-70/600/I-Type/Spectra, Vintage 70s/80s/90s/60s, Instax Rich/Natural/Mono/Sepia)")
         p.add_argument("--warmth", type=float, default=0.0, help="Analog warmth (-1.0 to 1.0)")
         p.add_argument("--vignette", type=float, default=0.0, help="Lens vignette falloff (0.0 to 1.0)")
@@ -1726,6 +1849,9 @@ async def main_cli():
 
     film_preset = getattr(args, "film_preset", "none")
     preset_data = FILM_PRESETS.get(film_preset, {})
+    eff_filter = getattr(args, "filter", "none")
+    if eff_filter == "none" and "filter" in preset_data:
+        eff_filter = preset_data["filter"]
 
     analog_kwargs = {
         "warmth": args.warmth if args.warmth != 0.0 else preset_data.get("warmth", 0.0),
@@ -1767,6 +1893,7 @@ async def main_cli():
         "banner_y": getattr(args, "banner_y", 0.68),
         "banner_scale": getattr(args, "banner_scale", 1.0),
         "banner_rot": getattr(args, "banner_rot", 0.0),
+        "filter_preset": eff_filter,
     }
 
     render_kwargs = {**analog_kwargs, **decorate_kwargs}

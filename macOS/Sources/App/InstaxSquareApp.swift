@@ -687,12 +687,21 @@ final class InstaxAppViewModel: ObservableObject {
     }
 
     func revealOfflineBackupInFinder() {
-        let zipPath = "/Users/michaelfitzgerald/Desktop/Instax-Printer-Offline-Backup.zip"
-        if FileManager.default.fileExists(atPath: zipPath) {
-            NSWorkspace.shared.selectFile(zipPath, inFileViewerRootedAtPath: "")
-        } else {
-            statusBanner = "Offline backup archive not found on Desktop."
+        let bundleParent = Bundle.main.bundleURL.deletingLastPathComponent().path
+        let candidates = [
+            "\(bundleParent)/Instax-Printer-Offline-Backup.zip",
+            "\(bundleParent)/../Instax-Printer-Offline-Backup.zip",
+            "/Users/michaelfitzgerald/Desktop/2026/github/Instax and Polaroid/Instax-Printer-Offline-Backup.zip",
+            NSHomeDirectory() + "/Desktop/Instax-Printer-Offline-Backup.zip"
+        ]
+        for candidate in candidates {
+            let standardized = (candidate as NSString).standardizingPath
+            if FileManager.default.fileExists(atPath: standardized) {
+                NSWorkspace.shared.selectFile(standardized, inFileViewerRootedAtPath: "")
+                return
+            }
         }
+        statusBanner = "Offline backup archive not found."
     }
 
     // MARK: - Image Rendering & Queue Sync

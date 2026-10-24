@@ -167,6 +167,132 @@ STICKER_MAP = {
     "mimosa": "🌾",
 }
 
+LEGACY_FILTER_NAMES = [
+    "Normal",
+    "Fujifilm Intelligence",
+    "Monochrome",
+    "Sepia",
+    "Vintage Film",
+    "Vivid Velvia",
+    "Solarisation",
+    "False-Colour Infrared",
+    "Cross-Processing",
+    "Duotone Cyanotype",
+    "Split-Toning",
+    "1-Bit Dithering",
+    "Chromatic Aberration",
+    "CRT Scanlines",
+    "Pixel Sorting",
+    "Posterisation",
+    "Sobel Edge Detection",
+    "Binarised Stencil",
+    "Embossing",
+]
+
+
+def apply_visual_filter(img: "Image.Image", flt: str = "Normal") -> "Image.Image":
+    """Apply Fujifilm SHARE or optical/digital/algorithmic visual manipulation filter."""
+    f = (flt or "Normal").strip().lower()
+    if f in ("", "none", "normal", "original"):
+        return img.convert("RGB")
+    out = img.convert("RGB")
+    if f in ("fujifilm intelligence", "fuji"):
+        out = ImageEnhance.Contrast(out).enhance(1.12)
+        return ImageEnhance.Color(out).enhance(1.15)
+    if f in ("monochrome", "mono", "b&w mono"):
+        return ImageOps.grayscale(out).convert("RGB")
+    if f in ("sepia", "warm sepia"):
+        return ImageOps.colorize(ImageOps.grayscale(out), "#2B1B0E", "#F5E1C0")
+    if f in ("vintage", "vintage film", "classic chrome"):
+        g = ImageOps.grayscale(out)
+        sepia_layer = ImageOps.colorize(g, "#3D2714", "#F5ECD0")
+        out = Image.blend(out, sepia_layer, 0.35)
+        out = ImageEnhance.Contrast(out).enhance(0.95)
+        return ImageEnhance.Brightness(out).enhance(1.05)
+    if f in ("vivid", "vivid velvia", "vivid pop"):
+        return ImageEnhance.Color(out).enhance(1.4)
+    if f in ("solarize", "solarisation"):
+        return ImageOps.solarize(out, threshold=128)
+    if f in ("posterize", "posterisation"):
+        return ImageOps.posterize(out, bits=2)
+    if f in ("threshold", "binarised stencil"):
+        g = ImageOps.grayscale(out)
+        return g.point(lambda p: 255 if p >= 128 else 0).convert("RGB")
+    if f in ("duotone_cyan", "duotone cyanotype"):
+        g = ImageOps.grayscale(out)
+        return ImageOps.colorize(g, "#082545", "#F0F8FF")
+    if f in ("split_tone", "split-toning"):
+        g = ImageOps.grayscale(out)
+        return ImageOps.colorize(g, "#0D3B4C", "#FFBF69")
+    if f in ("aerochrome", "false-colour infrared"):
+        r, g, b = out.split()
+        new_r = ImageChops.lighter(g, r)
+        new_g = b
+        new_b = g.point(lambda p: int(p * 0.55))
+        merged = Image.merge("RGB", (new_r, new_g, new_b))
+        return ImageEnhance.Color(merged).enhance(1.35)
+    if f in ("cross_process", "cross-processing"):
+        r, g, b = out.split()
+        r = r.point(lambda p: min(255, int(((p / 255.0) ** 0.85) * 255)))
+        g = g.point(lambda p: min(255, max(0, int((p - 128) * 1.25 + 134))))
+        b = b.point(lambda p: min(255, int(p * 0.82 + 24)))
+        return ImageEnhance.Contrast(Image.merge("RGB", (r, g, b))).enhance(1.2)
+    if f in ("dither", "1-bit dithering"):
+        bayer = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
+        g = ImageOps.grayscale(out)
+        w, h = g.size
+        pix = g.load()
+        res = Image.new("L", (w, h))
+        rpix = res.load()
+        for y in range(h):
+            row_m = bayer[y & 3]
+            for x in range(w):
+                thresh = (row_m[x & 3] + 0.5) * 16.0
+                rpix[x, y] = 255 if pix[x, y] >= thresh else 0
+        return res.convert("RGB")
+    if f in ("chromatic", "chromatic aberration"):
+        r, g, b = out.split()
+        shift = max(3, out.width // 90)
+        r_s = ImageChops.offset(r, -shift, 0)
+        b_s = ImageChops.offset(b, shift, 0)
+        return Image.merge("RGB", (r_s, g, b_s))
+    if f in ("crt_scanlines", "crt scanlines"):
+        w, h = out.size
+        pix = out.load()
+        for y in range(0, h, 3):
+            for x in range(w):
+                pr, pg, pb = pix[x, y]
+                pix[x, y] = (int(pr * 0.55), int(pg * 0.58), int(pb * 0.62))
+        return out
+    if f in ("pixel_sort", "pixel sorting"):
+        w, h = out.size
+        pix = out.load()
+        for y in range(h):
+            row = [pix[x, y] for x in range(w)]
+            x = 0
+            while x < w:
+                lum = 0.299 * row[x][0] + 0.587 * row[x][1] + 0.114 * row[x][2]
+                if 75 <= lum <= 215:
+                    start = x
+                    while x < w:
+                        l2 = 0.299 * row[x][0] + 0.587 * row[x][1] + 0.114 * row[x][2]
+                        if not (75 <= l2 <= 215) or (x - start) >= 48:
+                            break
+                        x += 1
+                    span = sorted(row[start:x], key=lambda c: c[0] + c[1] + c[2])
+                    for k, val in enumerate(span):
+                        pix[start + k, y] = val
+                else:
+                    x += 1
+        return out
+    if f in ("edge_detect", "sobel edge detection"):
+        edges = out.convert("L").filter(ImageFilter.FIND_EDGES)
+        edges = ImageEnhance.Contrast(edges).enhance(2.2)
+        return ImageOps.colorize(edges, "#040814", "#38BDF8")
+    if f in ("emboss", "embossing"):
+        return out.convert("L").filter(ImageFilter.EMBOSS).convert("RGB")
+    return out
+
 
 def draw_decorative_frame(canvas: Image.Image, style: str) -> Image.Image:
     if not style or style == "none":
@@ -664,11 +790,14 @@ def encode_planar_rgb(
     banner_pos_y: float = 0.68,
     banner_scale: float = 1.0,
     banner_rotation: float = 0.0,
+    filter_name: str = "Normal",
 ) -> bytes:
     spec = MODELS.get(model_name.upper(), MODELS["SP-2"])
     portrait_w = hw_width or spec["width"]
     portrait_h = hw_height or spec["height"]
     img = pil_image.convert("RGB")
+    if filter_name and filter_name.lower() not in ("", "none", "normal"):
+        img = apply_visual_filter(img, filter_name)
 
     if fit_mode == "fit":
         img.thumbnail((portrait_w, portrait_h), Image.Resampling.LANCZOS)
@@ -1230,6 +1359,7 @@ def main():
     parser.add_argument("--simulate", action="store_true", help="Run against built-in local simulator (127.0.0.1:18080)")
     parser.add_argument("--serve", action="store_true", help="Launch Local Web Studio Bridge (127.0.0.1:8089)")
     parser.add_argument("--fit", action="store_true", help="Fit image inside frame with borders (default: crop to fill)")
+    parser.add_argument("--filter", default="Normal", help="Artistic filter preset (e.g. Normal, Monochrome, Sepia, Solarisation, False-Colour Infrared, Cross-Processing, Duotone Cyanotype, Split-Toning, 1-Bit Dithering, Chromatic Aberration, CRT Scanlines, Pixel Sorting, Posterisation, Sobel Edge Detection, Binarised Stencil, Embossing)")
     parser.add_argument("--caption", default="", help="Optional bottom caption text")
     parser.add_argument("--qr", default="", help="Optional scannable QR code text/URL")
     parser.add_argument("--frame-style", choices=["none", "classic_white", "obsidian_black", "rainbow_gradient", "sunset_ombre", "sprocket_35mm", "gold_metallic", "metallic_gold", "rose_gold", "pastel_pop", "candy_pastel", "postage_stamp", "baroque_filigree", "wedding_corners", "stained_glass", "bokeh_sparkles", "fireworks_celebration", "twin_hearts_garland", "holiday_garland", "botanical_foliage"], default="none", help="Decorative film frame style")
@@ -1322,6 +1452,7 @@ def main():
         banner_pos_y=getattr(args, "banner_y", 0.68),
         banner_scale=getattr(args, "banner_scale", 1.0),
         banner_rotation=getattr(args, "banner_rot", 0.0),
+        filter_name=getattr(args, "filter", "Normal"),
     )
     result = client.print_planar_rgb(
         planar,

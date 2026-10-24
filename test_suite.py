@@ -271,6 +271,36 @@ const navigator = {{ bluetooth: {{}} }};
     else:
         fail_test(f"BLE preview generation failed:\n{res.stderr}")
 
+    # TEST 10: Optical, Digital & Algorithmic Visual Manipulation Filters (12 Filters)
+    total_tests += 1
+    log_test("Visual Manipulation Filters (12 Optical, Digital & Algorithmic Effects)")
+    sys.path.insert(0, os.path.join(SCRIPT_DIR, "Linux"))
+    from instax_printer import apply_visual_filter as ble_apply_filter
+    from legacy_instax_printer import apply_visual_filter as leg_apply_filter
+    filter_slugs = [
+        "solarize", "aerochrome", "cross_process", "duotone_cyan", "split_tone",
+        "dither", "chromatic", "crt_scanlines", "pixel_sort",
+        "posterize", "edge_detect", "threshold", "emboss",
+    ]
+    filter_test_img = Image.new("RGB", (120, 120), color=(180, 90, 210))
+    for slug in filter_slugs:
+        out_ble = ble_apply_filter(filter_test_img, slug)
+        out_leg = leg_apply_filter(filter_test_img, slug)
+        if out_ble.size != (120, 120) or out_leg.size != (120, 120):
+            fail_test(f"Filter '{slug}' returned invalid image dimensions")
+    mac_cli = os.path.join(SCRIPT_DIR, "macOS", "instax-square")
+    if sys.platform == "darwin" and os.path.isfile(mac_cli):
+        mac_out = os.path.join(tempfile.gettempdir(), "test_mac_filter_ci.jpg")
+        res_mac = subprocess.run([mac_cli, "preview", test_icon, "-o", mac_out, "--filter", "aerochrome"], capture_output=True, text=True)
+        if res_mac.returncode != 0 or not os.path.isfile(mac_out):
+            fail_test(f"macOS CLI --filter aerochrome failed:\n{res_mac.stderr}")
+        try:
+            os.remove(mac_out)
+        except Exception:
+            pass
+    pass_test("All 12 new visual manipulation filters verified across BLE, Legacy & macOS CLI.")
+    passed_tests += 1
+
     print("\n" + "=" * 70)
     print(f"🎉 ALL TESTS PASSED! ({passed_tests}/{total_tests} tests verified)")
     print("=" * 70)

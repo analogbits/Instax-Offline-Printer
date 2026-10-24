@@ -7,7 +7,7 @@ let args = Array(CommandLine.arguments.dropFirst())
 
 func printHelp() {
     print("""
-    Legacy Instax Printer CLI v1.5.0 — Offline Wi-Fi Direct Tool for Fujifilm Instax SHARE SP-1, SP-2 & SP-3
+    Legacy Instax Printer CLI v2.1.0 — Offline Wi-Fi Direct Tool for Fujifilm Instax SHARE SP-1, SP-2 & SP-3
     ======================================================================================================
     Usage:
       legacy-instax [options] [image_path]
@@ -21,6 +21,10 @@ func printHelp() {
       --dry-run            Test full Wi-Fi Direct image transfer with 0 film used
       --simulate           Start & connect to built-in Virtual SP-1/2/3 Simulator (127.0.0.1:18080)
       --fit                Fit image inside frame with matte borders (default: crop to fill)
+      --filter <name>      Artistic filter (Normal, Monochrome, Sepia, Vivid Velvia, Classic Chrome,
+                           Solarisation, False-Colour Infrared, Cross-Processing, Duotone Cyanotype,
+                           Split-Toning, 1-Bit Dithering, Chromatic Aberration, CRT Scanlines,
+                           Pixel Sorting, Posterisation, Sobel Edge Detection, Binarised Stencil, Embossing)
       --caption <text>     Add bottom caption text
       --qr <url_or_text>   Overlay scannable QR code on print
       --help               Show this help message
@@ -68,6 +72,36 @@ while i < args.count {
         simulate = true
     case "--fit":
         options.fitMode = .fit
+    case "--filter":
+        if i + 1 < args.count {
+            let fArg = args[i + 1]
+            let fLow = fArg.lowercased()
+            let slugMap: [String: LegacyPhotoFilter] = [
+                "none": .normal, "normal": .normal,
+                "fuji": .fujiIntelligence, "fujifilm intelligence": .fujiIntelligence,
+                "mono": .mono, "monochrome": .mono,
+                "sepia": .sepia,
+                "vivid": .vivid, "vivid velvia": .vivid,
+                "vintage": .vintage, "classic chrome": .vintage,
+                "solarize": .solarize, "solarisation": .solarize,
+                "aerochrome": .aerochrome, "false-colour infrared": .aerochrome,
+                "cross_process": .crossProcess, "cross-processing": .crossProcess,
+                "duotone_cyan": .duotoneCyan, "duotone cyanotype": .duotoneCyan,
+                "split_tone": .splitTone, "split-toning": .splitTone,
+                "dither": .dither, "1-bit dithering": .dither,
+                "chromatic": .chromaticAberration, "chromatic aberration": .chromaticAberration,
+                "crt_scanlines": .crtScanlines, "crt scanlines": .crtScanlines,
+                "pixel_sort": .pixelSort, "pixel sorting": .pixelSort,
+                "posterize": .posterize, "posterisation": .posterize,
+                "edge_detect": .edgeDetect, "sobel edge detection": .edgeDetect,
+                "threshold": .threshold, "binarised stencil": .threshold,
+                "emboss": .emboss, "embossing": .emboss
+            ]
+            if let mapped = slugMap[fLow] ?? LegacyPhotoFilter(rawValue: fArg) {
+                options.filter = mapped
+            }
+            i += 1
+        }
     case "--caption":
         if i + 1 < args.count { options.captionText = args[i + 1]; i += 1 }
     case "--frame-style":

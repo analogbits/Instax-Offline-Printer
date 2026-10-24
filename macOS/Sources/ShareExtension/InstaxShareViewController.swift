@@ -92,12 +92,21 @@ final class InstaxShareViewController: NSViewController {
 
     private func handoffToApp(urls: [URL]) {
         let appBundleID = "com.analogbits.instax.printer"
+        let parentAppURL = Bundle.main.bundleURL
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let newDesktopAppURL = URL(fileURLWithPath: "/Users/michaelfitzgerald/Desktop/2026/github/Instax and Polaroid/Instax Printer.app")
         let desktopAppURL = URL(fileURLWithPath: "/Users/michaelfitzgerald/Desktop/Instax Printer.app")
         let appsAppURL = URL(fileURLWithPath: "/Applications/Instax Printer.app")
         
         var targetURL = appsAppURL
-        if let appFromLS = NSWorkspace.shared.urlForApplication(withBundleIdentifier: appBundleID) {
+        if parentAppURL.pathExtension == "app" && FileManager.default.fileExists(atPath: parentAppURL.path) {
+            targetURL = parentAppURL
+        } else if let appFromLS = NSWorkspace.shared.urlForApplication(withBundleIdentifier: appBundleID) {
             targetURL = appFromLS
+        } else if FileManager.default.fileExists(atPath: newDesktopAppURL.path) {
+            targetURL = newDesktopAppURL
         } else if FileManager.default.fileExists(atPath: desktopAppURL.path) {
             targetURL = desktopAppURL
         }

@@ -6,6 +6,7 @@ Complete standalone application for Instax SQUARE Link, Link WIDE, and Mini Link
 
 import os
 import sys
+import io
 import time
 import threading
 import asyncio
@@ -18,12 +19,14 @@ from PIL import Image, ImageTk, ImageOps, ImageEnhance
 try:
     from instax_printer import (
         InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx,
-        STICKER_MAP, draw_decorative_frame, draw_sticker_overlay, draw_custom_banner
+        STICKER_MAP, draw_decorative_frame, draw_sticker_overlay, draw_custom_banner,
+        apply_visual_filter, FILTER_CHOICES
     )
 except ImportError:
     from .instax_printer import (
         InstaxBLE, render_image, DEFAULT_DEVICE_NAME, apply_analog_fx,
-        STICKER_MAP, draw_decorative_frame, draw_sticker_overlay, draw_custom_banner
+        STICKER_MAP, draw_decorative_frame, draw_sticker_overlay, draw_custom_banner,
+        apply_visual_filter, FILTER_CHOICES
     )
 
 FRAME_OPTIONS = [
@@ -420,7 +423,7 @@ class InstaxDesktopApp(tk.Tk):
         ttk.Radiobutton(tab_color, text="instax-Natural (Classic 3D-LUT)", value="natural", variable=self.print_mode, command=self.on_control_adjusted).pack(anchor=tk.W)
 
         ttk.Label(tab_color, text="Filter Preset:", font=("Arial", 9, "bold")).pack(anchor=tk.W, pady=(10, 4))
-        cb_filt = ttk.Combobox(tab_color, textvariable=self.filter_preset, values=["none", "monochrome", "sepia", "vintage", "vivid"])
+        cb_filt = ttk.Combobox(tab_color, textvariable=self.filter_preset, values=FILTER_CHOICES, state="readonly")
         cb_filt.bind("<<ComboboxSelected>>", lambda e: self.on_control_adjusted())
         cb_filt.pack(fill=tk.X)
 
@@ -923,20 +926,8 @@ class InstaxDesktopApp(tk.Tk):
         if self.rotation.get() != 0:
             img = img.rotate(-self.rotation.get(), expand=True, resample=Image.BICUBIC)
 
-        if self.filter_preset.get() in ("monochrome", "mono"):
-            img = ImageOps.grayscale(img).convert("RGB")
-        elif self.filter_preset.get() == "sepia":
-            gray = ImageOps.grayscale(img)
-            img = ImageOps.colorize(gray, "#2e1a0b", "#f5e6cc")
-        elif self.filter_preset.get() == "vintage":
-            gray = ImageOps.grayscale(img)
-            sepia_layer = ImageOps.colorize(gray, "#3d2714", "#f5ecd0")
-            img = Image.blend(img, sepia_layer, 0.35)
-            img = ImageEnhance.Contrast(img).enhance(0.95)
-            img = ImageEnhance.Brightness(img).enhance(1.05)
-        elif self.filter_preset.get() == "vivid":
-            enh = ImageEnhance.Color(img)
-            img = enh.enhance(1.4)
+        if self.filter_preset.get() and self.filter_preset.get() != "none":
+            img = apply_visual_filter(img, self.filter_preset.get())
 
         if self.print_mode.get() == "rich":
             # Rich Mode: saturation (+18%) and subtle contrast pop (+8%)
