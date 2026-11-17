@@ -1046,7 +1046,7 @@ class InstaxDesktopApp(tk.Tk):
     def action_choose_custom_sticker(self):
         path = filedialog.askopenfilename(
             title="Select Sticker Image or Logo",
-            filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.gif")]
+            filetypes=[("Image Files", "*.png *.jpg *.jpeg *.webp *.bmp *.gif")]
         )
         if not path:
             return
@@ -1125,7 +1125,7 @@ class InstaxDesktopApp(tk.Tk):
     def action_open_files(self):
         paths = filedialog.askopenfilenames(
             title="Select Photos to Print",
-            filetypes=[("Image Files", "*.jpg;*.jpeg;*.png;*.bmp;*.webp;*.tiff")]
+            filetypes=[("Image Files", "*.jpg *.jpeg *.png *.bmp *.webp *.tiff")]
         )
         if not paths:
             return
