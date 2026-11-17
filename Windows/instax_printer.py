@@ -1855,6 +1855,12 @@ async def main_cli():
 
     args = parser.parse_args()
 
+    # scan/status/led/eject-cover have no image options, but the render options
+    # below are built for every command. Fill in the print defaults for them.
+    for key, value in vars(p_print.parse_args(["-"])).items():
+        if not hasattr(args, key):
+            setattr(args, key, value)
+
     film_preset = getattr(args, "film_preset", "none")
     preset_data = FILM_PRESETS.get(film_preset, {})
     eff_filter = getattr(args, "filter", "none")
