@@ -202,7 +202,15 @@ class InstaxBLE:
         self.log(f"Connecting to {self.connected_name} ({matched.address})...")
         self.client = BleakClient(matched)
         await self.client.connect()
-        self.log("Connected! Enabling GATT notifications...")
+        # BlueZ reports the default 23-byte MTU until it is acquired; without this
+        # every packet is split into 20-byte writes, which makes uploads very slow.
+        backend = getattr(self.client, "_backend", None)
+        if hasattr(backend, "_acquire_mtu"):
+            try:
+                await backend._acquire_mtu()
+            except Exception as e:
+                self.log(f"Could not query BLE MTU, using default: {e}")
+        self.log(f"Connected (MTU {self.client.mtu_size})! Enabling GATT notifications...")
         await self.client.start_notify(NOTIFY_CHAR_UUID, self._on_notify)
         await asyncio.sleep(0.3)
 
