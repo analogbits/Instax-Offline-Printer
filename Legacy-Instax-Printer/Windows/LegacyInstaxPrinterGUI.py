@@ -1286,7 +1286,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
     def action_choose_custom_sticker(self):
         path = filedialog.askopenfilename(
             title="Select Sticker Image or Logo",
-            filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.gif")]
+            filetypes=[("Image Files", "*.png *.jpg *.jpeg *.webp *.bmp *.gif")]
         )
         if not path:
             return

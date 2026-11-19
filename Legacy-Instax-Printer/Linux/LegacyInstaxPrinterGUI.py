@@ -1031,13 +1031,13 @@ class LegacyInstaxPrinterGUI(tk.Tk):
             self.collage_layout_var.set("6-Photo Grid")
 
     def open_primary_image(self):
-        path = filedialog.askopenfilename(filetypes=[("Images", "*.png *.jpg *.jpeg *.bmp *.webp")])
+        path = filedialog.askopenfilename(filetypes=[("Images", "*.png *.PNG *.jpg *.JPG *.jpeg *.JPEG *.bmp *.BMP *.webp *.WEBP")])
         if path:
             self.primary_image = Image.open(path).convert("RGB")
             self.refresh_preview()
 
     def add_collage_photos(self):
-        paths = filedialog.askopenfilenames(filetypes=[("Images", "*.png *.jpg *.jpeg *.bmp *.webp")])
+        paths = filedialog.askopenfilenames(filetypes=[("Images", "*.png *.PNG *.jpg *.JPG *.jpeg *.JPEG *.bmp *.BMP *.webp *.WEBP")])
         for p in paths:
             self.collage_images.append(Image.open(p).convert("RGB"))
         self._auto_select_collage_layout()
@@ -1286,7 +1286,7 @@ class LegacyInstaxPrinterGUI(tk.Tk):
     def action_choose_custom_sticker(self):
         path = filedialog.askopenfilename(
             title="Select Sticker Image or Logo",
-            filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.gif")]
+            filetypes=[("Image Files", "*.png *.PNG *.jpg *.JPG *.jpeg *.JPEG *.webp *.WEBP *.bmp *.BMP *.gif *.GIF")]
         )
         if not path:
             return
