@@ -388,6 +388,8 @@ Special thanks to the community for feature ideas, testing, and code contributio
   * **[PR #1](https://github.com/analogbits/Instax-Offline-Printer/pull/1):** Requested the Adobe Lightroom Classic integration and contributed Mini Link 3 testing, `LrToolkitIdentifier` & `LrExportSession` fixes, generic `INSTAX-` prefix matching, and the `InstaxCLIHelper.app` macOS TCC Bluetooth helper bundle.
 * **[@orangekittysoftware](https://github.com/orangekittysoftware):**
   * **[PR #2](https://github.com/analogbits/Instax-Offline-Printer/pull/2):** Contributed `bin/test-image-maker.sh`, a cross-platform Instax test card generator for stamping prints with the app, code version, and OS details across Wide, Square, and Mini formats.
+* **[@7eks](https://github.com/7eks):**
+  * **[PR #4](https://github.com/analogbits/Instax-Offline-Printer/pull/4):** Fixed Tk file dialog image filters across all platforms (including case-sensitive Linux uppercase extensions), added BlueZ BLE MTU acquisition for ~5× faster Linux uploads, and fixed the CLI `scan`/`status`/`led`/`eject-cover` crash.
 * **`u/pola-dude`:**
   * Suggested and tested the **Legacy Instax Printer** (`SP-1`, `SP-2` & `SP-3` Wi-Fi Direct) application suite.
 
