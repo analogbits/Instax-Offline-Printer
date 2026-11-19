@@ -77,7 +77,7 @@ The suite provides an independent, reverse-engineered, 100% offline desktop and 
 - **Telemetry Polling**: Queries and displays real-time printer metrics: battery level, AC charging status, and remaining film count (0–10).
 - **0-Film Dry-Run Mode**: Non-destructive verification toggle that validates all packet payload construction, image transformations, and socket transmission while halting before physical ejection.
 - **Planar RGB Scanline Encoding**: For legacy SHARE printers, transforms arbitrary image formats into 90° clockwise scanline-oriented planar RGB bitstreams formatted into 24 segments (SP-1/SP-2) or 32 segments (SP-3).
-- **BLE JPEG Chunking**: For BLE Link printers, encodes images into baseline JPEG structures and chunk payloads into 1024-byte BLE packets with sequential sequence IDs and 8-bit checksums.
+- **BLE JPEG Chunking**: For BLE Link printers, encodes images into baseline JPEG structures and chunks payloads into model-specific BLE packets (600 B Mini, 900 B SQUARE, 1800 B WIDE) with sequential 32-bit sequence IDs and inverted modulo-256 checksums.
 - **Local Wi-Fi Bluetooth Bridge**: Local dual-radio HTTP daemon (`instax_wifi_bridge.py` / `legacy_web_bridge.py`) that serves the canonical offline web studio over LAN and bridges REST print calls to physical hardware.
 - **Artistic Simulation & Visual Manipulation Filters**: Complete suite of visual manipulation effects across three broad categories:
   - *Optical & Chemical Darkroom Processes*: Solarisation (Sabattier tone reversal with Mackie line edge highlights), False-Colour Infrared (Aerochrome EIR foliage chlorophyll swap to vivid crimson/magenta), Cross-Processing (X-Pro slide-film in C-41 chemistry with lime-green shadows and magenta highlights), Duotone Cyanotype (Prussian Blue `#0B2545` to warm paper white `#FAF8F5`), and Cinema Split-Toning (Golden Amber highlights `#FFB74D` with deep Teal shadows `#00485C`).
@@ -168,7 +168,7 @@ Fujifilm Instax SHARE printers (SP-1, SP-2, and SP-3) broadcast a standalone IEE
 - **Fixed Printer TCP Port**: `8080`
 - **Default Application PIN**: `1111`
 
-The legacy architecture sends binary command packets prefixed with magic bytes `0x49 0x53 0x54 0x58` (`ISTX`), followed by two-byte command codes, payload length, session PIN, and scanline image chunks.
+The legacy architecture sends binary command packets starting with mode byte `0x24` (`0x2A` for responses), followed by a 1-byte command type (`0x51` prep, `0x52` image segment, `0x53` trigger print, `0x50` reset), 16-bit total length, 32-bit session timestamp, 16-bit numeric PIN (`1111` = `0x0457`), payload, 16-bit XOR checksum, and `\r\n` (`0x0D 0x0A`) trailer.
 
 ---
 
@@ -193,7 +193,7 @@ sequenceDiagram
     User->>Phone: Selects Photo from Camera Roll, frames image & taps Print
     Phone->>Mac: HTTP POST /api/print (Sends framed JPEG payload over Wi-Fi)
     Note over Mac: Radio 1 (Wi-Fi) hands payload to Radio 2 (Bluetooth)
-    Mac->>BLE: Bleak client encodes 1024-byte GATT packets
+    Mac->>BLE: Bleak client encodes model-sized GATT packets
     BLE->>Printer: Transmits image chunks over BLE GATT characteristic
     Printer-->>BLE: Acknowledges packets & updates print head progress
     BLE-->>Mac: Progress updates (0% -> 100%)
@@ -259,38 +259,40 @@ The Link series printers receive data in structured frames over BLE GATT Write C
 ##### Packet Framing Byte Structure
 | Byte Offset | Field Name | Description | Example Value |
 | :--- | :--- | :--- | :--- |
-| `0x00` | Sync High | Fixed frame synchronizer byte 1 | `0xAA` |
-| `0x01` | Sync Low | Fixed frame synchronizer byte 2 | `0x55` |
-| `0x02` | Command Category | Major protocol category | `0xC0` (Print), `0xC4` (Telemetry) |
-| `0x03` | Command Subcode | Specific instruction code | `0x01` (Status), `0x02` (Send Image) |
-| `0x04 - 0x05` | Payload Length | 16-bit big-endian payload length ($N$) | `0x0400` (1024 bytes) |
-| `0x06` to `0x06+N-1` | Payload Data | Raw command parameters or JPEG bytes | `...` |
-| `0x06+N` | Checksum Footer | Sum8 / XOR verification checksum | `0xXX` |
+| `0x00` | Sync High | Fixed frame synchronizer byte 1 (`'A'` outbound / `'a'` inbound) | `0x41` (`0x61` response) |
+| `0x01` | Sync Low | Fixed frame synchronizer byte 2 (`'b'` outbound / `'B'` inbound) | `0x62` (`0x42` response) |
+| `0x02 - 0x03` | Total Length | 16-bit big-endian total packet length (`7 + N`) | `0x038B` (`7 + 900`) |
+| `0x04 - 0x05` | Service ID (SID) | 2-byte command identifier (`sid[0], sid[1]`) | `0x10 0x00` (Print Start), `0x10 0x01` (Print Data) |
+| `0x06` to `0x06+N-1` | Payload Data | Raw command parameters or sequenced JPEG chunk bytes | `...` |
+| `0x06+N` | Checksum Footer | Inverted modulo-256 verification checksum | `0xXX` |
 
 ##### Checksum Calculation
-The packet checksum is calculated as the bitwise sum of all bytes from offset 2 through offset $5+N$, modulo 256:
-$$\text{Checksum} = \left(\sum_{i=2}^{5+N} \text{Packet}[i]\right) \pmod{256}$$
+The packet checksum is calculated over all header and payload bytes (`body = Packet[0..5+N]`) using Fujifilm's inverted modulo-256 sum:
+$$\text{Checksum} = \left(255 - \left(\sum_{i=0}^{5+N} \text{Packet}[i] \bmod 256\right)\right) \bmod 256$$
 
 ---
 
 #### 4.1.2 Wi-Fi Direct TCP Socket Protocol Engine (SP-1, SP-2, SP-3)
 Legacy printers communicate over raw TCP stream sockets on port 8080.
 
-##### Packet Header Structure (`ISTX`)
+##### Packet Header & Trailer Structure
 ```c
 struct InstaxWifiPacketHeader {
-    uint8_t magic[4];       // 0x49, 0x53, 0x54, 0x58 ("ISTX")
-    uint16_t command_code;  // 0x10 (Prepare), 0x20 (Image Data), 0x30 (Status), 0xC0 (Reset)
-    uint16_t session_pin;   // Big-endian PIN (0x1111 = 4369)
-    uint32_t payload_len;   // 32-bit big-endian payload byte count
+    uint8_t  mode;          // 0x24 = client command, 0x2A = printer response
+    uint8_t  cmd_type;      // 0x51 (Prep), 0x52 (Send Segment), 0x53 (Trigger Print), 0x50 (Reset)
+    uint16_t total_len;     // 16-bit big-endian total length (16 + payload_len)
+    uint32_t session_time;  // 32-bit big-endian Unix epoch session timestamp
+    uint16_t pin_code;      // 16-bit big-endian numeric PIN (default 1111 = 0x0457)
+    uint16_t reserved;      // 0x0000
+    // Followed by payload bytes, then 16-bit XOR checksum ((sum(body) ^ 0xFFFF) & 0xFFFF) + "\r\n" (0x0D 0x0A)
 };
 ```
 
 ##### Command Code Definitions
-- `0x0010`: **Prepare Print Session** — Handshake and initialize print head parameters.
-- `0x0020`: **Transmit Planar Scanline Segment** — Sends a block of planar RGB image data with segment index.
-- `0x0030`: **Query Hardware Telemetry** — Requests remaining film count, battery level, and total lifetime print count.
-- `0x00C0`: **Reset / Cancel Session** — Aborts active print sequence.
+- `0x51` (`CMD_PREP_IMAGE`): **Prepare Print Session** — Handshake and initialize print head parameters.
+- `0x52` (`CMD_SEND_IMAGE`): **Transmit Planar Scanline Segment** — Sends a 60,000-byte block of planar RGB image data with segment index.
+- `0x53` (`CMD_TRIGGER_PRINT`): **Trigger Physical Print** — Begins film exposure and motor ejection.
+- `0x50` (`CMD_RESET`): **Reset / Cancel Session** — Aborts active print sequence (used in 0-Film Dry Run mode).
 
 ---
 
@@ -306,16 +308,14 @@ struct InstaxWifiPacketHeader {
 | **Instax SHARE SP-3** | SQUARE | 800 × 800 px | 1:1 Square | 1,920,000 bytes | 32 segments (60,000 B each) |
 
 #### Planar RGB 90° Scanline Transformation
-Unlike standard standard row-major interleaved RGB (`R1 G1 B1 R2 G2 B2...`), Instax SHARE print heads utilize **column-major planar RGB scanlines rotated 90° clockwise**:
-1. Image is rotated 90° clockwise.
-2. All Red channel scanlines are serialized sequentially.
-3. Followed by all Green channel scanlines.
-4. Followed by all Blue channel scanlines.
+Unlike standard row-major interleaved RGB (`R1 G1 B1 R2 G2 B2...`), Instax SHARE print heads utilize **column-major planar RGB scanlines rotated 90° clockwise**:
+1. The portrait image is rotated 90° clockwise so its width $W_{\text{print}}$ equals the number of scanline columns (800) and its height $H_{\text{print}}$ equals the dots per column (600 for SP-1/SP-2, 800 for SP-3).
+2. For each scanline column $w \in [0, W_{\text{print}}-1]$, all $H_{\text{print}}$ Red dots are serialized first, followed by all $H_{\text{print}}$ Green dots, followed by all $H_{\text{print}}$ Blue dots.
 
-Mathematical coordinate mapping for image $(W \times H)$:
-$$\text{Offset}_R(x, y) = y \cdot W + x$$
-$$\text{Offset}_G(x, y) = (W \cdot H) + (y \cdot W + x)$$
-$$\text{Offset}_B(x, y) = (2 \cdot W \cdot H) + (y \cdot W + x)$$
+Mathematical byte offsets for column $w$ and dot $h$:
+$$\text{Offset}_R(w, h) = w \cdot (3 H_{\text{print}}) + h$$
+$$\text{Offset}_G(w, h) = w \cdot (3 H_{\text{print}}) + H_{\text{print}} + h$$
+$$\text{Offset}_B(w, h) = w \cdot (3 H_{\text{print}}) + 2 H_{\text{print}} + h$$
 
 #### Film Simulation Presets
 - **Fujifilm Intelligence**: Dynamic contrast S-curve with midtone contrast elevation ($\gamma = 1.15$).
@@ -438,17 +438,18 @@ When running `instax_wifi_bridge.py` (`:8765`) or `legacy_web_bridge.py` (`:8089
 The repository contains two continuous verification suites:
 
 #### 1. Unit & Protocol Integrity Test Suite (`test_suite.py`)
-Runs automated non-GUI checks across 9 critical verification vectors:
-- **Test 1**: Python Syntax Compilation across all 24 source files (`py_compile`).
+Runs automated non-GUI checks across 10 critical verification vectors:
+- **Test 1**: Python Syntax Compilation across all 27 source files (`py_compile`).
 - **Test 2**: Shell & `.command` script syntax validation using `bash -n`.
 - **Test 3**: Canonical Web Architecture & MD5 integrity across platform bridge scripts.
 - **Test 4**: Web Studios JavaScript Syntax & Execution Verification via headless macOS JavaScriptCore (`jsc`) engine using safe W3C-compliant `HTMLParser` tokenization (satisfies CodeQL `py/bad-tag-filter`).
 - **Test 5**: Planar RGB Image Encoding math (SP-2 1,440,000 bytes vs SP-3 1,920,000 bytes).
 - **Test 6–8**: Virtual Wi-Fi Direct Simulator socket handshake and 0-film dry-run transmission for SP-1, SP-2, and SP-3.
 - **Test 9**: BLE Link Printer Preview Engine JPEG rendering.
+- **Test 10**: Visual Manipulation Filters (12 optical, digital & algorithmic effects across BLE, Legacy & macOS CLI).
 
 ```bash
-# Execute Test Suite (9/9 Tests Verified)
+# Execute Test Suite (10/10 Tests Verified)
 python3 test_suite.py
 ```
 

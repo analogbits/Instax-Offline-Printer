@@ -59,7 +59,7 @@ Instax Offline Printer Applications/
 ├── macOS/                           # macOS native Swift app & CLI binary (instax-square)
 ├── Windows/                         # Windows standalone .vbs app & instax_printer.py
 ├── Linux/                           # Linux standalone .sh app & instax_printer.py
-├── test_suite.py                    # 9-point protocol, architecture & JSC regression test suite
+├── test_suite.py                    # 10-point protocol, architecture, filter & JSC regression test suite
 └── test_gui.py                      # Headless Tkinter robot GUI test suite
 ```
 
@@ -83,7 +83,7 @@ SID_SUPPORT_INFO = (0x00, 0x02)  # Query resolution, battery %, film count, stat
 SID_SHUTDOWN     = (0x01, 0x00)  # Power off printer hardware
 SID_RESET        = (0x01, 0x01)  # Soft reset printer controller
 SID_PRINT_START  = (0x10, 0x00)  # Handshake image download session & declare total bytes
-SID_PRINT_DATA   = (0x10, 0x01)  # Stream sequential 1024-byte image chunk
+SID_PRINT_DATA   = (0x10, 0x01)  # Stream sequential model-sized image chunk (600/900/1800 B)
 SID_PRINT_END    = (0x10, 0x02)  # Finalize image transfer in printer RAM
 SID_PRINT_CANCEL = (0x10, 0x03)  # Abort image download (used in Dry Run mode)
 SID_PRINT_EXEC   = (0x10, 0x80)  # Trigger physical film exposure and motor ejection
@@ -807,7 +807,7 @@ Provides real-time direct manipulation for mouse on desktop and touch on mobile:
 ## 6. `test_suite.py` & `test_gui.py` — Automated Verification
 
 ### 6.1 Protocol Integrity, Planar Encoding & JavaScriptCore Engine Verification (`test_suite.py`)
-`test_suite.py` provides continuous regression testing without external dependencies across 9 comprehensive tests:
+`test_suite.py` provides continuous regression testing without external dependencies across 10 comprehensive tests:
 * **Test 4 — Headless JavaScriptCore (`jsc`) Execution:**
   To guarantee that modern Web Studio JavaScript code never regresses with parser syntax errors (such as duplicate `let` declarations) or runtime exceptions, `test_suite.py` extracts the `<script>` blocks and executes them in Apple's headless JavaScriptCore engine (`/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc`).
 * **CodeQL Safe Tokenization (`HTMLParser`):**
