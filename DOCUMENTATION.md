@@ -1,6 +1,6 @@
 # 📘 Instax Offline Printer Suite — Comprehensive Software Documentation & Runbook
 **Universal 100% Offline Printing for macOS, Windows, Linux, Web, and iOS**  
-*Document Version: 2.1.0 • Repository Release: v2.1.0*
+*Document Version: 2.1.1 • Repository Release: v2.1.1*
 
 > 🔬 **Developer Notice**: For line-by-line annotated source code breakdowns, reverse-engineered protocol math, and function-level explanations, see the companion document:  
 > 👉 **[Code Walkthrough & Developer Reference Manual (`CODE_WALKTHROUGH.md`)](CODE_WALKTHROUGH.md)**
@@ -522,10 +522,11 @@ python3 test_gui.py
    ```bash
    cp Linux/instax-printer.desktop ~/.local/share/applications/
    ```
-4. **BlueZ Permissions Note**: Ensure your Linux user belongs to the `bluetooth` group for BLE:
+4. **BlueZ Permissions & MTU Note**: Ensure your Linux user belongs to the `bluetooth` group for BLE:
    ```bash
    sudo usermod -a -G bluetooth $USER
    ```
+   `instax_printer.py` automatically acquires the negotiated BlueZ BLE MTU on connect (falling back safely if unsupported) so image transfers run at full speed instead of 20-byte writes.
 
 #### 5.2.4 Web Studio & iPhone / iPad Safari Printing
 1. **Online Studio**: [https://analogbits.github.io/Instax-Offline-Printer/](https://analogbits.github.io/Instax-Offline-Printer/)
@@ -538,10 +539,10 @@ python3 test_gui.py
 #### 5.2.5 Adobe Lightroom Classic & Darktable Plugins
 1. **Adobe Lightroom Classic**:
    - In Lightroom, go to **File $\to$ Plug-in Manager $\to$ Add**.
-   - Select `Lightroom-Classic-Plugin/InstaxPrinter.lrplugin`.
+   - Select `Lightroom-Classic-Plugin/Instax-Printer.lrplugin`.
    - Right-click any photo $\to$ **Export $\to$ Print with Instax Offline Printer**.
 2. **Linux Darktable**:
-   - Enable the Lua extension script located in `Linux/darktable/`.
+   - Enable the Lua extension script located in `Lightroom-Classic-Plugin/Linux-Darktable-Plugin/instax_darktable.lua`.
 
 ---
 
@@ -586,7 +587,7 @@ The project follows strict **Docs as Code** and automated verification principle
 - **CI Workflow (`ci/ci.yml`)**:
   - Validates Python syntax across all scripts (`py_compile`).
   - Executes shell verification (`bash -n`).
-  - Runs full 8-point protocol integrity suite (`test_suite.py`).
+  - Runs full 10-point protocol & filter integrity suite (`test_suite.py`).
   - Executes automated headless robot tests (`test_gui.py`).
 - **CodeQL Security Analysis**:
   - Configured with language matrix `['python']` targeting the cross-platform scripting core.

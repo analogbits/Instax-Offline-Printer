@@ -1,6 +1,6 @@
 # 🔬 Instax Offline Printer Suite — Code Walkthrough & Developer Reference Manual
 **Annotated Source Code Explainer, Protocol Math & Algorithmic Deep-Dive**  
-*Document Version: 2.1.0 • Standard: Literate / Elucidative Code Specification • Target Release: v2.1.0*
+*Document Version: 2.1.1 • Standard: Literate / Elucidative Code Specification • Target Release: v2.1.1*
 
 ---
 
@@ -157,7 +157,7 @@ class InstaxPacket:
 
 #### Line-by-Line Explanation:
 1. `rx_buffer.extend(data)`:
-   Because Bluetooth Low Energy packets are often fragmented across multiple 20-byte or 180-byte MTU notifications, incoming chunks are appended to a persistent FIFO buffer.
+   Because Bluetooth Low Energy packets are often fragmented across multiple 20-byte or negotiated-MTU notifications, incoming chunks are appended to a persistent FIFO buffer. On Linux (BlueZ), `connect()` also explicitly invokes `await backend._acquire_mtu()` so outbound image writes use the full negotiated MTU (e.g., 247 bytes) instead of falling back to 20-byte writes.
 2. `b"\x61\x42"`:
    The printer replies with inverted ASCII synchronizer bytes `'aB'` (`0x61 0x42`), distinguishing responses from outbound commands (`'Ab'`).
 3. `pkt_len = (self.rx_buffer[2] << 8) | self.rx_buffer[3]`:
